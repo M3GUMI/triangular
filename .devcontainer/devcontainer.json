@@ -1,0 +1,10 @@
+{
+	"name": "triangular",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"extensions": [
+		"ms-vscode.cpptools",
+		"franneck94.c-cpp-runner"
+	]
+}
