@@ -1,0 +1,1 @@
+bazel clean & bazel build test:test
