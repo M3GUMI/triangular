@@ -35,7 +35,7 @@ namespace BinanceWebsocketWrapper
 
     void BinanceWebsocketWrapper::OnOpenSendMsg()
     {
-        // std::string msg = R"({"method":"SUBSCRIBE","params":[")" + m_conectionName + R"(@depth5@100ms"],"id":)" + to_string(time(NULL) % 1000) + R"(})";
+        std::string msg = R"({"method":"SUBSCRIBE","params":[")" + m_conectionName + R"(@depth5@100ms"],"id":)" + to_string(time(NULL) % 1000) + R"(})";
         Send(on_open_send_msg);
     }
 

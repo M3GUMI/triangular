@@ -13,5 +13,6 @@ cc_binary(
     ],
     deps = [
         "//lib/triangular:triangular",
+         "//lib/binance:WebsocketClient",
     ],
 )
