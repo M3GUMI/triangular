@@ -1,7 +1,9 @@
 #include "lib/triangular/triangular.h"
+#include "lib/executor/executor.h"
 
 int main()
 {
+    Executor::Executor executor();
 
     Triangular::Triangular triangular;
     triangular.AddDepthSubscirbe("btcusdt", false);

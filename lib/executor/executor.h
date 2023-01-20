@@ -17,7 +17,7 @@ namespace Executor
 	class Executor // 执行器
 	{
 	public:
-		BaseResp* Init(Pathfinder::Pathfinder *pathfinder);
+		Executor();
 
 	private:
 		Pathfinder::Pathfinder *pathfinder = NULL;

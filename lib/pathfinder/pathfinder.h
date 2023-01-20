@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <time.h>
+#include <functional>
 
 using namespace std;
 namespace Pathfinder
@@ -35,15 +36,11 @@ namespace Pathfinder
 		DepthItem Asks[10];
 	};*/
 
-	typedef void (*PathfinderSubscriberHandler)(TransactionPath *path);
+	typedef function<void(TransactionPath *path)> PathfinderSubscriberHandler;
 
 	class Pathfinder
 	{
 	public:
-		Pathfinder();
-		~Pathfinder();
-
-		void Init();
 		void RevisePath(string origin, string end);
 		void SubscribeArbitrage(PathfinderSubscriberHandler handler);
 

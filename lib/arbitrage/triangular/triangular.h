@@ -26,9 +26,6 @@ namespace Arbitrage
 	class TriangularArbitrage
 	{
 	public:
-		TriangularArbitrage();
-		~TriangularArbitrage();
-
 		std::string TaskId; // 任务id
 
 		BaseResp *Run(Pathfinder::Pathfinder *pathfinder, Pathfinder::TransactionPath *path);

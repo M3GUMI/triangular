@@ -4,15 +4,10 @@
 using namespace std;
 namespace Pathfinder
 {
-	void Pathfinder::Init()
-	{
-
-	}
-
-	void Pathfinder::SubscribeArbitrage(PathfinderSubscriberHandler handler)
+	/*void Pathfinder::SubscribeArbitrage(PathfinderSubscriberHandler handler)
 	{
 		this->subscriber = handler;
-	}
+	}*/
 
 	void Pathfinder::depthDataHandler()
 	{

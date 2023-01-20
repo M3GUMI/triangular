@@ -8,17 +8,14 @@
 using namespace std;
 namespace Executor
 {
-	BaseResp *Executor::Init(Pathfinder::Pathfinder *pathfinder)
+	Executor::Executor()
 	{
-		if (pathfinder == NULL)
-		{
-			return FailBaseResp("pathfinder is null");
-		}
-
 		// 回调订阅
-		this->pathfinder = pathfinder;
-		// pathfinder->SubscribeArbitrage(arbitrageDataHandler);
-		return NewBaseResp("");
+		Pathfinder::Pathfinder pathfinder; 
+		this->pathfinder = &pathfinder;
+		this->pathfinder->SubscribeArbitrage(bind(&Executor::arbitrageDataHandler, this, placeholders::_1));
+
+		return;
 	}
 
 	void Executor::arbitrageDataHandler(Pathfinder::TransactionPath *path)

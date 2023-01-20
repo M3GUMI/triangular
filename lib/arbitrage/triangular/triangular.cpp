@@ -13,8 +13,7 @@ namespace Arbitrage
 
                 // 1. 执行第一步交易
 		//   a. ioc 下单。订阅order status
-		//   b. 实时价格偏差过大则回滚
-		// 2. 查询第二步交易路径
+		// 2. orderStatus更新成功，触发第二步。查询第二步交易路径
 		pathfinder->RevisePath("ETH", "USDT");
 		// 3. 执行第二步交易
 		// 4. maker卖出稳定币
