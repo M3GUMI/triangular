@@ -121,5 +121,7 @@
     "**/.*/**",
     "**/.vscode",
     "**/.vscode/**"
-  ]
+  ],
+  "C_Cpp.errorSquiggles": "enabled",
+  "editor.suggest.snippetsPreventQuickSuggestions": false
 }

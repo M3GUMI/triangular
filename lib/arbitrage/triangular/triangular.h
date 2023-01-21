@@ -8,13 +8,21 @@ namespace Arbitrage
 	class Order // 订单
 	{
 	public:
-		string TaskId;	    // 套利任务Id
-		string OrderId;	    // 订单Id
+		string TaskId;		// 套利任务Id
+		string OrderId;		// 订单Id
 		string OrderStatus; // 订单状态
 	private:
 	};
 
-	map<string, Order*> orderStore; // 订单存储
+	class OrderInformation
+	{
+	public:
+		std::string status;
+		double targetQuantity;
+		double surplusQuantity;
+	};
+
+	map<string, Order *> orderStore; // 订单存储
 
 	struct SearchOrderResp
 	{
@@ -28,7 +36,18 @@ namespace Arbitrage
 	public:
 		std::string TaskId; // 任务id
 
-		BaseResp *Run(Pathfinder::Pathfinder *pathfinder, Pathfinder::TransactionPath *path);
+		TriangularArbitrage();
+		TriangularArbitrage(std::string TaskId, std::string OriginToken){
+			this->TaskId = TaskId;
+			this->OriginToken = OriginToken;
+		};
+		BaseResp *Run(Pathfinder::Pathfinder &pathfinder, Pathfinder::TransactionPath &path);
+		std::string generateOrderId();
+		int TriangularArbitrage::TakerHandler(Pathfinder::TransactiItemonPath path);
+		int TriangularArbitrage::MakerHandler(Pathfinder::TransactiItemonPath path);
+		int TriangularArbitrage::SubscribeOrder(Arbitrage::OrderInformation& information);
+		void TriangularArbitrage::setPositionToken(std::string PositionToken);
+		void TriangularArbitrage::setPositionQuantity(double PositionQuantity);
 
 	private:
 		std::string OriginToken; // 原始起点token

@@ -14,17 +14,19 @@ namespace Pathfinder
 	};
 
 	// 套利路径
-	struct TransactionPathItem
+	struct TransactiItemonPath
 	{
 		std::string FromToken; // 卖出的token
+		double FromPrice;	       // 卖出价格
+		double FromQuantity;       // 卖出数量
 		std::string ToToken;   // 买入的token
-		double Price;	       // 参考价格
-		double Quantity;       // 参考数量
+		double ToPrice;	//买入价格
+		double ToQuantity; //买入数量
 	};
 
 	struct TransactionPath
 	{
-		TransactionPathItem Path[10];
+		TransactiItemonPath Path[10];
 	};
 
 	/*struct NotifyDepthReq
