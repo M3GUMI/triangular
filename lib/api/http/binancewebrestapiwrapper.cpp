@@ -342,14 +342,14 @@ pair<double, double> binancewebrestapiwrapper::selectPriceQuantity(CreateOrderRe
     if(isCancelAll == true){
         for(auto it = symbolMap.begin(); it != symbolMap.end(); )
         {
-            cancelOrder(it -> second, clientOrderId);
-            it += 2;
+            cancelOrder(it -> second, to_string(clientOrderId));
+            it = 2 + it;
         }
     }else
     {
         for(auto i = 0; i <= symbols.size(); i++)
         {
-            cancelOrder(symbols[i], clientOrderId);
+            cancelOrder(symbols[i], to_string(clientOrderId));
         }
     }
  }
