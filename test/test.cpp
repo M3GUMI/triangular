@@ -1,15 +1,19 @@
 #include "lib/triangular/triangular.h"
 #include "lib/binance/WebsocketClient.h"
+#include "binancewebrestapiwrapper.h"
+#include <iostream>
+#include <sys/timeb.h>
 
 
 int main()
 {   
-    std::string a = "234";
-    double b = 1.022;
-    websocketclient::WebsocketClient client;
+    // std::string a = "234";
+    // double b = 1.022;
+    // websocketclient::WebsocketClient client;
     Triangular::Triangular triangular;
-    
-    // triangular.AddDepthSubscirbe("btcusdt", false);
+
+    binancewebrestapiwrapper wrapper;
+    triangular.AddDepthSubscirbe("btcusdt", false);
     // triangular.AddDepthSubscirbe("ethusdt", false);
     // triangular.AddDepthSubscirbe("ethbtc", false);
 
@@ -27,10 +31,8 @@ int main()
 
     // triangular.run();
     // client.Connect("wss://ws-api.binance.com/ws-api/v3");
-    std::istringstream s(a);
-    s >> b;
-    cout << b << endl;
-    
+    // uint64_t num = uint64_t(time(NULL) << 32 | rand );
+    // std::cout << num << endl;
     return 0;
 }
 

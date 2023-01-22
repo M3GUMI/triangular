@@ -12,6 +12,7 @@
 #include "depthwebsocketclient.h"
 #include "../../ahttp/http_client.hpp" //配置include另外文件夹即可解决
 #include "../http/binancewebrestapiwrapper.h"
+#include "binanceorderwebsocketclient.h"
 
 using namespace websocketclient;
 #define access_key "ppp"
@@ -29,6 +30,8 @@ public:
 
     // 币安ws连接器
     binancedepthwebsocketclient *ws_client;
+    const std::string hostname = "stream.binance.com";
+    const std::string hostport = "9443";
 
     // 获取币安密钥
     std::string listenKey;
@@ -37,4 +40,8 @@ public:
     void listenkeyKeepHandler();
     std::shared_ptr<websocketpp::lib::asio::steady_timer> listenkeyKeepTimer;
     websocketpp::lib::asio::io_service ioService;
+    binanceorderwebsocketclient orderclient;
+
+    void WSMsgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg);
+    void ExecutionReportHandler(const rapidjson::Document &msg);
 };

@@ -24,7 +24,7 @@ public:
         std::string TimeInForce;
     };
 
-    struct cancelOrderReq
+    struct calcelOrderArgs
     {
         bool CancelAll;
         vector<pair<std::string, std::string>> pairs;
@@ -46,9 +46,9 @@ public:
     std::string BcreateOrder(CreateOrderReq sArgs);
 
     //发起取消订单方法
-    void cancelOrder(std::string symbol, std::string clientOrderId);
+    void cancelOrder(std::string symbol);
     void CancelAllCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, std::string ori_symbol);
-    void BcancelOrder(cancelOrderReq cArgs);
+
     //获取symbol对
     
     pair<std::string, std::string> getSymbolSize(std::string token0, std::string token1);

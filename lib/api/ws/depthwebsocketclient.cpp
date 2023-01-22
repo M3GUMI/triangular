@@ -22,12 +22,14 @@
         depthwebsocketclient::depthwebsocketclient(const std::string conectionName, websocketpp::lib::asio::io_service *ioService, std::string msg) : conectionName(conectionName), ioService(ioService), on_open_send_msg(msg)
         {
         }
-
+        depthwebsocketclient::depthwebsocketclient()
+        {
+        }
         depthwebsocketclient::~depthwebsocketclient()
         {
         }
 
-        // 重写了深度处理器
+        // depth处理器
         void depthwebsocketclient::DepthMsgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, std::string exchangeName)
         {
             cout << __func__ << " " << __LINE__ << msg->get_payload().c_str() << endl;
@@ -44,7 +46,7 @@
 
             const auto &bids = depthInfoJson["bids"];
             const auto &asks = depthInfoJson["asks"];
-            const auto &lastUpdateId = depthInfoJson["lastUpdateId"]; // 最后更新时间
+        
 
             if (bids.Size() < 0 || asks.Size() < 0 || bids[0].Size() < 2 || asks[0].Size() < 0)
             {
@@ -54,7 +56,10 @@
 
             double bidPrice = 0, bidValue = 0;
             double askPrice = 0, askValue = 0;
-
+            
+            //构建请求结构体
+            NotifyDepthReq req;
+            
             for (unsigned i = 0; i < bids.Size(); i++)
             {
                 const auto &bid = bids[i];
@@ -63,6 +68,8 @@
                 std::string strBidValue = bid[1].GetString();
                 websocketclient::websocketclient::String2Double(strBidPrice.c_str(), bidPrice);
                 websocketclient::websocketclient::String2Double(strBidValue.c_str(), bidValue);
+                req.Bids[i].price =  bidPrice;
+                req.Bids[i].quantity, bidValue;
             }
             for (unsigned i = 0; i < bids.Size(); i++)
             {
@@ -71,7 +78,12 @@
                 std::string strAskValue = ask[1].GetString();
                 websocketclient::websocketclient::String2Double(strAskPrice.c_str(), askPrice);
                 websocketclient::websocketclient::String2Double(strAskValue.c_str(), askValue);
+                req.Asks[i].price, askPrice;
+                req.Asks[i].quantity, askValue;
             }
+            uint64_t updateTime = getTime();
+            req.UpdateTime = updateTime;
+
         };
 
         //添加depth订阅

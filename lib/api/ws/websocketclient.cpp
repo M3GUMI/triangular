@@ -5,7 +5,6 @@ namespace websocketclient
 
     websocketclient::websocketclient(const std::string conectionName, websocketpp::lib::asio::io_service *ioService, std::string msg) : conectionName(conectionName), ioService(ioService), on_open_send_msg(msg)
     {
-        
     }
     websocketclient::websocketclient()
     {
@@ -100,7 +99,6 @@ namespace websocketclient
 
     void websocketclient::InitSymbol2Base()
     {
-        
     }
 
     // 工具函数
@@ -110,4 +108,13 @@ namespace websocketclient
         s >> d;
     }
 
+    static uint64_t getTime()
+    {
+
+        timeb t;
+        ftime(&t); // 获取毫秒
+        time_t curr =  t.time * 1000 + t.millitm;
+        uint64_t time = ((uint64_t)curr);
+        return time;
+    }
 }
