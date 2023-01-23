@@ -20,7 +20,7 @@ namespace Executor
 		Executor();
 
 	private:
-		Pathfinder::Pathfinder *pathfinder = NULL;
-		void arbitrageDataHandler(Pathfinder::TransactionPath *path);
+		Pathfinder::Pathfinder& pathfinder;
+		void arbitrageDataHandler(Pathfinder::TransactionPath& path);
 	};
 }

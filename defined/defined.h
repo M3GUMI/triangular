@@ -14,6 +14,7 @@ struct BaseResp
 	string RetMsg;
 };
 
+
 BaseResp *NewBaseResp(string msg);
 BaseResp *FailBaseResp(string errMsg);
 

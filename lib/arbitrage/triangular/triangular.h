@@ -2,6 +2,7 @@
 #include <string>
 #include <map>
 #include "lib/pathfinder/pathfinder.h"
+#include <set>
 
 namespace Arbitrage
 {
@@ -11,18 +12,31 @@ namespace Arbitrage
 		string TaskId;		// 套利任务Id
 		string OrderId;		// 订单Id
 		string OrderStatus; // 订单状态
+		std::string FromToken;
+		double FromPrice;
+		double FromQuantity;
+		std::string ToToken;
+		double ToPrice;
+		double ToQuantity;
+		std::string OrderType;
+		std::string TimeInForce;
 	private:
 	};
 
-	class OrderInformation
+	class OrderResult
 	{
 	public:
+		std::string OrderId;
 		std::string status;
-		double targetQuantity;
-		double surplusQuantity;
+		std::string from;
+		std::string to;
+		double exceQuantity;
+		double originQuantity;
+		double FromPrice;
 	};
 
-	map<string, Order *> orderStore; // 订单存储
+	map<string, Order*> orderStore; // 订单存储
+	set<string> staticCoin;
 
 	struct SearchOrderResp
 	{
@@ -35,19 +49,22 @@ namespace Arbitrage
 	{
 	public:
 		std::string TaskId; // 任务id
+		Pathfinder::Pathfinder pathfinder;
 
 		TriangularArbitrage();
-		TriangularArbitrage(std::string TaskId, std::string OriginToken){
+		TriangularArbitrage(std::string TaskId, std::string OriginToken, Pathfinder::Pathfinder pathfinder){
 			this->TaskId = TaskId;
 			this->OriginToken = OriginToken;
+			this->pathfinder = pathfinder;
 		};
 		BaseResp *Run(Pathfinder::Pathfinder &pathfinder, Pathfinder::TransactionPath &path);
 		std::string generateOrderId();
-		int TriangularArbitrage::TakerHandler(Pathfinder::TransactiItemonPath path);
-		int TriangularArbitrage::MakerHandler(Pathfinder::TransactiItemonPath path);
-		int TriangularArbitrage::SubscribeOrder(Arbitrage::OrderInformation& information);
+		int TriangularArbitrage::ExecuteTrans(Pathfinder::Pathfinder& pathfinder, Pathfinder::TransactiItemonPath& path);
 		void TriangularArbitrage::setPositionToken(std::string PositionToken);
 		void TriangularArbitrage::setPositionQuantity(double PositionQuantity);
+		Arbitrage::Order TriangularArbitrage::TriangularArbitrage::generateOrder(Pathfinder::TransactiItemonPath& path);
+		void Arbitrage::TriangularArbitrage::IOCOrderStatusHandler(Arbitrage::OrderResult orderResult);
+		void Arbitrage::TriangularArbitrage::GTCOrderStatusHandler(Arbitrage::OrderResult orderResult);
 
 	private:
 		std::string OriginToken; // 原始起点token
@@ -56,5 +73,9 @@ namespace Arbitrage
 		double PositionQuantity;   // 持仓数量
 
 		SearchOrderResp searchOrder(std::string orderId);
+		void X2Static(Arbitrage::OrderResult &orderResult);
+		void X2X(Arbitrage::OrderResult &orderResult);
+		void Static2X(Arbitrage::OrderResult &orderResult);
+		void Static2Static(Arbitrage::OrderResult &orderResult);
 	};
 }

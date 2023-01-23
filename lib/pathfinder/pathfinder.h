@@ -43,7 +43,7 @@ namespace Pathfinder
 	class Pathfinder
 	{
 	public:
-		void RevisePath(string origin, string end);
+		void RevisePath(string origin, string end, double PositionQuantity);
 		void SubscribeArbitrage(PathfinderSubscriberHandler handler);
 
 	private:
