@@ -15,8 +15,8 @@
 #include "binanceorderwebsocketclient.h"
 
 using namespace websocketclient;
-#define access_key "ppp"
-#define secret_key "ddd"
+#define access_key "c52zdrltx6vSMgojFzxJcVQ1v7qiD55G0PgTe31v3fCfEazqgnBu3xNRWOPVOj86"
+#define secret_key "lDOZfpTNBIG8ICteeNfoOIoOHBONvBsiAP88GJ5rgDMF6bGGPETkM1Ri14mrbkfJ"
 
 class binancedepthwebsocketclient : public depthwebsocketclient
 {
@@ -44,4 +44,6 @@ public:
 
     void WSMsgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg);
     void ExecutionReportHandler(const rapidjson::Document &msg);
+
+    void Subscribedepth(std::string fromToken,std::string toToken);
 };

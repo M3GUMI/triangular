@@ -1,6 +1,7 @@
 #include "binancedepthwebsocketclient.h"
 #include "binanceorderwebsocketclient.h"
 #include "orderwebsocketclient.h"
+#include "../http/binancewebrestapiwrapper.h"
 
 
 
@@ -11,6 +12,7 @@ struct orReq
     std::string OrderStatus;
     uint64_t UpdateTime;
 };
+
 
 
 void binancedepthwebsocketclient::CreateAndSubListenKey()
@@ -116,6 +118,12 @@ void binancedepthwebsocketclient::ExecutionReportHandler(const rapidjson::Docume
     //等subscribe接口
     std::cout << "订单id: " << orReq.OrderId << endl;
 
+}
+
+
+void Subscribedepth(std::string fromToken,std::string toToken)
+{
+    
 }
 
 

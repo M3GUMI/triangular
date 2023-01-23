@@ -1,5 +1,6 @@
 #include "./http/binancewebrestapiwrapper.h"
 #include "./ws/binancedepthwebsocketclient.h"
+#include "./depthwebsocketclient.h"
 #include "binance.h"
 
 
@@ -38,6 +39,15 @@ void binance::binance::cancelOrder(binancewebrestapiwrapper::cancelOrderReq cArg
     wrapper.BcancelOrder(cArgs);
 }
 
+void binance::binance::subscribeDepth(std::string fromToken, std::string toToken)
+{
+    binancewebrestapiwrapper wrapper = binancewebrestapiwrapper(ioService,accessKey,secretKey);
+    pair pair = wrapper.getSymbolSize(fromToken, toToken);
+    std::string connectName = pair.first;
+    binancedepthwebsocketclient client = binancedepthwebsocketclient(connectName, ioService, "");
+    client.AddDepthSubscirbe(connectName);
+
+}
 
 
 

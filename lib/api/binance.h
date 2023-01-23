@@ -15,5 +15,6 @@ namespace binance
         void init();
         void createOrder(binancewebrestapiwrapper::CreateOrderReq sArgs);
         void cancelOrder(binancewebrestapiwrapper::cancelOrderReq cArgs);
+        void subscribeDepth(std::string fromToken, std::string toToken);
     };
 }

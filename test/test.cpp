@@ -1,19 +1,21 @@
 #include "lib/triangular/triangular.h"
 #include "lib/binance/WebsocketClient.h"
-#include "binancewebrestapiwrapper.h"
+#include "lib/api/binance.h"
 #include <iostream>
 #include <sys/timeb.h>
 
 
 int main()
 {   
+
+    binance::binance  binance("c52zdrltx6vSMgojFzxJcVQ1v7qiD55G0PgTe31v3fCfEazqgnBu3xNRWOPVOj86", "lDOZfpTNBIG8ICteeNfoOIoOHBONvBsiAP88GJ5rgDMF6bGGPETkM1Ri14mrbkfJ");
+    binance.init();
+    binance.subscribeDepth("btc", "usdt");
     // std::string a = "234";
     // double b = 1.022;
     // websocketclient::WebsocketClient client;
-    Triangular::Triangular triangular;
-
-    binancewebrestapiwrapper wrapper;
-    triangular.AddDepthSubscirbe("btcusdt", false);
+    // Triangular::Triangular triangular;
+    // triangular.AddDepthSubscirbe("btcusdt", false);
     // triangular.AddDepthSubscirbe("ethusdt", false);
     // triangular.AddDepthSubscirbe("ethbtc", false);
 
