@@ -2,13 +2,13 @@
 
 namespace commondef
 {
-    enum Order_Side
+    enum OrderSide
     {
         BUY = 1,
         SELL = 2
     };
 
-    enum Order_Type
+    enum OrderType
     {
         LIMIT = 1,             // 限价单
         MARKET = 2,            // 市价单
@@ -26,7 +26,7 @@ namespace commondef
         FOK = 3  // 无法全部立即成交就撤销
     };
 
-    enum Order_Status
+    enum OrderStatus
     {
         NEW = 1,              // 订单被交易引擎接受
         PARTIALLY_FILLED = 2, // 部分订单被成交
@@ -36,5 +36,4 @@ namespace commondef
         REJECTED = 6,         // 订单没有被交易引擎接受，也没被处理
         EXPIRED = 7,          // 订单被交易引擎取消, 比如
     };
-
 }

@@ -35,7 +35,7 @@ binanceorderwebsocketclient::~binanceorderwebsocketclient()
 
     void binanceorderwebsocketclient::ExecutionReportHandler(const rapidjson::Document &msg)
     {
-                std::string symbol = msg.FindMember("s")->value.GetString();
+        std::string symbol = msg.FindMember("s")->value.GetString();
         std::string from, to;
         std::string side = msg.FindMember("S")->value.GetString();
         std::string ori = msg.FindMember("q")->value.GetString();
@@ -54,5 +54,4 @@ binanceorderwebsocketclient::~binanceorderwebsocketclient()
         {
             swap(from, to);
         }
-
     }

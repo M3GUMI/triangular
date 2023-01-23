@@ -3,10 +3,11 @@
 #include "lib/api/binance.h"
 #include <iostream>
 #include <sys/timeb.h>
-
+#include "lib/executor/executor.h"
 
 int main()
-{   
+{
+    Executor::Executor executor();
 
     binance::binance  binance("c52zdrltx6vSMgojFzxJcVQ1v7qiD55G0PgTe31v3fCfEazqgnBu3xNRWOPVOj86", "lDOZfpTNBIG8ICteeNfoOIoOHBONvBsiAP88GJ5rgDMF6bGGPETkM1Ri14mrbkfJ");
     binance.init();

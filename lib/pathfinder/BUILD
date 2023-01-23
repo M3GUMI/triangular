@@ -1,7 +1,10 @@
-cc_binary(
-    name = "test",
+cc_library(
+    name = "pathfinder",
+    hdrs = [
+        "pathfinder.h",
+    ],
     srcs = [
-        "test.cpp"
+        "pathfinder.cpp",
     ],
     includes = ["."],
     linkopts = [
@@ -10,10 +13,9 @@ cc_binary(
         "--std=c++11",
         "-lssl",
         "-lcrypto",
+        "-DASIO_STANDALONE"
     ],
     deps = [
-        "//lib/triangular:triangular",
-        "//lib/binance:WebsocketClient",
-        "//lib/executor:executor",
     ],
+    visibility = ["//visibility:public"],
 )
