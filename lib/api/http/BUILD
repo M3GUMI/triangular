@@ -1,11 +1,12 @@
 cc_library(
-    name = "defined",
+    name = "http",
     hdrs = [
-        "defined.h",
-        "commondef.h",
+        "base_api_wrapper.h",
+        "binance_api_wrapper.h",
     ],
     srcs = [
-        "defined.cpp",
+        "base_api_wrapper.cpp",
+        "binance_api_wrapper.cpp",
     ],
     includes = ["."],
     linkopts = [
@@ -17,6 +18,10 @@ cc_library(
         "-DASIO_STANDALONE"
     ],
     deps = [
+        "//lib/ahttp:ahttp",
+        "//lib/libmix:libmix",
+        "//defined:defined",
+        "//utils:utils",
     ],
     visibility = ["//visibility:public"],
 )

@@ -1,5 +1,6 @@
 #include "defined.h"
 #include <string>
+#include <sstream>
 
 using namespace std;
 

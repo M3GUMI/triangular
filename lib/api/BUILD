@@ -1,11 +1,10 @@
 cc_library(
-    name = "defined",
+    name = "binance_test",
     hdrs = [
-        "defined.h",
-        "commondef.h",
+        "binance.h",
     ],
     srcs = [
-        "defined.cpp",
+        "binance.cpp",
     ],
     includes = ["."],
     linkopts = [
@@ -17,6 +16,8 @@ cc_library(
         "-DASIO_STANDALONE"
     ],
     deps = [
+        "//lib/api/ws:ws",
+        "//lib/api/http:http",
     ],
     visibility = ["//visibility:public"],
 )

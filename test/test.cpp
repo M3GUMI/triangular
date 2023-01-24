@@ -12,6 +12,7 @@ int main()
     binance::binance  binance("c52zdrltx6vSMgojFzxJcVQ1v7qiD55G0PgTe31v3fCfEazqgnBu3xNRWOPVOj86", "lDOZfpTNBIG8ICteeNfoOIoOHBONvBsiAP88GJ5rgDMF6bGGPETkM1Ri14mrbkfJ");
     binance.init();
     binance.subscribeDepth("btc", "usdt");
+
     // std::string a = "234";
     // double b = 1.022;
     // websocketclient::WebsocketClient client;
