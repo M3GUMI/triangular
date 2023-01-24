@@ -12,6 +12,8 @@
     "sstream": "cpp",
     "functional": "cpp",
     "*.ipp": "cpp",
+    "system_error": "cpp",
+    "iostream": "cpp",
     "cctype": "cpp",
     "clocale": "cpp",
     "cmath": "cpp",
@@ -59,7 +61,6 @@
     "ratio": "cpp",
     "regex": "cpp",
     "source_location": "cpp",
-    "system_error": "cpp",
     "tuple": "cpp",
     "type_traits": "cpp",
     "fstream": "cpp",
@@ -67,7 +68,6 @@
     "initializer_list": "cpp",
     "iomanip": "cpp",
     "iosfwd": "cpp",
-    "iostream": "cpp",
     "istream": "cpp",
     "latch": "cpp",
     "limits": "cpp",
@@ -121,7 +121,5 @@
     "**/.*/**",
     "**/.vscode",
     "**/.vscode/**"
-  ],
-  "C_Cpp.errorSquiggles": "enabled",
-  "editor.suggest.snippetsPreventQuickSuggestions": false
+  ]
 }
