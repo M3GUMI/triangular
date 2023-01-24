@@ -119,7 +119,7 @@ namespace Arbitrage
 			orderStore.erase(it);
 			// 找路径
 
-			/* 2. 处理没弄完的不稳定币 递归更新路径并下单 到状态为FILLED才return */
+			/* 2. 处理没弄完的不稳定币 递归更新路径并下单 到状态为FILLED才结束 */
 
 			// 继续下单 直到到状态为FILLED才开始下一步
 			double remain = ori - exce;
@@ -228,7 +228,7 @@ namespace Arbitrage
 		}
 		else if (status == "NEW" || status == "PARTIALLY_FILLED")
 		{
-			// 回调 GTCOrderHandler继续等
+			// 回调 GTCOrderHandler继续等，但是不新增order
 		}
 	}
 
