@@ -1,5 +1,4 @@
 #pragma once
-// #define ASIO_STANDALONE
 #include <set>
 #include <string.h>
 #include <functional>

@@ -80,7 +80,7 @@ namespace HttpApi
             query = toURI(args);
             if (need_sign)
             {
-                // args["signature"] = this->hmac(secretKey, query, EVP_sha256(), Strings::hex_to_string);
+                args["signature"] = this->hmac(secretKey, query, EVP_sha256(), Strings::hex_to_string);
                 query = toURI(args);
             }
         }
