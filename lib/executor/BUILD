@@ -18,7 +18,7 @@ cc_library(
     deps = [
         "//lib/arbitrage/triangular:triangular_arbitrage",
         "//lib/pathfinder:pathfinder",
-        "//defined",
+        "//lib/api:api",
     ],
     visibility = ["//visibility:public"],
 )

@@ -20,7 +20,6 @@ cc_library(
         "-DASIO_STANDALONE"
     ],
     deps = [
-        "//defined:defined",
         "//utils:utils",
         "//lib/api/http:http",
     ],

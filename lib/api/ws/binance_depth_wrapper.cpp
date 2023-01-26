@@ -6,7 +6,7 @@
 using namespace std;
 namespace websocketclient
 {
-    BinanceDepthWrapper::BinanceDepthWrapper()
+    BinanceDepthWrapper::BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpApi::BinanceApiWrapper& binanceApiWrapper): WebsocketWrapper("", "", ioService), apiWrapper(binanceApiWrapper)
     {
     }
 
@@ -19,13 +19,14 @@ namespace websocketclient
         this->subscriber = handler;
     }
 
-    void BinanceDepthWrapper::Connect(string symbol)
+    void BinanceDepthWrapper::Connect(string token0, string token1)
     {
+        auto symbol = this->apiWrapper.GetSymbol(token0, token1);
         string msg = R"({"method":"SUBSCRIBE","params":[")" + symbol + R"(@depth5@100ms"],"id":)" + to_string(time(NULL) % 1000) + R"(})";
-        WebsocketWrapper::Connect("", bind(&BinanceDepthWrapper::msgHandler, this, placeholders::_1, placeholders::_2, symbol));
+        WebsocketWrapper::Connect("", msg, bind(&BinanceDepthWrapper::msgHandler, this, placeholders::_1, placeholders::_2, token0, token1));
     }
 
-    void BinanceDepthWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, std::string exchangeName)
+    void BinanceDepthWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string token0, string token1)
     {
         rapidjson::Document depthInfoJson;
         depthInfoJson.Parse(msg->get_payload().c_str());
@@ -36,8 +37,10 @@ namespace websocketclient
             return;
         }
 
-        // todo 加一个丢弃冗余数据
-        uint64_t lastUpdateId = depthInfoJson["lastUpdateId"].GetUint64();
+        if (this->lastUpdateId <= depthInfoJson["lastUpdateId"].GetUint64()) {
+            this->lastUpdateId = depthInfoJson["lastUpdateId"].GetUint64();
+            return;
+        }
 
         const auto &bids = depthInfoJson["bids"];
         const auto &asks = depthInfoJson["asks"];
@@ -76,9 +79,10 @@ namespace websocketclient
         }
 
         DepthData data;
-        data.FromToken = "ETH"; // todo 做一个token映射
-        data.ToToken = "USDT";  // todo 做一个token映射
-        data.UpdateTime = getTime();
+        auto symbolData = this->apiWrapper.GetSymbolData(token0, token1);
+        data.FromToken = symbolData.BaseToken;
+        data.ToToken = symbolData.QuoteToken;
+        data.UpdateTime = GetNowTime();
         data.Bids.push_back(bidData);
         data.Asks.push_back(askData);
         this->subscriber(data);

@@ -1,10 +1,10 @@
 cc_library(
-    name = "binance_test",
+    name = "api",
     hdrs = [
-        "binance.h",
+        "api.h",
     ],
     srcs = [
-        "binance.cpp",
+        "api.cpp",
     ],
     includes = ["."],
     linkopts = [

@@ -1,33 +1,31 @@
-#include <functional>
 #include <rapidjson/document.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/reader.h>
-#include <rapidjson/stringbuffer.h>
-#include "binance_api_wrapper.h"
-#include "defined/commondef.h"
-#include "defined/defined.h"
+#include "define/define.h"
 #include "utils/utils.h"
+#include "binance_api_wrapper.h"
 
 using namespace std;
 namespace HttpApi
 {
-    BinanceApiWrapper::BinanceApiWrapper(websocketpp::lib::asio::io_service *ioService)
+    BinanceApiWrapper::BinanceApiWrapper(websocketpp::lib::asio::io_service &ioService) : BaseApiWrapper(ioService, GetAccessKey().first, GetAccessKey().second)
     {
-        BaseApiWrapper(ioService, "access_key", "secret_key");
     }
 
     BinanceApiWrapper::~BinanceApiWrapper()
     {
     }
 
-    void BinanceApiWrapper::binanceInitSymbol()
+    void BinanceApiWrapper::InitBinanceSymbol()
     {
-        /*string requestLink = "https://api.binance.com/api/v3/exchangeInfo";
-        MakeRequest({}, "GET", requestLink, "", std::bind(&BinanceApiWrapper::ExchangeInfoHandler, this, placeholders::_1, placeholders::_2), false);
-        init_time = time(NULL);*/
+        ApiRequest req;
+        req.args = {};
+        req.method = "GET";
+        req.uri = "https://api.binance.com/api/v3/exchangeInfo";
+        req.data = "";
+        req.sign = false;
+        req.callback = bind(&BinanceApiWrapper::initBinanceSymbolCallback, this, placeholders::_1, placeholders::_2);
     }
 
-    void BinanceApiWrapper::ExchangeInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
+    void BinanceApiWrapper::initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
     {
         if (res == nullptr || res->payload().empty())
         {
@@ -44,30 +42,25 @@ namespace HttpApi
 
         rapidjson::Document exchangeInfoJson;
         exchangeInfoJson.Parse(msg.c_str());
-        if (exchangeInfoJson.HasMember("symbols"))
+        if (!exchangeInfoJson.HasMember("symbols"))
         {
-            const auto &symbols = exchangeInfoJson["symbols"];
-            for (unsigned i = 0; i < symbols.Size(); ++i)
+            return;
+        }
+
+        const auto &symbols = exchangeInfoJson["symbols"];
+        for (unsigned i = 0; i < symbols.Size(); i++)
+        {
+            double double_tickSize = 0;
+            string symbol = symbols[i].FindMember("symbol")->value.GetString();
+            string baseAsset = symbols[i].FindMember("baseAsset")->value.GetString();
+            string quoteAsset = symbols[i].FindMember("quoteAsset")->value.GetString();
+            if (baseAsset == "NGN" || quoteAsset == "NGN")
             {
-                std::string symbol = symbols[i].FindMember("symbol")->value.GetString();
-                std::string baseAsset = symbols[i].FindMember("baseAsset")->value.GetString();
-                std::string quoteAsset = symbols[i].FindMember("quoteAsset")->value.GetString();
-                if (baseAsset == "NGN" || quoteAsset == "NGN")
-                {
-                    continue;
-                }
-                symbolMap[make_pair(baseAsset, quoteAsset)] = symbol;
-                symbolMap[make_pair(quoteAsset, baseAsset)] = symbol;
-                baseOfSymbol[symbol] = baseAsset;
-                m_mapSymbol2Base[symbol] = make_pair(baseAsset, quoteAsset);
-                m_setBaseCoins.insert(baseAsset);
-                m_setBaseCoins.insert(quoteAsset);
+                continue;
+            }
 
-                if (not symbols[i].HasMember("filters"))
-                {
-                    continue;
-                }
-
+            if (symbols[i].HasMember("filters"))
+            {
                 auto filters = symbols[i].FindMember("filters")->value.GetArray();
                 for (uint32_t j = 0; j < filters.Size(); j++)
                 {
@@ -76,21 +69,85 @@ namespace HttpApi
                         continue;
                     }
 
-                    std::string filterType = filters[j].FindMember("filterType")->value.GetString();
+                    string filterType = filters[j].FindMember("filterType")->value.GetString();
 
                     if (filterType != "LOT_SIZE")
                     {
                         continue;
                     }
 
-                    std::string ticksize = filters[j].FindMember("stepSize")->value.GetString();
-                    double double_tickSize = 0;
+                    string ticksize = filters[j].FindMember("stepSize")->value.GetString();
                     String2Double(ticksize, double_tickSize);
-                    m_mapExchange2Ticksize[symbol] = double_tickSize;
                     break;
                 }
             }
+
+            BinanceSymbolData data;
+            data.Symbol = symbol;
+            data.BaseToken = baseAsset;
+            data.QuoteToken = quoteAsset;
+            data.TicketSize = double_tickSize;
+
+            symbolMap[baseAsset + quoteAsset] = data;
+            symbolMap[quoteAsset + baseAsset] = data;
+            baseCoins.insert(baseAsset);
+            baseCoins.insert(quoteAsset);
         }
+    }
+
+    BinanceSymbolData& BinanceApiWrapper::GetSymbolData(std::string token0, std::string token1)
+    {
+        auto symbol = token0 + token1;
+        if (symbolMap.count(symbol) != 1)
+        {
+            BinanceSymbolData data;
+            cout << "not found error" << endl;
+            return data;
+        }
+
+        BinanceSymbolData data = symbolMap[symbol];
+        return data;
+    }
+
+    BinanceSymbolData& BinanceApiWrapper::GetSymbolData(std::string symbol)
+    {
+        if (symbolMap.count(symbol) != 1)
+        {
+            BinanceSymbolData data;
+            cout << "not found error" << endl;
+            return data;
+        }
+
+        BinanceSymbolData data = symbolMap[symbol];
+        return data;
+    }
+
+    string BinanceApiWrapper::GetSymbol(std::string token0, std::string token1)
+    {
+        auto symbol = token0 + token1;
+        if (symbolMap.count(symbol) != 1)
+        {
+            cout << "not found error" << endl;
+            return "";
+        }
+
+        BinanceSymbolData data = symbolMap[symbol];
+        return data.Symbol;
+    }
+
+    define::OrderSide BinanceApiWrapper::GetSide(std::string token0, std::string token1)
+    {
+        auto symbol = token0 + token1;
+        if (symbolMap.count(symbol) != 1)
+        {
+            cout << "not found error" << endl;
+            return define::UNKNOWN;
+        }
+
+        define::OrderSide side;
+        BinanceSymbolData data = symbolMap[symbol];
+        data.BaseToken == token0 ? side = define::SELL : side = define::BUY;
+        return side;
     }
 
     int BinanceApiWrapper::CreateOrder(CreateOrderReq &req)
@@ -99,13 +156,12 @@ namespace HttpApi
 
         map<string, string> args;
         string uri = "https://api.binance.com/api/v3/order";
-        pair<std::string, commondef::OrderSide> symbolSide;
-        symbolSide = getSymbolSide(req.FromToken, req.ToToken);
-        auto symbol = symbolSide.first;
-        auto side = symbolSide.second;
+        pair<std::string, define::OrderSide> symbolSide;
+        auto symbol = GetSymbol(req.FromToken, req.ToToken);
+        auto side = GetSide(req.FromToken, req.ToToken);
 
         pair<double, double> priceQuantity;
-        priceQuantity = getPriceQuantity(req, side);
+        priceQuantity = GetPriceQuantity(req, side);
         auto price = priceQuantity.first;
         auto quantity = priceQuantity.second;
 
@@ -116,12 +172,12 @@ namespace HttpApi
         args["quantity"] = quantity;
 
         // 市价单 不能有下面这些参数
-        if (req.OrderType != commondef::MARKET && req.OrderType != commondef::LIMIT_MAKER)
+        if (req.OrderType != define::MARKET && req.OrderType != define::LIMIT_MAKER)
         {
             args["timeInForce"] = this->timeInForceToString(req.TimeInForce);
         }
 
-        if (req.OrderType != commondef::MARKET)
+        if (req.OrderType != define::MARKET)
         {
             args["price"] = price;
         }
@@ -194,8 +250,8 @@ namespace HttpApi
     {
         for (auto symbol : symbols)
         {
-            auto pair = this->getSymbolSide(symbol.first, symbol.second);
-            this->cancelOrder("", pair.first);
+            auto symbolStr = this->GetSymbol(symbol.first, symbol.second);
+            this->cancelOrder("", symbolStr);
         }
     }
 
@@ -227,17 +283,16 @@ namespace HttpApi
             // 找不到订单了
             if (code == -2011 && msg == "Unknown order sent.")
             {
-                mapSymbolBalanceOrderStatus[ori_symbol] = 0;
+                // todo 改成回调通知订单管理层
+                // mapSymbolBalanceOrderStatus[ori_symbol] = 0;
             }
             return;
         }
 
         cout << __func__ << " " << __LINE__ << msg.c_str() << endl;
 
-        // cout << __func__ << " " << __LINE__ << msg.c_str() << endl;
-        // std::string symbol = order.FindMember("symbol")->value.GetString();
-
-        mapSymbolBalanceOrderStatus[ori_symbol] = 0;
+        // todo 改成回调通知订单管理层
+        // mapSymbolBalanceOrderStatus[ori_symbol] = 0;
     }
 
     void BinanceApiWrapper::CreateListenKey(string listenKey, function<void(int errCode, string listenKey)> callback)
@@ -287,17 +342,13 @@ namespace HttpApi
         return callback(2, "");
     }
 
-    void listenkeyKeepHandler()
-    {
-    }
-
     string BinanceApiWrapper::sideToString(uint32_t side)
     {
         switch (side)
         {
-        case commondef::BUY:
+        case define::BUY:
             return "BUY";
-        case commondef::SELL:
+        case define::SELL:
             return "SELL";
         }
 
@@ -308,19 +359,19 @@ namespace HttpApi
     {
         switch (orderType)
         {
-        case commondef::LIMIT:
+        case define::LIMIT:
             return "LIMIT";
-        case commondef::MARKET:
+        case define::MARKET:
             return "MARKET";
-        case commondef::STOP_LOSS:
+        case define::STOP_LOSS:
             return "STOP_LOSS";
-        case commondef::STOP_LOSS_LIMIT:
+        case define::STOP_LOSS_LIMIT:
             return "STOP_LOSS_LIMIT";
-        case commondef::TAKE_PROFIT:
+        case define::TAKE_PROFIT:
             return "TAKE_PROFIT";
-        case commondef::TAKE_PROFIT_LIMIT:
+        case define::TAKE_PROFIT_LIMIT:
             return "TAKE_PROFIT_LIMIT";
-        case commondef::LIMIT_MAKER:
+        case define::LIMIT_MAKER:
             return "LIMIT_MAKER";
         }
 
@@ -331,11 +382,11 @@ namespace HttpApi
     {
         switch (timeInForce)
         {
-        case commondef::GTC:
+        case define::GTC:
             return "GTC";
-        case commondef::IOC:
+        case define::IOC:
             return "IOC";
-        case commondef::FOK:
+        case define::FOK:
             return "FOK";
         }
 

@@ -3,11 +3,7 @@
 namespace websocketclient
 {
 
-    WebsocketWrapper::WebsocketWrapper(const std::string conectionName, websocketpp::lib::asio::io_service *ioService, std::string msg) : conectionName(conectionName), ioService(ioService), on_open_send_msg(msg)
-    {
-    }
-
-    WebsocketWrapper::WebsocketWrapper()
+    WebsocketWrapper::WebsocketWrapper(string hostname, string hostport, websocketpp::lib::asio::io_service& ioService) : hostname(hostname), hostport(hostport), ioService(ioService)
     {
     }
 
@@ -15,22 +11,15 @@ namespace websocketclient
     {
     }
 
-    void WebsocketWrapper::Connect(string uri, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler)
+    void WebsocketWrapper::Connect(string uri, string msg, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler)
     {
         try
         {
+            this->sendMsg = msg;
             client.clear_access_channels(websocketpp::log::alevel::all);
             client.set_error_channels(websocketpp::log::elevel::all);
 
-            if (ioService != NULL)
-            {
-                client.init_asio(ioService);
-            }
-            else
-            {
-                client.init_asio();
-            }
-
+            client.init_asio(&ioService);
             client.set_message_handler(msgHandler);
             client.set_tls_init_handler(websocketpp::lib::bind(&WebsocketWrapper::on_tls_init, this, websocketpp::lib::placeholders::_1));
             client.set_open_handler(websocketpp::lib::bind(&WebsocketWrapper::on_open, this, websocketpp::lib::placeholders::_1));
@@ -68,7 +57,7 @@ namespace websocketclient
         // ping_timer = std::make_shared<websocketpp::lib::asio::steady_timer>(*_ios, websocketpp::lib::asio::milliseconds(10000));
         // ping_timer->async_wait(websocketpp::lib::bind(&BaseExchange::on_ping_timer, this, websocketpp::lib::placeholders::_1));
         hdl = hdl;
-        send(on_open_send_msg);
+        send(sendMsg);
     }
 
     void WebsocketWrapper::send(const std::string &data)

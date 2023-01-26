@@ -1,11 +1,9 @@
 cc_library(
-    name = "defined",
+    name = "define",
     hdrs = [
-        "defined.h",
-        "commondef.h",
+        "define.h",
     ],
     srcs = [
-        "defined.cpp",
     ],
     includes = ["."],
     linkopts = [

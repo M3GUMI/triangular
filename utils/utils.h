@@ -4,4 +4,6 @@
 using namespace std;
 
 void String2Double(const string &str, double &d);
-uint64_t getTime();
+uint64_t GetNowTime();
+
+pair<string, string> GetAccessKey();

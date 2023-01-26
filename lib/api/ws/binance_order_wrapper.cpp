@@ -1,57 +1,45 @@
-#include <rapidjson/document.h>
-
 #include "lib/api/http/binance_api_wrapper.h"
 #include "utils/utils.h"
 #include "binance_order_wrapper.h"
 
 namespace websocketclient
 {
-    BinanceOrderWraper::BinanceOrderWraper()
+    BinanceOrderWrapper::BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpApi::BinanceApiWrapper& binanceApiWrapper): WebsocketWrapper("", "", ioService), apiWrapper(binanceApiWrapper)
     {
     }
 
-    BinanceOrderWraper::~BinanceOrderWraper()
+    BinanceOrderWrapper::~BinanceOrderWrapper()
     {
     }
 
-    void BinanceOrderWraper::SubscribeOrder(function<void(OrderData &req)> handler)
+    void BinanceOrderWrapper::SubscribeOrder(function<void(OrderData &req)> handler)
     {
         this->subscriber = handler;
     }
 
-    void BinanceOrderWraper::Connect()
+    void BinanceOrderWrapper::Connect()
     {
-        // todo ioService 逻辑待补充
-        websocketpp::lib::asio::io_service *ioService = NULL;
-
-        auto binance = HttpApi::BinanceApiWrapper(NULL);
-        binance.CreateListenKey("", bind(&BinanceOrderWraper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
+        auto binance = HttpApi::BinanceApiWrapper(this->ioService);
+        binance.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
     }
 
-    void BinanceOrderWraper::createListenKeyHandler(int errCode, string listenKey)
+    void BinanceOrderWrapper::createListenKeyHandler(int errCode, string listenKey)
     {
-        // todo ioService 逻辑待补充
-        websocketpp::lib::asio::io_service *ioService = NULL;
-
-        // todo 不知道缺了个什么头文件
-        /*string msg = R"({"method":"SUBSCRIBE","params":[],"id":)" + to_string(time(NULL) % 1000) + R"(})";
-        WebsocketWrapper::Connect(listenKey, bind(&BinanceOrderWraper::msgHandler, this, placeholders::_1, placeholders::_2));
+        string msg = R"({"method":"SUBSCRIBE","params":[],"id":)" + to_string(time(NULL) % 1000) + R"(})";
+        WebsocketWrapper::Connect(listenKey, msg, bind(&BinanceOrderWrapper::msgHandler, this, placeholders::_1, placeholders::_2));
 
         uint64_t next_keep_time_ms = errCode > 0 ? 1000 * 60:1000 * 60 * 20;
-        auto listenkeyKeepTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(next_keep_time_ms));
-        listenkeyKeepTimer->async_wait(bind(&BinanceOrderWraper::keepListenKeyHandler, this));*/
+        auto listenkeyKeepTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(this->ioService, websocketpp::lib::asio::milliseconds(next_keep_time_ms));
+        listenkeyKeepTimer->async_wait(bind(&BinanceOrderWrapper::keepListenKeyHandler, this));
     }
 
-    void BinanceOrderWraper::keepListenKeyHandler()
+    void BinanceOrderWrapper::keepListenKeyHandler()
     {
-        // todo ioService 逻辑待补充
-        websocketpp::lib::asio::io_service *ioService = NULL;
-
-        auto binance = HttpApi::BinanceApiWrapper(ioService);
-        binance.CreateListenKey(this->listenKey, bind(&BinanceOrderWraper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
+        auto binance = HttpApi::BinanceApiWrapper(this->ioService);
+        binance.CreateListenKey(this->listenKey, bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
     }
 
-    void BinanceOrderWraper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)
+    void BinanceOrderWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)
     {
         rapidjson::Document msgInfoJson;
         msgInfoJson.Parse(msg->get_payload().c_str());
@@ -73,7 +61,7 @@ namespace websocketclient
         cout << __func__ << " " << __LINE__ << "[" << msg->get_payload().c_str() << "]" << endl;
     }
 
-    void BinanceOrderWraper::executionReportHandler(const rapidjson::Document &msg)
+    void BinanceOrderWrapper::executionReportHandler(const rapidjson::Document &msg)
     {
         std::string from, to;
         std::string symbol = msg.FindMember("s")->value.GetString();        // 交易对
@@ -85,9 +73,11 @@ namespace websocketclient
         String2Double(exced, doubleExced);
         String2Double(ori, doubleOri);
         std::string status = msg.FindMember("X")->value.GetString(); // 订单状态
-        uint64_t updateTime = getTime();
-        from = mapSymbol2Base[symbol].first;
-        to = mapSymbol2Base[symbol].second;
+        uint64_t updateTime = GetNowTime();
+
+        auto symbolData = this->apiWrapper.GetSymbolData(symbol);
+        from = symbolData.BaseToken;
+        to = symbolData.QuoteToken;
 
         cout << __func__ << " " << __LINE__ << " " << symbol << " ExecutionReportHandler " << side << " " << ori << " " << exced << endl;
 

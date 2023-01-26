@@ -1,6 +1,8 @@
 #pragma once
+#include <string>
 
-namespace commondef
+using namespace std;
+namespace define
 {
     enum OrderSide
     {

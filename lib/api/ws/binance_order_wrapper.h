@@ -1,5 +1,6 @@
 #pragma once
 #include <string.h>
+#include <rapidjson/document.h>
 #include "websocket_wrapper.h"
 
 using namespace std;
@@ -11,12 +12,12 @@ namespace websocketclient
         uint64_t UpdateTime;
     };
 
-    class BinanceOrderWraper : public WebsocketWrapper
+    class BinanceOrderWrapper : public WebsocketWrapper
     {
     private:
         string listenKey = "";
 		function<void(OrderData& data)> subscriber = NULL;
-        std::map<string, std::pair<std::string, std::string>> mapSymbol2Base; // 交易对到货币名
+        HttpApi::BinanceApiWrapper& apiWrapper;
 
         void createListenKeyHandler(int errCode, string listenKey);
         void keepListenKeyHandler();
@@ -24,12 +25,10 @@ namespace websocketclient
         void executionReportHandler(const rapidjson::Document &msg);
 
     public:
-        BinanceOrderWraper();
-        ~BinanceOrderWraper();
+        BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpApi::BinanceApiWrapper& binanceApiWrapper);
+        ~BinanceOrderWrapper();
 
-        // 创建连接
         void Connect();
-        // 订阅订单数据
         void SubscribeOrder(function<void(OrderData& req)> handler);
     };
 }

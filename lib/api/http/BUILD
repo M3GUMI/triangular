@@ -20,7 +20,7 @@ cc_library(
     deps = [
         "//lib/ahttp:ahttp",
         "//lib/libmix:libmix",
-        "//defined:defined",
+        "//define:define",
         "//utils:utils",
     ],
     visibility = ["//visibility:public"],

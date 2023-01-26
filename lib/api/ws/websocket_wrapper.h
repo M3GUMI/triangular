@@ -12,16 +12,13 @@ namespace websocketclient
     class WebsocketWrapper
     {
     private:
-        // 连接
-        websocketpp::lib::asio::io_service *ioService;
-        websocketpp::client<websocketpp::config::asio_tls_client> client;
-        websocketpp::connection_hdl hdl;
-
         // 连接配置
-        string conectionName;
-        string on_open_send_msg;
-        const string hostname = "";
-        const string hostport = "";
+        string sendMsg;
+        string hostname = "";
+        string hostport = "";
+
+        websocketpp::connection_hdl hdl;
+        websocketpp::client<websocketpp::config::asio_tls_client> client;
 
         // 事件触发函数
         websocketpp::lib::shared_ptr<websocketpp::lib::asio::ssl::context> on_tls_init(websocketpp::connection_hdl); // ssl安全 http转https
@@ -29,11 +26,13 @@ namespace websocketclient
         void send(const string &data);
 
     public:
-        WebsocketWrapper(string conectionName, websocketpp::lib::asio::io_service *ioService, string msg);
-        WebsocketWrapper();
+        // 连接
+        websocketpp::lib::asio::io_service& ioService;
+
+        WebsocketWrapper(string hostname, string hostport, websocketpp::lib::asio::io_service& ioService);
         ~WebsocketWrapper();
 
-        void Connect(string uri, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler);
+        void Connect(string uri, string msg, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler);
     };
 
 }

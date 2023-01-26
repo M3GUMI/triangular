@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "lib/api/http/binance_api_wrapper.h"
 #include "websocket_wrapper.h"
 
 using namespace std;
@@ -23,15 +24,18 @@ namespace websocketclient
     class BinanceDepthWrapper : public WebsocketWrapper
     {
     private:
-		function<void(DepthData& data)> subscriber = NULL;
-        void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, std::string exchangeName);
+        uint64_t lastUpdateId = 0;
+        function<void(DepthData &data)> subscriber = NULL;
+        HttpApi::BinanceApiWrapper& apiWrapper;
+
+        void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string token0, string token1);
 
     public:
-        BinanceDepthWrapper();
+        BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpApi::BinanceApiWrapper& binanceApiWrapper);
         ~BinanceDepthWrapper();
 
         // 创建连接
-        void Connect(string symbol);
+        void Connect(string token0, string token1);
         // 订阅depth数据
         void SubscribeDepth(function<void(DepthData& data)> handler);
     };

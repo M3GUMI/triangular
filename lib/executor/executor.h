@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <time.h>
-#include "defined/defined.h"
 #include "lib/arbitrage/triangular/triangular.h"
 
 using namespace std;
