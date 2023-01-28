@@ -1,10 +1,12 @@
 cc_library(
-    name = "executor",
+    name = "http",
     hdrs = [
-        "executor.h",
+        "base_api_wrapper.h",
+        "binance_api_wrapper.h",
     ],
     srcs = [
-        "executor.cpp",
+        "base_api_wrapper.cpp",
+        "binance_api_wrapper.cpp",
     ],
     includes = ["."],
     linkopts = [
@@ -16,9 +18,10 @@ cc_library(
         "-DASIO_STANDALONE"
     ],
     deps = [
-        "//lib/arbitrage/triangular:triangular_arbitrage",
-        "//lib/pathfinder:pathfinder",
-        "//lib/api:api",
+        "//lib/ahttp:ahttp",
+        "//lib/libmix:libmix",
+        "//define:define",
+        "//utils:utils",
     ],
     visibility = ["//visibility:public"],
 )

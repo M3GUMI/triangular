@@ -1,10 +1,14 @@
 cc_library(
-    name = "defined",
+    name = "ws",
     hdrs = [
-        "defined.h",
+        "websocket_wrapper.h",
+        "binance_order_wrapper.h",
+        "binance_depth_wrapper.h",
     ],
     srcs = [
-        "defined.cpp",
+        "websocket_wrapper.cpp",
+        "binance_order_wrapper.cpp",
+        "binance_depth_wrapper.cpp",
     ],
     includes = ["."],
     linkopts = [
@@ -16,6 +20,8 @@ cc_library(
         "-DASIO_STANDALONE"
     ],
     deps = [
+        "//utils:utils",
+        "//lib/api/http:http",
     ],
     visibility = ["//visibility:public"],
 )

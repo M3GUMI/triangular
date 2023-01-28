@@ -41,6 +41,7 @@ namespace Arbitrage
 
 		if (IsStatic(from) && IsStatic(to))
 		{
+<<<<<<< HEAD
 			order.TimeInForce = "GTC";
 		}
 
@@ -256,28 +257,36 @@ namespace Arbitrage
 		Order order = generateOrder(path);
 		binancewebrestapiwrapper::CreateOrderReq orderReq = Order2OrderReq(order);
 		binance::binance::createOrder(orderReq);
+=======
+			return 1; //error
+		}
+
+                // 1. 执行第一步交易
+		//   a. ioc 下单。订阅order status
+		// 2. orderStatus更新成功，触发第二步。查询第二步交易路径
+		pathfinder->RevisePath("ETH", "USDT");
+		// 3. 执行第二步交易
+		// 4. maker卖出稳定币
+		// 5. 回归USDT
+		return 0;
+>>>>>>> main
 	}
 
-	SearchOrderResp TriangularArbitrage::searchOrder(std::string orderId)
+	int TriangularArbitrage::searchOrder(std::string orderId, SearchOrderResp& resp)
 	{
-		SearchOrderResp resp;
-		resp.Base = NewBaseResp("");
-
 		auto val = orderStore.find(orderId);
 		if (val == orderStore.end())
 		{
-			resp.Base = FailBaseResp("not found order");
-			return resp;
+			return 1;
 		}
 
 		resp.OrderData = val->second;
 		if (resp.OrderData == NULL)
 		{
-			resp.Base = FailBaseResp("order is null");
-			return resp;
+			return 1;
 		}
 
-		return resp;
+		return 0;
 	}
 
 	bool IsStatic(std::string coinName)

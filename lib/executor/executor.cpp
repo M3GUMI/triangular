@@ -1,6 +1,5 @@
 #include <functional>
 #include "executor.h"
-#include "defined/defined.h"
 #include "lib/arbitrage/triangular/triangular.h"
 #include "lib/pathfinder/pathfinder.h"
 #include "lib/arbitrage/triangular/triangular.h"

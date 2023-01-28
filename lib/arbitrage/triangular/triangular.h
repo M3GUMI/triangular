@@ -41,7 +41,6 @@ namespace Arbitrage
 	struct SearchOrderResp
 	{
 		Order *OrderData; // 订单数据
-		BaseResp *Base;
 	};
 
 	// 三角套利
