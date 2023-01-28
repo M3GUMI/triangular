@@ -19,7 +19,6 @@ namespace Arbitrage
 	struct SearchOrderResp
 	{
 		Order *OrderData; // 订单数据
-		BaseResp *Base;
 	};
 
 	// 三角套利
@@ -28,7 +27,7 @@ namespace Arbitrage
 	public:
 		std::string TaskId; // 任务id
 
-		BaseResp *Run(Pathfinder::Pathfinder *pathfinder, Pathfinder::TransactionPath *path);
+		int Run(Pathfinder::Pathfinder *pathfinder, Pathfinder::TransactionPath *path);
 
 	private:
 		std::string OriginToken; // 原始起点token
@@ -36,6 +35,6 @@ namespace Arbitrage
 		std::string PositionToken; // 当前持仓token，算法起点。todo 当前只计算一种持仓token
 		double PositionQuantity;   // 持仓数量
 
-		SearchOrderResp searchOrder(std::string orderId);
+		int searchOrder(std::string orderId, SearchOrderResp& resp);
 	};
 }

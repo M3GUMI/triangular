@@ -27,15 +27,6 @@ namespace Pathfinder
 		TransactionPathItem Path[10];
 	};
 
-	/*struct NotifyDepthReq
-	{
-		std::string FromToken; // 卖出的token
-		std::string ToToken; // 买入的token
-		time_t UpdateTime; // 更新时间，ms精度
-		DepthItem Bids[10];
-		DepthItem Asks[10];
-	};*/
-
 	typedef function<void(TransactionPath *path)> PathfinderSubscriberHandler;
 
 	class Pathfinder

@@ -1,10 +1,10 @@
 cc_library(
-    name = "executor",
+    name = "utils",
     hdrs = [
-        "executor.h",
+        "utils.h",
     ],
     srcs = [
-        "executor.cpp",
+        "utils.cpp",
     ],
     includes = ["."],
     linkopts = [
@@ -16,9 +16,6 @@ cc_library(
         "-DASIO_STANDALONE"
     ],
     deps = [
-        "//lib/arbitrage/triangular:triangular_arbitrage",
-        "//lib/pathfinder:pathfinder",
-        "//lib/api:api",
     ],
     visibility = ["//visibility:public"],
 )

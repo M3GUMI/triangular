@@ -45,3 +45,25 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
 )
+
+cc_library(
+    name = "WebsocketClient",
+    hdrs = [
+        "WebsocketClient.h",
+    ],
+    srcs = [
+        "WebsocketClient.cpp",
+    ],
+    includes = ["."],
+    linkopts = [
+        "-lboost_system",
+        "-lpthread",
+        "--std=c++11",
+        "-lssl",
+        "-lcrypto",
+        "-DASIO_STANDALONE"
+    ],
+    deps = [
+    ],
+    visibility = ["//visibility:public"],
+)

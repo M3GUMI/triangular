@@ -1,14 +1,13 @@
-#include "defined/defined.h"
 #include "triangular.h"
 #include "lib/pathfinder/pathfinder.h"
 
 namespace Arbitrage
 {
-	BaseResp *TriangularArbitrage::Run(Pathfinder::Pathfinder *pathfinder, Pathfinder::TransactionPath *path)
+	int TriangularArbitrage::Run(Pathfinder::Pathfinder *pathfinder, Pathfinder::TransactionPath *path)
 	{
 		if (pathfinder == NULL)
 		{
-			return FailBaseResp("pathfinder is null");
+			return 1; //error
 		}
 
                 // 1. 执行第一步交易
@@ -18,28 +17,23 @@ namespace Arbitrage
 		// 3. 执行第二步交易
 		// 4. maker卖出稳定币
 		// 5. 回归USDT
-		return NewBaseResp("");
+		return 0;
 	}
 
-	SearchOrderResp TriangularArbitrage::searchOrder(std::string orderId)
+	int TriangularArbitrage::searchOrder(std::string orderId, SearchOrderResp& resp)
 	{
-		SearchOrderResp resp;
-		resp.Base = NewBaseResp("");
-
 		auto val = orderStore.find(orderId);
 		if (val == orderStore.end())
 		{
-			resp.Base = FailBaseResp("not found order");
-			return resp;
+			return 1;
 		}
 
 		resp.OrderData = val->second;
 		if (resp.OrderData == NULL)
 		{
-			resp.Base = FailBaseResp("order is null");
-			return resp;
+			return 1;
 		}
 
-		return resp;
+		return 0;
 	}
 }
