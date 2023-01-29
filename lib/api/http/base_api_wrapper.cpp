@@ -58,14 +58,13 @@ namespace HttpWrapper
         return make_pair(price, quantity);
     }
 
-    void BaseApiWrapper::MakeRequest(ApiRequest& req)
+    void BaseApiWrapper::MakeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback)
     {
         auto args = req.args;
         auto method = req.method;
         auto uri = req.uri;
         auto data = req.data;
         auto needSign = req.sign;
-        auto callback = req.callback;
 
         string query;
         const auto &header = sign(args, query, needSign);
@@ -99,7 +98,7 @@ namespace HttpWrapper
             query = toURI(args);
             if (need_sign)
             {
-                args["signature"] = this->hmac(secretKey, query, EVP_sha256(), Strings::hex_to_string);
+                // args["signature"] = this->hmac(secretKey, query, EVP_sha256(), Strings::hex_to_string);
                 query = toURI(args);
             }
         }

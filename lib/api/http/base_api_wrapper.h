@@ -16,8 +16,6 @@ namespace HttpWrapper
         string data;
         bool sign;
 
-        function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback;
-
         ApiRequest()
         {
             this->args = {};
@@ -25,7 +23,6 @@ namespace HttpWrapper
             this->uri = "";
             this->data = "";
             this->sign = false;
-            this->callback = NULL;
         }
     };
 
@@ -65,6 +62,7 @@ namespace HttpWrapper
         template <typename T, typename outer>
         string hmac(const std::string &key, const std::string &data, T evp, outer filter);
 
+
     public:
         BaseApiWrapper(websocketpp::lib::asio::io_service& ioService, string accessKey, string secretKey);
         ~BaseApiWrapper();
@@ -79,6 +77,6 @@ namespace HttpWrapper
         string GetOutOrderId(string orderId);
         int CheckResp(shared_ptr<HttpRespone> &res);
         pair<double, double> GetPriceQuantity(CreateOrderReq req, define::OrderSide side);
-        void MakeRequest(ApiRequest& req);
+        void MakeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback);
     };
 }

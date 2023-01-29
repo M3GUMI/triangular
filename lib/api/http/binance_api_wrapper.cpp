@@ -22,7 +22,7 @@ namespace HttpWrapper
         req.uri = "https://api.binance.com/api/v3/exchangeInfo";
         req.data = "";
         req.sign = false;
-        req.callback = bind(&BinanceApiWrapper::initBinanceSymbolCallback, this, placeholders::_1, placeholders::_2);
+        MakeRequest(req, bind(&BinanceApiWrapper::initBinanceSymbolCallback, this, placeholders::_1, placeholders::_2));
     }
 
     void BinanceApiWrapper::initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
@@ -201,7 +201,7 @@ namespace HttpWrapper
         return;
     }
 
-    int BinanceApiWrapper::CreateOrder(CreateOrderReq &req)
+    int BinanceApiWrapper::CreateOrder(CreateOrderReq &req, function<void(OrderData& data)> callback)
     {
         if (req.OrderId == "")
         {
@@ -245,12 +245,12 @@ namespace HttpWrapper
         apiReq.uri = uri;
         apiReq.data = "";
         apiReq.sign = true;
-        apiReq.callback = bind(&BinanceApiWrapper::createOrderCallback, this, placeholders::_1, placeholders::_2, req.OrderId),
-        BaseApiWrapper::MakeRequest(apiReq);
+        apiReq.callback = bind(&BinanceApiWrapper::createOrderCallback, this, placeholders::_1, placeholders::_2, req.OrderId, callback),
+        BaseApiWrapper::MakeRequest(apiReq, apiCallback);
         return 0;
     }
 
-    void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, string orderId)
+    void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, string orderId, function<void(OrderData& data)> callback)
     {
         if (res == nullptr || res->payload().empty())
         {
@@ -269,6 +269,7 @@ namespace HttpWrapper
             if (code == -2010 && msg == "Account has insufficient balance for requested action.")
             {
                 cout << "余额不足" << endl;
+                // GetBalanceAndCheckNoWait();
             }
             return;
         } else {
@@ -276,7 +277,29 @@ namespace HttpWrapper
             orderIdMap[orderId] = clientOrderId;
             outOrderIdMap[clientOrderId] = orderId;
         }
+        
+        // 当前均为IOC数据推送
+        auto symbol = order["s"].GetString();
+        auto side = stringToSide(order["S"].GetString());
 
+        if (side == define::UNKNOWN)
+        {
+            // error
+            // todo 需要增加以下参数的合法性校验
+            return;
+        }
+
+        OrderData data;
+        data.OrderId = this->orderIdMap[order["c"].GetString()];
+        data.ExecuteTime = order["E"].GetUint64();
+        data.OrderStatus = stringToOrderStatus(order["X"].GetString());
+        data.FromToken = parseToken(symbol, side).first; 
+        data.ToToken = parseToken(symbol, side).second; 
+        data.ExecutePrice = order["L"].GetDouble();
+        data.ExecuteQuantity = order["l"].GetDouble();
+        data.OriginQuantity = order["q"].GetDouble();
+
+        callback(data);
         return;
     }
 
@@ -295,9 +318,9 @@ namespace HttpWrapper
         req.uri = uri;
         req.data = "";
         req.sign = true;
-        req.callback = bind(&BinanceApiWrapper::cancelOrderCallback, this, placeholders::_1, placeholders::_2, symbol);
+        auto callback = bind(&BinanceApiWrapper::cancelOrderCallback, this, placeholders::_1, placeholders::_2, symbol);
 
-        MakeRequest(req);
+        MakeRequest(req, callback);
     }
 
     void BinanceApiWrapper::CancelOrder(string orderId)
@@ -363,7 +386,7 @@ namespace HttpWrapper
         req.uri = uri;
         req.data = "";
         req.sign = true;
-        req.callback = bind(&BinanceApiWrapper::createListkeyCallback, this, placeholders::_1, placeholders::_2, callback);
+        auto apiCallback = bind(&BinanceApiWrapper::createListkeyCallback, this, placeholders::_1, placeholders::_2, callback);
 
         if (listenKey.size() == 0)
         {
@@ -371,7 +394,7 @@ namespace HttpWrapper
             req.method = "PUT";
         }
 
-        this->MakeRequest(req);
+        this->MakeRequest(req, apiCallback);
     }
 
     void BinanceApiWrapper::createListkeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(int errCode, string listenKey)> callback)
@@ -399,6 +422,53 @@ namespace HttpWrapper
         }
 
         return callback(2, "");
+    }
+
+    define::OrderStatus BinanceApiWrapper::stringToOrderStatus(string status)
+    {
+        if (status == "NEW")
+        {
+            return define::NEW;
+        }
+        else if (status == "PARTIALLY_FILLED")
+        {
+            return define::PARTIALLY_FILLED;
+        }
+        else if (status == "FILLED")
+        {
+            return define::FILLED;
+        }
+        else if (status == "CANCELED")
+        {
+            return define::CANCELED;
+        }
+        else if (status == "PENDING_CANCEL")
+        {
+
+            return define::PENDING_CANCEL;
+        }
+        else if (status == "REJECTED")
+        {
+            return define::REJECTED;
+        }
+        else if (status == "EXPIRED")
+        {
+
+            return define::EXPIRED;
+        }
+
+        return define::NEW;
+    }
+
+    define::OrderSide BinanceApiWrapper::stringToSide(string side)
+    {
+        if (side == "BUY") {
+            return define::BUY;
+        } else if (side == "SELL") {
+            return define::SELL;
+        }
+
+        return define::UNKNOWN;
     }
 
     string BinanceApiWrapper::sideToString(uint32_t side)
@@ -450,5 +520,15 @@ namespace HttpWrapper
         }
 
         return "";
+    }
+
+    pair<string, string> BinanceApiWrapper::parseToken(string symbol, define::OrderSide side)
+    {
+        auto data = GetSymbolData(symbol);
+        if (side == define::SELL) {
+            return make_pair(data.QuoteToken, data.BaseToken);
+        } else {
+            return make_pair(data.BaseToken, data.QuoteToken);
+        }
     }
 }
