@@ -30,6 +30,7 @@ namespace Arbitrage
 	int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path)
 	{
 		HttpWrapper::CreateOrderReq req;
+		req.OrderId = generateOrderId();
 		req.FromToken = path.FromToken;
 		req.FromPrice = path.FromPrice;
 		req.FromQuantity = path.FromQuantity;
@@ -134,7 +135,7 @@ namespace Arbitrage
 		}
 	}
 
-	int TriangularArbitrage::SearchOrder(string orderId, SearchOrderResp &resp)
+	/*int TriangularArbitrage::SearchOrder(string orderId, SearchOrderResp &resp)
 	{
 		auto val = orderStore.find(orderId);
 		if (val == orderStore.end())
@@ -149,7 +150,7 @@ namespace Arbitrage
 		}
 
 		return 0;
-	}
+	}*/
 
 	unsigned long getRand()
 	{

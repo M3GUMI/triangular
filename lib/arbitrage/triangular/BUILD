@@ -19,6 +19,7 @@ cc_library(
         "//lib/pathfinder:pathfinder",
         "//lib/api:api",
         "//define:define",
+        "//utils:utils",
     ],
     visibility = ["//visibility:public"],
 )

@@ -9,6 +9,10 @@ namespace Pathfinder
 		API::GetBinanceDepthWrapper().SubscribeDepth(bind(&Pathfinder::depthDataHandler, this, placeholders::_1));
 	}
 
+	Pathfinder::~Pathfinder()
+	{
+	}
+
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData& data)
 	{
 		// 1. 更新负权图

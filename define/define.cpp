@@ -1,25 +1,27 @@
 #include "define.h"
 
-bool IsStableCoin(string coinName)
+namespace define
 {
-    if (coinName == "ETH")
+    bool IsStableCoin(string coinName)
     {
-        return true;
-    }
-    else if (coinName == "USDT")
-    {
-        return true;
-    }
-    else if (coinName == "BTC")
-    {
-        return true;
+        if (coinName == "ETH")
+        {
+            return true;
+        }
+        else if (coinName == "USDT")
+        {
+            return true;
+        }
+        else if (coinName == "BTC")
+        {
+            return true;
+        }
+
+        return false;
     }
 
-    return false;
-}
-
-
-bool NotStableCoin(string coinName)
-{
-    return !IsStableCoin(coinName);
+    bool NotStableCoin(string coinName)
+    {
+        return !IsStableCoin(coinName);
+    }
 }

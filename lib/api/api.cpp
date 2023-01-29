@@ -2,7 +2,11 @@
 
 namespace API
 {
-    void InitApi()
+    HttpWrapper::BinanceApiWrapper *api;
+    WebsocketWrapper::BinanceDepthWrapper *depth;
+    WebsocketWrapper::BinanceOrderWrapper *order;
+
+    void Init()
     {
         websocketpp::lib::asio::io_service ioService;
 

@@ -25,7 +25,7 @@ namespace Arbitrage
 	private:
 	};
 
-	map<std::string, Order*> orderStore; // 订单存储
+	// map<std::string, Order*> orderStore; // 订单存储
 
 	struct SearchOrderResp
 	{
@@ -41,7 +41,7 @@ namespace Arbitrage
 
 		int Run(Pathfinder::TransactionPath &path);
 		int ExecuteTrans(Pathfinder::TransactionPathItem &path);
-		int SearchOrder(string orderId, SearchOrderResp& resp);
+		// int SearchOrder(string orderId, SearchOrderResp& resp);
 	private:
 		Pathfinder::Pathfinder &pathfinder;
 		string TaskId;		// 任务id

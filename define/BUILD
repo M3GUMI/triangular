@@ -4,6 +4,7 @@ cc_library(
         "define.h",
     ],
     srcs = [
+        "define.cpp",
     ],
     includes = ["."],
     linkopts = [
