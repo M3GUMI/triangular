@@ -150,9 +150,64 @@ namespace HttpWrapper
         return side;
     }
 
+    int BinanceApiWrapper::GetAccountInfo(function<void(AccountInfo& info)> callback)
+    {
+        uint64_t now = time(NULL);
+
+        ApiRequest req;
+        req.args["timestamp"] = to_string(now * 1000);
+        req.method = "GET";
+        req.uri = "https://api.binance.com/api/v3/account";
+        req.data = "";
+        req.sign = true;
+        req.callback = bind(&BinanceApiWrapper::accountInfoHandler, this, ::_1, ::_2, callback);
+
+        this->MakeRequest(req);
+        return 0;
+    }
+
+    void BinanceApiWrapper::accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo& info)> callback)
+    {
+        if (this->CheckResp(res) > 0)
+        {
+            cout << __func__ << " " << __LINE__ << " get_account_info error " << endl;
+            return;
+        }
+
+        rapidjson::Document accountInfoDocument;
+        accountInfoDocument.Parse(res->payload().c_str());
+        if (not accountInfoDocument.HasMember("balances"))
+        {
+            cout << __func__ << " " << __LINE__ << "no balance data " << res->payload().c_str() << endl;
+            return;
+        }
+
+        AccountInfo info;
+        auto balances = accountInfoDocument["balances"].GetArray();
+        for (int i = 0; i < balances.Size(); i++)
+        {
+            std::string asset = balances[i].FindMember("asset")->value.GetString();
+            std::string free = balances[i].FindMember("free")->value.GetString();
+            std::string locked = balances[i].FindMember("locked")->value.GetString();
+
+            BalanceData data;
+            data.Asset = asset;
+            String2Double(free, data.Free);
+            String2Double(locked, data.Locked);
+            info.Balances.push_back(data);
+        }
+
+        callback(info);
+        return;
+    }
+
     int BinanceApiWrapper::CreateOrder(CreateOrderReq &req)
     {
-        function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> func;
+        if (req.OrderId == "")
+        {
+            // error
+            return 1;
+        }
 
         map<string, string> args;
         string uri = "https://api.binance.com/api/v3/order";
@@ -190,12 +245,12 @@ namespace HttpWrapper
         apiReq.uri = uri;
         apiReq.data = "";
         apiReq.sign = true;
-        apiReq.callback = bind(&BinanceApiWrapper::createOrderCallback, this, placeholders::_1, placeholders::_2),
+        apiReq.callback = bind(&BinanceApiWrapper::createOrderCallback, this, placeholders::_1, placeholders::_2, req.OrderId),
         BaseApiWrapper::MakeRequest(apiReq);
         return 0;
     }
 
-    void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
+    void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, string orderId)
     {
         if (res == nullptr || res->payload().empty())
         {
@@ -216,6 +271,10 @@ namespace HttpWrapper
                 cout << "余额不足" << endl;
             }
             return;
+        } else {
+            string clientOrderId = order.FindMember("clientOrderId")->value.GetString();
+            orderIdMap[orderId] = clientOrderId;
+            outOrderIdMap[clientOrderId] = orderId;
         }
 
         return;
@@ -228,7 +287,7 @@ namespace HttpWrapper
         args["symbol"] = symbol;
         args["timestamp"] = std::to_string(time(NULL) * 1000);
         args["recvWindow"] = "50000";
-        args["newClientOrderId"] = this->GetClientOrderId(orderId);
+        args["newClientOrderId"] = GetOutOrderId(orderId);
 
         ApiRequest req;
         req.args = args;

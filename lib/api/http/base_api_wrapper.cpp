@@ -16,9 +16,29 @@ namespace HttpWrapper
     {
     }
 
-    string GetClientOrderId(string orderId)
+    string BaseApiWrapper::GetOrderId(string outOrderId)
     {
-        return "";
+        return outOrderIdMap[outOrderId];
+    }
+
+    string BaseApiWrapper::GetOutOrderId(string orderId)
+    {
+        return orderIdMap[orderId];
+    }
+
+    int BaseApiWrapper::CheckResp(shared_ptr<HttpRespone> &res)
+    {
+        if (res == nullptr || res->payload().empty())
+        {
+            return 1;
+        }
+
+        if (res->http_status() != 200)
+        {
+            return 2;
+        }
+
+        return 0;
     }
 
     pair<double, double> BaseApiWrapper::GetPriceQuantity(CreateOrderReq req, define::OrderSide side)
