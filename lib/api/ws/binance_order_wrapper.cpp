@@ -2,9 +2,9 @@
 #include "utils/utils.h"
 #include "binance_order_wrapper.h"
 
-namespace websocketclient
+namespace WebsocketWrapper
 {
-    BinanceOrderWrapper::BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpApi::BinanceApiWrapper& binanceApiWrapper): WebsocketWrapper("", "", ioService), apiWrapper(binanceApiWrapper)
+    BinanceOrderWrapper::BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper): WebsocketWrapper("", "", ioService), apiWrapper(binanceApiWrapper)
     {
     }
 
@@ -19,7 +19,7 @@ namespace websocketclient
 
     void BinanceOrderWrapper::Connect()
     {
-        auto binance = HttpApi::BinanceApiWrapper(this->ioService);
+        auto binance = HttpWrapper::BinanceApiWrapper(this->ioService);
         binance.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
     }
 
@@ -35,7 +35,7 @@ namespace websocketclient
 
     void BinanceOrderWrapper::keepListenKeyHandler()
     {
-        auto binance = HttpApi::BinanceApiWrapper(this->ioService);
+        auto binance = HttpWrapper::BinanceApiWrapper(this->ioService);
         binance.CreateListenKey(this->listenKey, bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
     }
 

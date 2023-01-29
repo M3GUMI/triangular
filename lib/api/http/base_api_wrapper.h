@@ -6,7 +6,7 @@
 #include "define/define.h"
 
 using namespace std;
-namespace HttpApi
+namespace HttpWrapper
 {
     struct ApiRequest
     {
@@ -16,8 +16,6 @@ namespace HttpApi
         string data;
         bool sign;
 
-        function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback;
-
         ApiRequest()
         {
             this->args = {};
@@ -25,12 +23,12 @@ namespace HttpApi
             this->uri = "";
             this->data = "";
             this->sign = false;
-            this->callback = NULL;
         }
     };
 
     struct CreateOrderReq
     {
+        string OrderId;
         string FromToken;
         double FromPrice;
         double FromQuantity;
@@ -38,7 +36,7 @@ namespace HttpApi
         double ToPrice;
         double ToQuantity;
         define::OrderType OrderType;
-        define::TimeInFoce TimeInForce;
+        define::TimeInForce TimeInForce;
     };
 
     struct CancelOrderReq
@@ -64,15 +62,21 @@ namespace HttpApi
         template <typename T, typename outer>
         string hmac(const std::string &key, const std::string &data, T evp, outer filter);
 
+
     public:
         BaseApiWrapper(websocketpp::lib::asio::io_service& ioService, string accessKey, string secretKey);
         ~BaseApiWrapper();
 
         // 交易对基础货币
         set<string> baseCoins;
+        // 订单号映射
+        map<string, string> orderIdMap; // 内部id转外部id
+        map<string, string> outOrderIdMap; // 外部id转内部id
 
-        string GetClientOrderId(string orderId); // todo 待补充
+        string GetOrderId(string outOrderId);
+        string GetOutOrderId(string orderId);
+        int CheckResp(shared_ptr<HttpRespone> &res);
         pair<double, double> GetPriceQuantity(CreateOrderReq req, define::OrderSide side);
-        void MakeRequest(ApiRequest& req);
+        void MakeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback);
     };
 }

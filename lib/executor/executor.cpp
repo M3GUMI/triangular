@@ -7,22 +7,18 @@
 using namespace std;
 namespace Executor
 {
-	Executor::Executor()
+	Executor::Executor(Pathfinder::Pathfinder &pathfinder) : pathfinder(pathfinder)
 	{
-		// 回调订阅
-		Pathfinder::Pathfinder pathfinder; 
-		this->pathfinder = &pathfinder;
-		this->pathfinder->SubscribeArbitrage(bind(&Executor::arbitrageDataHandler, this, placeholders::_1));
-
+		this->pathfinder.SubscribeArbitrage(bind(&Executor::arbitrageDataHandler, this, placeholders::_1));
 		return;
 	}
 
-	void Executor::arbitrageDataHandler(Pathfinder::TransactionPath *path)
+	void Executor::arbitrageDataHandler(Pathfinder::TransactionPath& path)
 	{
 		// 当前不区分类型，均为三角套利
 
-		Arbitrage::TriangularArbitrage triangular;
+		Arbitrage::TriangularArbitrage triangular(this->pathfinder);
 		// 1. 新建三角套利任务,注册任务并初始化执行
-		triangular.Run(this->pathfinder, path);
+		triangular.Run(path);
 	}
 }

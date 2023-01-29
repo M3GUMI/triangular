@@ -6,7 +6,7 @@
 #include "base_api_wrapper.h"
 
 using namespace std;
-namespace HttpApi
+namespace HttpWrapper
 {
     BaseApiWrapper::BaseApiWrapper(websocketpp::lib::asio::io_service& ioService, string accessKey, string secretKey): ioService(ioService), accessKey(accessKey), secretKey(secretKey)
     {
@@ -16,9 +16,29 @@ namespace HttpApi
     {
     }
 
-    string GetClientOrderId(string orderId)
+    string BaseApiWrapper::GetOrderId(string outOrderId)
     {
-        return "";
+        return outOrderIdMap[outOrderId];
+    }
+
+    string BaseApiWrapper::GetOutOrderId(string orderId)
+    {
+        return orderIdMap[orderId];
+    }
+
+    int BaseApiWrapper::CheckResp(shared_ptr<HttpRespone> &res)
+    {
+        if (res == nullptr || res->payload().empty())
+        {
+            return 1;
+        }
+
+        if (res->http_status() != 200)
+        {
+            return 2;
+        }
+
+        return 0;
     }
 
     pair<double, double> BaseApiWrapper::GetPriceQuantity(CreateOrderReq req, define::OrderSide side)
@@ -38,15 +58,13 @@ namespace HttpApi
         return make_pair(price, quantity);
     }
 
-    void BaseApiWrapper::MakeRequest(ApiRequest& req)
+    void BaseApiWrapper::MakeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback)
     {
-        // todo 奇怪的包问题，需要看一下
         auto args = req.args;
         auto method = req.method;
         auto uri = req.uri;
         auto data = req.data;
         auto needSign = req.sign;
-        auto callback = req.callback;
 
         string query;
         const auto &header = sign(args, query, needSign);
@@ -80,7 +98,8 @@ namespace HttpApi
             query = toURI(args);
             if (need_sign)
             {
-                args["signature"] = this->hmac(secretKey, query, EVP_sha256(), Strings::hex_to_string);
+                // todo 奇怪依赖问题
+                // args["signature"] = this->hmac(secretKey, query, EVP_sha256(), Strings::hex_to_string);
                 query = toURI(args);
             }
         }

@@ -2,43 +2,46 @@
 #include <string>
 #include <time.h>
 #include <functional>
+#include "lib/api/api.h"
 
 using namespace std;
 namespace Pathfinder
 {
-	// 深度数据
-	struct DepthItem
-	{
-		double Price; // 价格
-		double Quantity; // 数量
-	};
-
-	// 套利路径
+	// 套利路径项
 	struct TransactionPathItem
 	{
 		std::string FromToken; // 卖出的token
+		double FromPrice;	   // 卖出价格
+		double FromQuantity;   // 卖出数量
 		std::string ToToken;   // 买入的token
-		double Price;	       // 参考价格
-		double Quantity;       // 参考数量
+		double ToPrice;		   // 买入价格
+		double ToQuantity;	   // 买入数量
 	};
 
 	struct TransactionPath
 	{
-		TransactionPathItem Path[10];
+		vector<TransactionPathItem> Path;
 	};
 
-	typedef function<void(TransactionPath *path)> PathfinderSubscriberHandler;
+	struct RevisePathReq
+	{
+		string Origin;
+		string End;
+		double PositionQuantity;
+	};
 
 	class Pathfinder
 	{
-	public:
-		void RevisePath(string origin, string end);
-		void SubscribeArbitrage(PathfinderSubscriberHandler handler);
-
 	private:
-		PathfinderSubscriberHandler subscriber = NULL;
+		function<void(TransactionPath &path)> subscriber = NULL;
 
-		void depthDataHandler();
-		TransactionPath *getTriangularPath();
+		void depthDataHandler(WebsocketWrapper::DepthData& data); // 接收depth数据处理
+
+	public:
+		Pathfinder(); 
+		~Pathfinder(); 
+
+		void SubscribeArbitrage(function<void(TransactionPath &path)> handler); // 订阅套利机会推送
+		int RevisePath(RevisePathReq req, TransactionPath &resp);				// 路径修正
 	};
 }

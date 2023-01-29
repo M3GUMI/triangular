@@ -1,6 +1,6 @@
 #include "websocket_wrapper.h"
 
-namespace websocketclient
+namespace WebsocketWrapper
 {
 
     WebsocketWrapper::WebsocketWrapper(string hostname, string hostport, websocketpp::lib::asio::io_service& ioService) : hostname(hostname), hostport(hostport), ioService(ioService)
