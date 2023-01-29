@@ -4,7 +4,7 @@
 #include "binance_api_wrapper.h"
 
 using namespace std;
-namespace HttpApi
+namespace HttpWrapper
 {
     BinanceApiWrapper::BinanceApiWrapper(websocketpp::lib::asio::io_service &ioService) : BaseApiWrapper(ioService, GetAccessKey().first, GetAccessKey().second)
     {

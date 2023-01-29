@@ -6,9 +6,9 @@ namespace API
     {
         websocketpp::lib::asio::io_service ioService;
 
-        HttpApi::BinanceApiWrapper apiWrapper(ioService);
-        websocketclient::BinanceDepthWrapper depthWrapper(ioService, apiWrapper);
-        websocketclient::BinanceOrderWrapper orderWrapper(ioService, apiWrapper);
+        HttpWrapper::BinanceApiWrapper apiWrapper(ioService);
+        WebsocketWrapper::BinanceDepthWrapper depthWrapper(ioService, apiWrapper);
+        WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper);
         apiWrapper.InitBinanceSymbol();
 
         api = &apiWrapper;
@@ -16,7 +16,7 @@ namespace API
         order = &orderWrapper;
     }
 
-    HttpApi::BinanceApiWrapper &GetBinanceApiWrapper()
+    HttpWrapper::BinanceApiWrapper &GetBinanceApiWrapper()
     {
         if (api == NULL)
         {
@@ -26,7 +26,7 @@ namespace API
         return *api;
     }
 
-    websocketclient::BinanceDepthWrapper& GetBinanceDepthWrapper()
+    WebsocketWrapper::BinanceDepthWrapper& GetBinanceDepthWrapper()
     {
         if (depth == NULL)
         {
@@ -36,7 +36,7 @@ namespace API
         return *depth;
     }
 
-    websocketclient::BinanceOrderWrapper &GetBinanceOrderWrapper()
+    WebsocketWrapper::BinanceOrderWrapper &GetBinanceOrderWrapper()
     {
         if (order == NULL)
         {

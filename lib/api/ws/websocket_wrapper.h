@@ -5,7 +5,7 @@
 
 using namespace std;
 
-namespace websocketclient
+namespace WebsocketWrapper
 {
 
     class WebsocketWrapper

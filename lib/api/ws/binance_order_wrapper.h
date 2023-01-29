@@ -4,7 +4,7 @@
 #include "websocket_wrapper.h"
 
 using namespace std;
-namespace websocketclient
+namespace WebsocketWrapper
 {
     struct OrderData {
         string OrderId;
@@ -17,7 +17,7 @@ namespace websocketclient
     private:
         string listenKey = "";
 		function<void(OrderData& data)> subscriber = NULL;
-        HttpApi::BinanceApiWrapper& apiWrapper;
+        HttpWrapper::BinanceApiWrapper& apiWrapper;
 
         void createListenKeyHandler(int errCode, string listenKey);
         void keepListenKeyHandler();
@@ -25,7 +25,7 @@ namespace websocketclient
         void executionReportHandler(const rapidjson::Document &msg);
 
     public:
-        BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpApi::BinanceApiWrapper& binanceApiWrapper);
+        BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper);
         ~BinanceOrderWrapper();
 
         void Connect();

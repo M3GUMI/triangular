@@ -7,13 +7,9 @@
 using namespace std;
 namespace Executor
 {
-	Executor::Executor()
+	Executor::Executor(Pathfinder::Pathfinder &pathfinder) : pathfinder(pathfinder)
 	{
-		// 回调订阅
-		Pathfinder::Pathfinder pathfinder; 
-		this->pathfinder = pathfinder;
 		this->pathfinder.SubscribeArbitrage(bind(&Executor::arbitrageDataHandler, this, placeholders::_1));
-
 		return;
 	}
 

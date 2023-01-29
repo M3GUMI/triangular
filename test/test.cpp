@@ -1,6 +1,4 @@
 #include "lib/triangular/triangular.h"
-#include "lib/binance/WebsocketClient.h"
-#include "lib/api/binance.h"
 #include <iostream>
 #include <sys/timeb.h>
 #include "lib/executor/executor.h"

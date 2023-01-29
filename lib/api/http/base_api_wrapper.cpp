@@ -6,7 +6,7 @@
 #include "base_api_wrapper.h"
 
 using namespace std;
-namespace HttpApi
+namespace HttpWrapper
 {
     BaseApiWrapper::BaseApiWrapper(websocketpp::lib::asio::io_service& ioService, string accessKey, string secretKey): ioService(ioService), accessKey(accessKey), secretKey(secretKey)
     {
@@ -40,7 +40,6 @@ namespace HttpApi
 
     void BaseApiWrapper::MakeRequest(ApiRequest& req)
     {
-        // todo 奇怪的包问题，需要看一下
         auto args = req.args;
         auto method = req.method;
         auto uri = req.uri;

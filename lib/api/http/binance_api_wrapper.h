@@ -7,8 +7,7 @@
 #include "base_api_wrapper.h"
 
 using namespace std;
-
-namespace HttpApi
+namespace HttpWrapper
 {
     struct BinanceSymbolData {
         string Symbol;

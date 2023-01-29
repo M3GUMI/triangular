@@ -5,12 +5,12 @@
 
 namespace API
 {
-    HttpApi::BinanceApiWrapper *api;
-    websocketclient::BinanceDepthWrapper *depth;
-    websocketclient::BinanceOrderWrapper *order;
+    HttpWrapper::BinanceApiWrapper *api;
+    WebsocketWrapper::BinanceDepthWrapper *depth;
+    WebsocketWrapper::BinanceOrderWrapper *order;
 
     void InitApi();
-    HttpApi::BinanceApiWrapper& GetBinanceApiWrapper();
-    websocketclient::BinanceDepthWrapper& GetBinanceDepthWrapper();
-    websocketclient::BinanceOrderWrapper& GetBinanceOrderWrapper();
+    HttpWrapper::BinanceApiWrapper& GetBinanceApiWrapper();
+    WebsocketWrapper::BinanceDepthWrapper& GetBinanceDepthWrapper();
+    WebsocketWrapper::BinanceOrderWrapper& GetBinanceOrderWrapper();
 }

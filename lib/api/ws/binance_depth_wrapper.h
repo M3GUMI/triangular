@@ -4,7 +4,7 @@
 #include "websocket_wrapper.h"
 
 using namespace std;
-namespace websocketclient
+namespace WebsocketWrapper
 {
     struct DepthItem
     {
@@ -26,12 +26,12 @@ namespace websocketclient
     private:
         uint64_t lastUpdateId = 0;
         function<void(DepthData &data)> subscriber = NULL;
-        HttpApi::BinanceApiWrapper& apiWrapper;
+        HttpWrapper::BinanceApiWrapper& apiWrapper;
 
         void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string token0, string token1);
 
     public:
-        BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpApi::BinanceApiWrapper& binanceApiWrapper);
+        BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper);
         ~BinanceDepthWrapper();
 
         // 创建连接

@@ -4,9 +4,9 @@
 #include "utils/utils.h"
 
 using namespace std;
-namespace websocketclient
+namespace WebsocketWrapper
 {
-    BinanceDepthWrapper::BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpApi::BinanceApiWrapper& binanceApiWrapper): WebsocketWrapper("", "", ioService), apiWrapper(binanceApiWrapper)
+    BinanceDepthWrapper::BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper): WebsocketWrapper("", "", ioService), apiWrapper(binanceApiWrapper)
     {
     }
 

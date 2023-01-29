@@ -6,7 +6,7 @@
 #include "define/define.h"
 
 using namespace std;
-namespace HttpApi
+namespace HttpWrapper
 {
     struct ApiRequest
     {
@@ -38,7 +38,7 @@ namespace HttpApi
         double ToPrice;
         double ToQuantity;
         define::OrderType OrderType;
-        define::TimeInFoce TimeInForce;
+        define::TimeInForce TimeInForce;
     };
 
     struct CancelOrderReq
