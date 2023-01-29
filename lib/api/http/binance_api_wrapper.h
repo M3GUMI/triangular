@@ -26,7 +26,7 @@ namespace HttpWrapper
     struct AccountInfo
     {
         vector<BalanceData> Balances;
-    }
+    };
 
 	struct OrderData
 	{

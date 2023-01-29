@@ -160,9 +160,9 @@ namespace HttpWrapper
         req.uri = "https://api.binance.com/api/v3/account";
         req.data = "";
         req.sign = true;
-        req.callback = bind(&BinanceApiWrapper::accountInfoHandler, this, ::_1, ::_2, callback);
+        auto apiCallback = bind(&BinanceApiWrapper::accountInfoHandler, this, ::_1, ::_2, callback);
 
-        this->MakeRequest(req);
+        this->MakeRequest(req, apiCallback);
         return 0;
     }
 
@@ -205,7 +205,7 @@ namespace HttpWrapper
     {
         if (req.OrderId == "")
         {
-            // error
+            // todo error日志处理
             return 1;
         }
 
@@ -245,8 +245,8 @@ namespace HttpWrapper
         apiReq.uri = uri;
         apiReq.data = "";
         apiReq.sign = true;
-        apiReq.callback = bind(&BinanceApiWrapper::createOrderCallback, this, placeholders::_1, placeholders::_2, req.OrderId, callback),
-        BaseApiWrapper::MakeRequest(apiReq, apiCallback);
+        auto apiCallback = bind(&BinanceApiWrapper::createOrderCallback, this, placeholders::_1, placeholders::_2, req.OrderId, callback);
+        this->MakeRequest(apiReq, apiCallback);
         return 0;
     }
 

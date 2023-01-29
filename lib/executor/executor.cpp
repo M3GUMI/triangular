@@ -17,8 +17,8 @@ namespace Executor
 	{
 		// 当前不区分类型，均为三角套利
 
-		Arbitrage::TriangularArbitrage triangular = Arbitrage::TriangularArbitrage();
+		Arbitrage::TriangularArbitrage triangular(this->pathfinder);
 		// 1. 新建三角套利任务,注册任务并初始化执行
-		triangular.Run(this->pathfinder, path);
+		triangular.Run(path);
 	}
 }

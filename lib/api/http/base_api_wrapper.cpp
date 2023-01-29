@@ -98,6 +98,7 @@ namespace HttpWrapper
             query = toURI(args);
             if (need_sign)
             {
+                // todo 奇怪依赖问题
                 // args["signature"] = this->hmac(secretKey, query, EVP_sha256(), Strings::hex_to_string);
                 query = toURI(args);
             }

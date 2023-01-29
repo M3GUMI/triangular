@@ -1,19 +1,17 @@
-#include "lib/triangular/triangular.h"
 #include <iostream>
 #include <sys/timeb.h>
+#include "lib/api/api.h"
 #include "lib/executor/executor.h"
+#include "lib/triangular/triangular.h"
 
 int main()
 {
-    Executor::Executor executor();
+    // access_key: c52zdrltx6vSMgojFzxJcVQ1v7qiD55G0PgTe31v3fCfEazqgnBu3xNRWOPVOj86
+    // secret_key: lDOZfpTNBIG8ICteeNfoOIoOHBONvBsiAP88GJ5rgDMF6bGGPETkM1Ri14mrbkfJ
+    API::Init();
+    Pathfinder::Pathfinder pathfinder;
+    Executor::Executor executor(pathfinder);
 
-    binance::binance  binance("c52zdrltx6vSMgojFzxJcVQ1v7qiD55G0PgTe31v3fCfEazqgnBu3xNRWOPVOj86", "lDOZfpTNBIG8ICteeNfoOIoOHBONvBsiAP88GJ5rgDMF6bGGPETkM1Ri14mrbkfJ");
-    binance.init();
-    binance.subscribeDepth("btc", "usdt");
-
-    // std::string a = "234";
-    // double b = 1.022;
-    // websocketclient::WebsocketClient client;
     // Triangular::Triangular triangular;
     // triangular.AddDepthSubscirbe("btcusdt", false);
     // triangular.AddDepthSubscirbe("ethusdt", false);
@@ -37,9 +35,3 @@ int main()
     // std::cout << num << endl;
     return 0;
 }
-
-/*
-*
-*   todo 余额不足的时候立即开始平衡仓位
-*
-*/

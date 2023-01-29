@@ -9,7 +9,7 @@ namespace API
     WebsocketWrapper::BinanceDepthWrapper *depth;
     WebsocketWrapper::BinanceOrderWrapper *order;
 
-    void InitApi();
+    void Init();
     HttpWrapper::BinanceApiWrapper& GetBinanceApiWrapper();
     WebsocketWrapper::BinanceDepthWrapper& GetBinanceDepthWrapper();
     WebsocketWrapper::BinanceOrderWrapper& GetBinanceOrderWrapper();

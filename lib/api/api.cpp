@@ -20,7 +20,7 @@ namespace API
     {
         if (api == NULL)
         {
-            InitApi();
+            Init();
         }
 
         return *api;
@@ -30,7 +30,7 @@ namespace API
     {
         if (depth == NULL)
         {
-            InitApi();
+            Init();
         }
 
         return *depth;
@@ -40,7 +40,7 @@ namespace API
     {
         if (order == NULL)
         {
-            InitApi();
+            Init();
         }
 
         return *order;
