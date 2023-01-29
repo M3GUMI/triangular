@@ -1,278 +1,140 @@
-#include "./defined/defined.h"
-#include "triangular.h"
-#include "lib/pathfinder/pathfinder.h"
 #include "iostream"
-#include "string"
 #include <chrono>
 #include <random>
 #include <sstream>
-#include "./lib/api/binance.h"
-std::stringstream ss;
+#include "triangular.h"
+#include "define/define.h"
+#include "lib/pathfinder/pathfinder.h"
+#include "lib/api/api.h"
 
+std::stringstream ss;
 namespace Arbitrage
 {
-	BaseResp *TriangularArbitrage::Run(Pathfinder::Pathfinder &pathfinder, Pathfinder::TransactionPath &path)
+	TriangularArbitrage::TriangularArbitrage(Pathfinder::Pathfinder &pathfinder): pathfinder(pathfinder)
 	{
-		Pathfinder::TransactiItemonPath firstPath = path.Path[0];
-		ExecuteTrans(pathfinder, firstPath);
-		return NewBaseResp("");
 	}
 
-	int TriangularArbitrage::ExecuteTrans(Pathfinder::Pathfinder &pathfinder, Pathfinder::TransactiItemonPath &path)
+	TriangularArbitrage::~TriangularArbitrage()
 	{
-		std::string from = path.FromToken;
-		std::string to = path.ToToken;
-		double ori = path.FromQuantity;
-
-		Arbitrage::TriangularArbitrage::send(path);
 	}
 
-	Arbitrage::Order TriangularArbitrage::TriangularArbitrage::generateOrder(Pathfinder::TransactiItemonPath &path)
+	int TriangularArbitrage::Run(Pathfinder::TransactionPath &path)
 	{
-		std::string from = path.FromToken;
-		std::string to = path.ToToken;
-		double fromPrice = path.FromPrice;
-		double toPrice = path.ToPrice;
-		double fromQuantity = path.FromQuantity;
-		double toQuantity = path.ToQuantity;
-		std::string OrderId = generateOrderId();
+		Pathfinder::TransactionPathItem firstPath = path.Path[0];
+		this->OriginToken = firstPath.FromToken;
 
-		Arbitrage::Order order = {this->TaskId, OrderId, "CREATED", from, fromPrice, fromQuantity, to, toPrice, toQuantity, "LIMIT", "IOC"};
-
-		if (IsStatic(from) && IsStatic(to))
-		{
-<<<<<<< HEAD
-			order.TimeInForce = "GTC";
-		}
-
-		// 记录 order
-		Arbitrage::orderStore[OrderId] = &order;
-
-		return order;
+		ExecuteTrans(firstPath);
+		return 0;
 	}
 
-	void Arbitrage::TriangularArbitrage::OrderStatusCallback(Arbitrage::OrderResult orderResult)
+	int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path)
 	{
-		std::string from = orderResult.from;
-		std::string to = orderResult.to;
-		double exec = orderResult.exceQuantity;
-		double ori = orderResult.originQuantity;
-		std::string status = orderResult.status;
+		HttpWrapper::CreateOrderReq req;
+		req.FromToken = path.FromToken;
+		req.FromPrice = path.FromPrice;
+		req.FromQuantity = path.FromQuantity;
+		req.ToToken = path.ToToken;
+		req.ToPrice = path.ToPrice;
+		req.ToQuantity = path.ToQuantity;
+		req.OrderType = define::LIMIT;
+		req.TimeInForce = define::IOC;
+		auto callback = bind(&TriangularArbitrage::orderDataHandler, this, placeholders::_1);
 
-		// IOC 稳定币到x币
-		if (IsStatic(from) && not IsStatic(to))
-		{
-			Static2X(orderResult);
-		}
-
-		// IOC x币到x币
-		if (not IsStatic(from) && not IsStatic(to))
-		{
-			X2X(orderResult);
-		}
-
-		// IOC x币到稳定币
-		else if (not IsStatic(from) && IsStatic(to))
-		{
-			X2Static(orderResult);
-		}
-
-		// GTC 稳定币转稳定币
-		else if (IsStatic(from) && IsStatic(to))
-		{
-			Static2Static(orderResult);
-		}
+		API::GetBinanceApiWrapper().CreateOrder(req, callback);
+		// Arbitrage::orderStore[OrderId] = &order;
 	}
 
-	void Arbitrage::TriangularArbitrage::X2Static(Arbitrage::OrderResult &orderResult)
+	void TriangularArbitrage::orderDataHandler(HttpWrapper::OrderData& data)
 	{
-		std::string OrderId = orderResult.OrderId;
-		std::string from = orderResult.from;
-		std::string to = orderResult.to;
-		double price = orderResult.FromPrice;
-		double exce = orderResult.exceQuantity;
-		double ori = orderResult.originQuantity;
-		std::string status = orderResult.status;
-		if (status == "PARTIALLY_FILLED")
+		int ec;
+		if (data.OrderStatus == define::FILLED)
 		{
-			/* 1. 先跑完当前部分的交易 */
-			auto it = orderStore.find(OrderId);
-			orderStore.erase(it);
-			// 调用找路径
-			this->pathfinder.RevisePath(to, this->TargetToken, exce*price);
-
-			/* 2. 处理没弄完的不稳定币 递归更新路径并下单 到状态为FILLED才结束 */
-			// 继续下单 直到到状态为FILLED才开始下一步
-			double remain = ori - exce;
-			
-			// 调用找路径
-			this->pathfinder.RevisePath(from, this->TargetToken, remain);
+			ec = filledHandler(data);
 		}
-		else if (status == "FILLED")
+		else if (data.OrderStatus == define::PARTIALLY_FILLED)
 		{
-			// 删除map中的数据
-			auto it = orderStore.find(OrderId);
-			orderStore.erase(it);
-
-			// 调用找路径
-			this->pathfinder.RevisePath(to, this->TargetToken, exce*price);
-		}
-	}
-
-	void Arbitrage::TriangularArbitrage::X2X(Arbitrage::OrderResult &orderResult)
-	{
-		std::string OrderId = orderResult.OrderId;
-		std::string from = orderResult.from;
-		std::string to = orderResult.to;
-		double price = orderResult.FromPrice;
-		double exce = orderResult.exceQuantity;
-		double ori = orderResult.originQuantity;
-		std::string status = orderResult.status;
-
-		if (status == "PARTIALLY_FILLED")
-		{
-			/* 1. 先跑完当前部分的交易 */
-			auto it = orderStore.find(OrderId);
-			orderStore.erase(it);
-			// 调用找路径
-			this->pathfinder.RevisePath(to, this->TargetToken, exce*price);
-
-			/* 2. 处理没弄完的不稳定币 递归更新路径并下单 到状态为FILLED才结束 */
-			// 继续下单 直到到状态为FILLED才开始下一步
-			double remain = ori - exce;
-			
-			// 调用找路径
-			this->pathfinder.RevisePath(from, this->TargetToken, remain);
-		}
-		else if (status == "FILLED")
-		{
-			// 删除map中的数据
-			auto it = orderStore.find(OrderId);
-			orderStore.erase(it);
-
-			// 调用找路径
-			this->pathfinder.RevisePath(to, this->TargetToken, exce*price);
-		}
-	}
-
-	void Arbitrage::TriangularArbitrage::Static2X(Arbitrage::OrderResult &orderResult)
-	{
-		std::string OrderId = orderResult.OrderId;
-		std::string from = orderResult.from;
-		std::string to = orderResult.to;
-		double exce = orderResult.exceQuantity;
-		double ori = orderResult.originQuantity;
-		double price = orderResult.FromPrice;
-		std::string status = orderResult.status;
-		if (exce > 0)
-		{
-			// 删除交易map
-			auto it = orderStore.find(OrderId);
-			orderStore.erase(it);
-
-			// 调用找路径 进行下一步
-			this->pathfinder.RevisePath(to, this->TargetToken, exce * price);
+			ec = partiallyFilledHandler(data);
 		}
 		else
 		{
-			// 把没有换到的消息发给管理器
-			cout << "First Step Incomplete" << endl;
-		}
-	}
-
-	void Arbitrage::TriangularArbitrage::Static2Static(Arbitrage::OrderResult &orderResult)
-	{
-		std::string OrderId = orderResult.OrderId;
-		std::string from = orderResult.from;
-		std::string to = orderResult.to;
-		double exce = orderResult.exceQuantity;
-		double price = orderResult.FromPrice;
-		double ori = orderResult.originQuantity;
-		std::string status = orderResult.status;
-
-		// 订单没了重发一波
-		if (status == "CANCELED" || status == "EXPIRED" || status == "REJECTED")
-		{
-			// 删除map订单
-			auto it = orderStore.find(OrderId);
-			orderStore.erase(it);
-			Pathfinder::TransactiItemonPath path;
-			Arbitrage::TriangularArbitrage::send(path);
-		}
-		else if (status == "FILLED")
-		{
-			// 完成三角套利交易，删除订单
-			auto it = orderStore.find(OrderId);
-			orderStore.erase(it);
-
 			return;
 		}
-		else if (status == "NEW" || status == "PARTIALLY_FILLED")
+
+		if (ec > 0)
 		{
+			// todo error处理
 			return;
 		}
 	}
 
-	unsigned long getRand()
+	int TriangularArbitrage::filledHandler(HttpWrapper::OrderData &data)
 	{
-		static default_random_engine e(chrono::system_clock::now().time_since_epoch().count() / chrono::system_clock::period::den);
-		return e();
-	}
-
-	std::string generateOrderId()
-	{
-		std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::system_clock::now().time_since_epoch());
-
-		// 获取 long long的OrderId
-		unsigned long long timestamp = ms.count();
-		unsigned long long longOrderId = (timestamp << 32 | getRand());
-
-		// 转long long 转 string
-		stringstream stream;
-		string result;
-
-		stream << longOrderId;
-		stream >> result;
-		return result;
-	}
-
-	binancewebrestapiwrapper::CreateOrderReq Order2OrderReq(Order order){
-		binancewebrestapiwrapper::CreateOrderReq createOrderReq = {
-			order.OrderId,
-			order.FromToken,
-			order.FromPrice,
-			order.FromQuantity,
-			order.ToToken,
-			order.ToPrice,
-			order.ToQuantity,
-			order.OrderType,
-			order.TimeInForce
-		};
-		return createOrderReq;
-	}
-
-	void Arbitrage::TriangularArbitrage::send(Pathfinder::TransactiItemonPath p){
-		Pathfinder::TransactiItemonPath &path = p;
-		Order order = generateOrder(path);
-		binancewebrestapiwrapper::CreateOrderReq orderReq = Order2OrderReq(order);
-		binance::binance::createOrder(orderReq);
-=======
-			return 1; //error
+		if (data.ToToken == this->TargetToken) {
+			// 套利完成
+			return 0;
 		}
 
-                // 1. 执行第一步交易
-		//   a. ioc 下单。订阅order status
-		// 2. orderStatus更新成功，触发第二步。查询第二步交易路径
-		pathfinder->RevisePath("ETH", "USDT");
-		// 3. 执行第二步交易
-		// 4. maker卖出稳定币
-		// 5. 回归USDT
+		// 执行下一步路径
+		Pathfinder::RevisePathReq req;
+		Pathfinder::TransactionPath resp;
+
+		req.Origin = data.ToToken;
+		req.End = this->TargetToken;
+		req.PositionQuantity = data.ExecuteQuantity * data.ExecutePrice;
+
+		auto ec = this->pathfinder.RevisePath(req, resp);
+		if (ec > 0)
+		{
+			// todo error日志处理
+			return ec;
+		}
+
+		ec = ExecuteTrans(resp.Path.front());
+		if (ec > 0)
+		{
+			// todo error日志处理
+			return ec;
+		}
+
 		return 0;
->>>>>>> main
 	}
 
-	int TriangularArbitrage::searchOrder(std::string orderId, SearchOrderResp& resp)
+	int TriangularArbitrage::partiallyFilledHandler(HttpWrapper::OrderData &data)
+	{
+		if (define::IsStableCoin(data.FromToken))
+		{
+			// 稳定币持仓，等待rebalance
+			return 0;
+		}
+		else if (define::NotStableCoin(data.FromToken))
+		{
+			// 寻找新路径重试
+			Pathfinder::RevisePathReq req;
+			Pathfinder::TransactionPath resp;
+
+			req.Origin = data.FromToken;
+			req.End = this->TargetToken;
+			req.PositionQuantity = data.OriginQuantity - data.ExecuteQuantity;
+
+			auto ec = this->pathfinder.RevisePath(req, resp);
+			if (ec > 0)
+			{
+				// todo error日志处理
+				return ec;
+			}
+
+			ec = ExecuteTrans(resp.Path.front());
+			if (ec > 0)
+			{
+				// todo error日志处理
+				return ec;
+			}
+
+			return 0;
+		}
+	}
+
+	int TriangularArbitrage::SearchOrder(string orderId, SearchOrderResp &resp)
 	{
 		auto val = orderStore.find(orderId);
 		if (val == orderStore.end())
@@ -289,8 +151,27 @@ namespace Arbitrage
 		return 0;
 	}
 
-	bool IsStatic(std::string coinName)
+	unsigned long getRand()
 	{
-		return Arbitrage::staticCoin.count(coinName);
+		static default_random_engine e(chrono::system_clock::now().time_since_epoch().count() / chrono::system_clock::period::den);
+		return e();
+	}
+
+	string TriangularArbitrage::generateOrderId()
+	{
+		std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::system_clock::now().time_since_epoch());
+
+		// 获取 long long的OrderId
+		unsigned long long timestamp = ms.count();
+		unsigned long long longOrderId = (timestamp << 32 | getRand());
+
+		// 转long long 转 string
+		stringstream stream;
+		string result;
+
+		stream << longOrderId;
+		stream >> result;
+		return result;
 	}
 }

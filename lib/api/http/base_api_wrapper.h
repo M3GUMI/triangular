@@ -16,8 +16,6 @@ namespace HttpWrapper
         string data;
         bool sign;
 
-        function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback;
-
         ApiRequest()
         {
             this->args = {};
@@ -25,7 +23,6 @@ namespace HttpWrapper
             this->uri = "";
             this->data = "";
             this->sign = false;
-            this->callback = NULL;
         }
     };
 
@@ -64,15 +61,16 @@ namespace HttpWrapper
         template <typename T, typename outer>
         string hmac(const std::string &key, const std::string &data, T evp, outer filter);
 
+
     public:
         BaseApiWrapper(websocketpp::lib::asio::io_service& ioService, string accessKey, string secretKey);
         ~BaseApiWrapper();
 
-        // 交易对基础货币
-        set<string> baseCoins;
+        set<string> baseCoins; // 交易对基础货币
+        map<string, string> orderIdMap; // 订单号映射
 
         string GetClientOrderId(string orderId); // todo 待补充
         pair<double, double> GetPriceQuantity(CreateOrderReq req, define::OrderSide side);
-        void MakeRequest(ApiRequest& req);
+        void MakeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback);
     };
 }

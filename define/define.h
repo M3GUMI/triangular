@@ -4,6 +4,9 @@
 using namespace std;
 namespace define
 {
+    bool IsStableCoin(string coinName);
+    bool NotStableCoin(string coinName);
+
     enum OrderSide
     {
         UNKNOWN = 0,
@@ -22,7 +25,7 @@ namespace define
         LIMIT_MAKER = 7        // 限价只挂单
     };
 
-    enum TimeInFoce
+    enum TimeInForce
     {
         GTC = 1, // 成交为止
         IOC = 2, // 无法立即成交的部分就撤销

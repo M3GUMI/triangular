@@ -20,7 +20,7 @@ namespace Pathfinder
 
 	struct TransactionPath
 	{
-		TransactionPathItem Path[10];
+		vector<TransactionPathItem> Path;
 	};
 
 	struct RevisePathReq
