@@ -13,5 +13,6 @@ namespace Executor
 
 	public:
 		Executor(Pathfinder::Pathfinder &pathfinder);
+		~Executor();
 	};
 }

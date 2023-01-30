@@ -1,9 +1,8 @@
 #include "iostream"
-#include <chrono>
-#include <random>
 #include <sstream>
 #include "triangular.h"
 #include "define/define.h"
+#include "utils/utils.h"
 #include "lib/pathfinder/pathfinder.h"
 #include "lib/api/api.h"
 
@@ -30,7 +29,7 @@ namespace Arbitrage
 	int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path)
 	{
 		HttpWrapper::CreateOrderReq req;
-		req.OrderId = generateOrderId();
+		req.OrderId = GenerateOrderId();
 		req.FromToken = path.FromToken;
 		req.FromPrice = path.FromPrice;
 		req.FromQuantity = path.FromQuantity;
@@ -151,28 +150,4 @@ namespace Arbitrage
 
 		return 0;
 	}*/
-
-	unsigned long getRand()
-	{
-		static default_random_engine e(chrono::system_clock::now().time_since_epoch().count() / chrono::system_clock::period::den);
-		return e();
-	}
-
-	string TriangularArbitrage::generateOrderId()
-	{
-		std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::system_clock::now().time_since_epoch());
-
-		// 获取 long long的OrderId
-		unsigned long long timestamp = ms.count();
-		unsigned long long longOrderId = (timestamp << 32 | getRand());
-
-		// 转long long 转 string
-		stringstream stream;
-		string result;
-
-		stream << longOrderId;
-		stream >> result;
-		return result;
-	}
 }

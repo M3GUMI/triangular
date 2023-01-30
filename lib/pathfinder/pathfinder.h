@@ -30,6 +30,18 @@ namespace Pathfinder
 		double PositionQuantity;
 	};
 
+	struct GetExchangePriceReq
+	{
+		string FromToken;
+		string ToToken;
+	};
+
+	struct GetExchangePriceResp
+	{
+		string FromPrice;
+		string ToPrice;
+	};
+
 	class Pathfinder
 	{
 	private:
@@ -42,6 +54,7 @@ namespace Pathfinder
 		~Pathfinder(); 
 
 		void SubscribeArbitrage(function<void(TransactionPath &path)> handler); // 订阅套利机会推送
-		int RevisePath(RevisePathReq req, TransactionPath &resp);				// 路径修正
+		int RevisePath(RevisePathReq req, TransactionPath& resp);				// 路径修正
+		int GetExchangePrice(GetExchangePriceReq& req, GetExchangePriceResp& resp);				// 路径修正
 	};
 }

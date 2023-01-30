@@ -13,6 +13,10 @@ namespace Executor
 		return;
 	}
 
+	Executor::~Executor()
+	{
+	}
+
 	void Executor::arbitrageDataHandler(Pathfinder::TransactionPath& path)
 	{
 		// 当前不区分类型，均为三角套利

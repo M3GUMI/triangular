@@ -1,5 +1,7 @@
 #include <sstream>
 #include <string>
+#include <chrono>
+#include <random>
 #include "utils.h"
 
 void String2Double(const string &str, double &d)
@@ -21,4 +23,34 @@ uint64_t GetNowTime()
 pair<string, string> GetAccessKey()
 {
 	return make_pair("access", "secret");
+}
+
+unsigned long getRand()
+{
+	static default_random_engine e(chrono::system_clock::now().time_since_epoch().count() / chrono::system_clock::period::den);
+	return e();
+}
+
+string GeneratePositionId()
+{
+	// todo 临时
+	return GenerateOrderId();
+}
+
+string GenerateOrderId()
+{
+	std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::system_clock::now().time_since_epoch());
+
+	// 获取 long long的OrderId
+	unsigned long long timestamp = ms.count();
+	unsigned long long longOrderId = (timestamp << 32 | getRand());
+
+	// 转long long 转 string
+	stringstream stream;
+	string result;
+
+	stream << longOrderId;
+	stream >> result;
+	return result;
 }
