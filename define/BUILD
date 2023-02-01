@@ -6,6 +6,7 @@ cc_library(
     ],
     srcs = [
         "define.cpp",
+        "error.cpp",
     ],
     includes = ["."],
     linkopts = [

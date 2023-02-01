@@ -16,6 +16,7 @@ cc_library(
         "-DASIO_STANDALONE"
     ],
     deps = [
+        "//define:define",
     ],
     visibility = ["//visibility:public"],
 )

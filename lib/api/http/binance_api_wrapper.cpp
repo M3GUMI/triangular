@@ -16,6 +16,8 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::InitBinanceSymbol()
     {
+        LogDebug("func", "InitBinanceSymbol", "msg", "start");
+
         this->SymbolDataReady = false;
         ApiRequest req;
         req.args = {};
@@ -28,8 +30,7 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
     {
-        if (CheckResp(res) > 0) {
-            // todo error处理
+        if (auto err = CheckResp(res); err > 0) {
             return;
         }
 
@@ -37,7 +38,7 @@ namespace HttpWrapper
         exchangeInfoJson.Parse(res->payload().c_str());
         if (!exchangeInfoJson.HasMember("symbols"))
         {
-            // todo error处理
+            LogError("func", "initBinanceSymbolCallback", "msg", define::WrapErr(define::ErrorInvalidResp));
             return;
         }
 
@@ -90,6 +91,7 @@ namespace HttpWrapper
         }
 
         this->SymbolDataReady = true;
+        LogDebug("func", "InitBinanceSymbol", "msg", "load symbol data success");
     }
 
     BinanceSymbolData& BinanceApiWrapper::GetSymbolData(std::string token0, std::string token1)

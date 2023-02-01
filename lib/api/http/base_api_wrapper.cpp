@@ -3,6 +3,7 @@
 #include "openssl/hmac.h"
 #include "lib/libmix/libmix.h"
 #include "lib/ahttp/http_client.hpp"
+#include "utils/utils.h"
 #include "base_api_wrapper.h"
 
 using namespace std;
@@ -10,6 +11,9 @@ namespace HttpWrapper
 {
     BaseApiWrapper::BaseApiWrapper(websocketpp::lib::asio::io_service& ioService, string accessKey, string secretKey): ioService(ioService), accessKey(accessKey), secretKey(secretKey)
     {
+        HttpClient *client = new HttpClient(ioService);
+        hclientPtr = std::shared_ptr<HttpClient>(client);
+        hclientPtr->set_timeout(5000);
     }
 
     BaseApiWrapper::~BaseApiWrapper()
@@ -40,14 +44,14 @@ namespace HttpWrapper
     {
         if (res == nullptr || res->payload().empty())
         {
-            // todo error处理
-            return 1;
+            LogError("func", "CheckResp", "msg", define::WrapErr(define::ErrorHttpFail));
+            return define::ErrorHttpFail;
         }
 
         if (res->http_status() != 200)
         {
-            // todo error处理
-            return 2;
+            LogError("func", "CheckResp", "msg", define::WrapErr(define::ErrorEmptyResponse));
+            return define::ErrorEmptyResponse;
         }
 
         return 0;
@@ -58,8 +62,8 @@ namespace HttpWrapper
         CheckRespWithCodeResp resp;
         if (res == nullptr || res->payload().empty())
         {
-            // todo error处理
-            resp.Err = 1;
+            LogError("func", "CheckResp", "msg", define::WrapErr(define::ErrorHttpFail));
+            resp.Err = define::ErrorHttpFail;
             return resp;
         }
 
@@ -67,8 +71,8 @@ namespace HttpWrapper
         json.Parse(res->payload().c_str());
         if (res->http_status() != 200)
         {
-            // todo error处理
-            resp.Err = 1;
+            LogError("func", "CheckResp", "msg", define::WrapErr(define::ErrorEmptyResponse));
+            resp.Err = define::ErrorEmptyResponse;
             resp.Code = json.FindMember("code")->value.GetInt();
             resp.Msg = json.FindMember("msg")->value.GetString();
             return resp;
@@ -116,13 +120,15 @@ namespace HttpWrapper
             whole_uri = uri + "?" + query;
         }
 
-        cout << "whole uri = " << whole_uri << endl;
+        // todo 日志整合
+        LogDebug("func", "MakeRequest", "uri", whole_uri);
+        LogDebug("method", method, "data", data);
 
         auto httpRequest = HttpRequest::make_request(method, whole_uri, data);
         httpRequest->Header = header;
         hclientPtr->Do(httpRequest, callback);
 
-        cout << "End request" << endl;
+        LogDebug("func", "MakeRequest", "msg", "send request success");
     }
 
     std::map<std::string, std::string> BaseApiWrapper::sign(std::map<std::string, std::string> &args, std::string &query, bool need_sign)

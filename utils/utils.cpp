@@ -1,7 +1,9 @@
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <chrono>
 #include <random>
+#include <map>
 #include "utils.h"
 
 void String2Double(const string &str, double &d)
@@ -47,4 +49,58 @@ string GenerateId()
 	stream << longOrderId;
 	stream >> result;
 	return result;
+}
+
+void LogDebug(string arg1, string arg2, string arg3, string arg4) {
+	vector<string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	args.push_back(arg3);
+	args.push_back(arg4);
+	log("[Debug]", args);
+}
+
+void LogInfo(string arg1, string arg2, string arg3, string arg4) {
+	vector<string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	args.push_back(arg3);
+	args.push_back(arg4);
+	log("[Info]", args);
+}
+
+void LogError(string arg1, string arg2, string arg3, string arg4) {
+	vector<string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	args.push_back(arg3);
+	args.push_back(arg4);
+	log("[Error]", args);
+}
+
+void log(string level, vector<string> args)
+{
+	bool first = true;
+	bool isVal = false;
+	for (auto arg : args)
+	{
+		if (!isVal)
+		{
+			if (!first)
+			{
+				cout << ", ";
+			}
+			isVal = true;
+			cout << arg << "=";
+		}
+		else
+		{
+			isVal = false;
+			cout << arg;
+		}
+
+		first = false;
+	}
+
+	cout << endl;
 }

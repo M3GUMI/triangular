@@ -6,10 +6,8 @@ namespace API
     WebsocketWrapper::BinanceDepthWrapper *depth;
     WebsocketWrapper::BinanceOrderWrapper *order;
 
-    void Init()
+    void Init(websocketpp::lib::asio::io_service& ioService)
     {
-        websocketpp::lib::asio::io_service ioService;
-
         HttpWrapper::BinanceApiWrapper apiWrapper(ioService);
         WebsocketWrapper::BinanceDepthWrapper depthWrapper(ioService, apiWrapper);
         WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper);
@@ -24,7 +22,7 @@ namespace API
     {
         if (api == NULL)
         {
-            Init();
+            // 直接重启
         }
 
         return *api;
@@ -34,7 +32,7 @@ namespace API
     {
         if (depth == NULL)
         {
-            Init();
+            // 直接重启
         }
 
         return *depth;
@@ -44,7 +42,7 @@ namespace API
     {
         if (order == NULL)
         {
-            Init();
+            // 直接重启
         }
 
         return *order;

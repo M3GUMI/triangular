@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "error.h"
 
 using namespace std;
 namespace define
