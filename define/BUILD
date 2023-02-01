@@ -2,6 +2,7 @@ cc_library(
     name = "define",
     hdrs = [
         "define.h",
+        "error.h",
     ],
     srcs = [
         "define.cpp",

@@ -3,10 +3,9 @@
 
 using namespace std;
 
+pair<string, string> GetExchangeKey();
+
 void String2Double(const string &str, double &d);
 uint64_t GetNowTime();
-
-pair<string, string> GetAccessKey();
 unsigned long getRand();
-string GeneratePositionId();
-string GenerateOrderId();
+string GenerateId();

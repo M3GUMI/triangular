@@ -4,12 +4,14 @@
 #include "lib/libmix/libmix.h"
 #include "lib/ahttp/http_client.hpp"
 #include "define/define.h"
+#include "define/error.h"
 #include "base_api_wrapper.h"
 
 using namespace std;
 namespace HttpWrapper
 {
     struct BinanceSymbolData {
+        bool Valid; // 数据是否合法
         string Symbol;
         string BaseToken;
         string QuoteToken;
@@ -18,7 +20,7 @@ namespace HttpWrapper
 
     struct BalanceData
     {
-        string Asset;
+        string Token;
         double Free;
         double Locked;
     };
@@ -53,30 +55,31 @@ namespace HttpWrapper
         pair<string, string> parseToken(string symbol, define::OrderSide side);
 
         void initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec);
-        void accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo &info)> callback);
-        void createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, string orderId, function<void(OrderData& data)> callback);
+        void accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo &info, int err)> callback);
+        void createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, string orderId, function<void(OrderData& data, int err)> callback);
 
         void cancelOrder(string orderId, string symbol);
         void cancelOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, std::string ori_symbol);
 
-        void createListkeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(int errCode, string listenKey)> callback);
+        void createListkeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(string listenKey, int err)> callback);
 
     public:
         BinanceApiWrapper(websocketpp::lib::asio::io_service& ioService);
         ~BinanceApiWrapper();
 
         // 交易对
+        bool SymbolDataReady = false; // 交易对数据是否就绪 
         void InitBinanceSymbol();
         BinanceSymbolData& GetSymbolData(std::string token0, std::string token1);
         BinanceSymbolData& GetSymbolData(std::string symbol);
         string GetSymbol(std::string token0, std::string token1);
         define::OrderSide GetSide(std::string token0, std::string token1);
 
-        // 账户余额
-        int GetAccountInfo(function<void(AccountInfo &info)> callback);
+        // 账户信息
+        int GetAccountInfo(function<void(AccountInfo &info, int err)> callback);
 
         // 创建订单
-        int CreateOrder(CreateOrderReq &req, function<void(OrderData& data)> callback);
+        int CreateOrder(CreateOrderReq &req, function<void(OrderData& data, int err)> callback);
 
         // 取消订单
         void CancelOrder(string orderId);
@@ -84,6 +87,6 @@ namespace HttpWrapper
         void CancelOrderAll();
 
         // listenKey
-        void CreateListenKey(string listenKey, function<void(int errCode, string listenKey)> callback);
+        void CreateListenKey(string listenKey, function<void(string listenKey, int err)> callback);
     };
 }

@@ -12,7 +12,7 @@ namespace Executor
 		void arbitrageDataHandler(Pathfinder::TransactionPath &path);
 
 	public:
-		Executor(Pathfinder::Pathfinder &pathfinder);
+		Executor(Pathfinder::Pathfinder& pathfinder);
 		~Executor();
 	};
 }

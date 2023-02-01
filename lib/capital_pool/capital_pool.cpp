@@ -1,24 +1,24 @@
+#include <functional>
 #include "utils/utils.h"
 #include "capital_pool.h"
 
 namespace CapitalPool
 {
-    // 0. 初始化账号余额，并rebalance
-    // 1. 开始套利
-    //   a. 资金池扣减token
-    //   b. 建仓并锁定
-    // 2. 交易失败部分释放，回归资金池并自动rebalance
-    // 3. 套利执行中，盈利部分token资金池不感知
-    // 4. 套利结束后，清仓。所有token回滚资金池
-    // 定期比对资金池与账号余额差值，旁路校验bug
-
-    CapitalPool::CapitalPool(vector<Asset> assets)
+    CapitalPool capitalPool;
+    CapitalPool &GetCapitalPool()
     {
-        for(auto asset: assets) {
-            basePool[asset.Token] = asset.Amount;
+        return capitalPool;
+    }
+
+    CapitalPool::CapitalPool()
+    {
+        vector<pair<string, double>> assets; // todo define获取
+        for (auto asset : assets)
+        {
+            basePool[asset.first] = asset.second;
         }
-        // 拉用户余额，初始化
-        // balancePool
+
+        Refresh();
     }
 
     CapitalPool::~CapitalPool()
@@ -94,7 +94,7 @@ namespace CapitalPool
     {
         // todo ticketSize校验补充
         HttpWrapper::CreateOrderReq req;
-        req.OrderId = GenerateOrderId();
+        req.OrderId = GenerateId();
         req.FromToken = fromToken;
         req.FromPrice = 0; // todo 算法层获取最新价格
         req.FromQuantity = amount;
@@ -111,10 +111,12 @@ namespace CapitalPool
     {
     }
 
-    int CapitalPool::CreatePosition(Asset& asset, Position& position)
+    int CapitalPool::LockAsset(string token, double amount)
     {
-        auto token = asset.Token;
-        auto amount = asset.Amount;
+        if (locked) {
+            // todo error刷新中
+            return 1;
+        }
 
         if (not balancePool.count(token))
         {
@@ -128,54 +130,18 @@ namespace CapitalPool
             return 1;
         }
 
-        Asset newAsset;
-        newAsset.Token = token;
-        newAsset.Amount = amount;
-
-        position.PositionId = GeneratePositionId();
-        position.AssetMap[token] = newAsset;
-        positionMap[position.PositionId] = position;
-
         balancePool[token] = balancePool[token] - amount; 
         return 0;
     }
 
-    int CapitalPool::GetPosition(string id, Position &position)
+    int CapitalPool::FreeAsset(string token, double amount)
     {
-        if (not positionMap.count(id)) {
-            // todo error不存在
-            return 1;
-        }
-
-        position.PositionId = positionMap[id].PositionId;
-        position.AssetMap = positionMap[id].AssetMap;
-        return 0;
-    }
-
-    int CapitalPool::FreePosition(string id, Asset &asset)
-    {
-        if (not positionMap.count(id))
+        if (locked)
         {
-            // todo error不存在
+            // todo error刷新中
             return 1;
         }
 
-        auto token = asset.Token;
-        auto amount = asset.Amount;
-        auto position = positionMap[id];
-        auto assetMap = position.AssetMap;
-        if (not assetMap.count(token))
-        {
-            // todo 资产不存在
-            return 1;
-        }
-        if (assetMap[token].Amount < amount)
-        {
-            // todo 资产不足
-            return 1;
-        }
-
-        assetMap[token].Amount = assetMap[token].Amount - amount;
         if (balancePool.count(token))
         {
             balancePool[token] = balancePool[token] + amount;
@@ -188,26 +154,28 @@ namespace CapitalPool
         return 0;
     }
 
-    int CapitalPool::EmptyPosition(string id)
+    int CapitalPool::Refresh()
     {
-        if (not positionMap.count(id))
+        locked = true;
+        API::GetBinanceApiWrapper().GetAccountInfo(bind(&CapitalPool::refreshAccountHandler, this, placeholders::_1, placeholders::_2));
+    }
+
+    void CapitalPool::refreshAccountHandler(HttpWrapper::AccountInfo &info, int err)
+    {
+        if (err > 0)
         {
-            // todo error不存在
-            return 1;
+            // todo error处理+重试
+            Refresh();
+            return;
         }
 
-        auto position = positionMap[id];
-        for (auto item : position.AssetMap)
+        for (auto asset : info.Balances)
         {
-            auto token = item.first;
-            auto ec = FreePosition(id, position.AssetMap[token]);
-            if (ec > 0)
-            {
-                // todo error处理
-                return ec;
-            }
+            this->balancePool = {};
+            this->balancePool[asset.Token] = asset.Free;
         }
 
-        positionMap.erase(id);
+        locked = false;
+        return;
     }
 }

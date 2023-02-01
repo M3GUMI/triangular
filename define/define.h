@@ -9,7 +9,7 @@ namespace define
 
     enum OrderSide
     {
-        UNKNOWN = 0,
+        INVALID_SIDE = 0,
         BUY = 1,
         SELL = 2
     };
@@ -34,12 +34,13 @@ namespace define
 
     enum OrderStatus
     {
-        NEW = 1,              // 订单被交易引擎接受
-        PARTIALLY_FILLED = 2, // 部分订单被成交
-        FILLED = 3,           // 订单完全成交
-        CANCELED = 4,         // 用户撤销了订单
-        PENDING_CANCEL = 5,   // 撤销中(目前并未使用)
-        REJECTED = 6,         // 订单没有被交易引擎接受，也没被处理
-        EXPIRED = 7,          // 订单被交易引擎取消, 比如
+        INVALID_ORDER_STATUS = 1, // 非法订单状态
+        NEW = 1,                  // 订单被交易引擎接受
+        PARTIALLY_FILLED = 2,     // 部分订单被成交
+        FILLED = 3,               // 订单完全成交
+        CANCELED = 4,             // 用户撤销了订单
+        PENDING_CANCEL = 5,       // 撤销中(目前并未使用)
+        REJECTED = 6,             // 订单没有被交易引擎接受，也没被处理
+        EXPIRED = 7,              // 订单被交易引擎取消, 比如
     };
 }

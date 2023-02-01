@@ -6,7 +6,7 @@
 using namespace std;
 namespace HttpWrapper
 {
-    BinanceApiWrapper::BinanceApiWrapper(websocketpp::lib::asio::io_service &ioService) : BaseApiWrapper(ioService, GetAccessKey().first, GetAccessKey().second)
+    BinanceApiWrapper::BinanceApiWrapper(websocketpp::lib::asio::io_service &ioService) : BaseApiWrapper(ioService, GetExchangeKey().first, GetExchangeKey().second)
     {
     }
 
@@ -16,6 +16,7 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::InitBinanceSymbol()
     {
+        this->SymbolDataReady = false;
         ApiRequest req;
         req.args = {};
         req.method = "GET";
@@ -27,30 +28,23 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
     {
-        if (res == nullptr || res->payload().empty())
-        {
-            cout << __func__ << " " << __LINE__ << " get_balance error " << endl;
-            return;
-        }
-
-        auto &msg = res->payload();
-        if (res->http_status() != 200)
-        {
-            cout << __func__ << " " << __LINE__ << "***** get_balance http status error *****" << res->http_status() << " msg: " << msg << endl;
+        if (CheckResp(res) > 0) {
+            // todo error处理
             return;
         }
 
         rapidjson::Document exchangeInfoJson;
-        exchangeInfoJson.Parse(msg.c_str());
+        exchangeInfoJson.Parse(res->payload().c_str());
         if (!exchangeInfoJson.HasMember("symbols"))
         {
+            // todo error处理
             return;
         }
 
         const auto &symbols = exchangeInfoJson["symbols"];
         for (unsigned i = 0; i < symbols.Size(); i++)
         {
-            double double_tickSize = 0;
+            double doubleTickSize = 0;
             string symbol = symbols[i].FindMember("symbol")->value.GetString();
             string baseAsset = symbols[i].FindMember("baseAsset")->value.GetString();
             string quoteAsset = symbols[i].FindMember("quoteAsset")->value.GetString();
@@ -77,22 +71,25 @@ namespace HttpWrapper
                     }
 
                     string ticksize = filters[j].FindMember("stepSize")->value.GetString();
-                    String2Double(ticksize, double_tickSize);
+                    String2Double(ticksize, doubleTickSize);
                     break;
                 }
             }
 
             BinanceSymbolData data;
+            data.Valid = true;
             data.Symbol = symbol;
             data.BaseToken = baseAsset;
             data.QuoteToken = quoteAsset;
-            data.TicketSize = double_tickSize;
+            data.TicketSize = doubleTickSize;
 
             symbolMap[baseAsset + quoteAsset] = data;
             symbolMap[quoteAsset + baseAsset] = data;
             baseCoins.insert(baseAsset);
             baseCoins.insert(quoteAsset);
         }
+
+        this->SymbolDataReady = true;
     }
 
     BinanceSymbolData& BinanceApiWrapper::GetSymbolData(std::string token0, std::string token1)
@@ -100,26 +97,28 @@ namespace HttpWrapper
         auto symbol = token0 + token1;
         if (symbolMap.count(symbol) != 1)
         {
-            BinanceSymbolData data;
+            // todo 错误日志输出
             cout << "not found error" << endl;
+            BinanceSymbolData data;
+            data.Valid = false;
             return data;
         }
 
-        BinanceSymbolData data = symbolMap[symbol];
-        return data;
+        return symbolMap[symbol];
     }
 
     BinanceSymbolData& BinanceApiWrapper::GetSymbolData(std::string symbol)
     {
         if (symbolMap.count(symbol) != 1)
         {
-            BinanceSymbolData data;
+            // todo 错误日志输出
             cout << "not found error" << endl;
+            BinanceSymbolData data;
+            data.Valid = false;
             return data;
         }
 
-        BinanceSymbolData data = symbolMap[symbol];
-        return data;
+        return symbolMap[symbol];
     }
 
     string BinanceApiWrapper::GetSymbol(std::string token0, std::string token1)
@@ -127,6 +126,7 @@ namespace HttpWrapper
         auto symbol = token0 + token1;
         if (symbolMap.count(symbol) != 1)
         {
+            // todo 错误日志输出
             cout << "not found error" << endl;
             return "";
         }
@@ -140,8 +140,9 @@ namespace HttpWrapper
         auto symbol = token0 + token1;
         if (symbolMap.count(symbol) != 1)
         {
+            // todo error日志输出
             cout << "not found error" << endl;
-            return define::UNKNOWN;
+            return define::INVALID_SIDE;
         }
 
         define::OrderSide side;
@@ -150,7 +151,7 @@ namespace HttpWrapper
         return side;
     }
 
-    int BinanceApiWrapper::GetAccountInfo(function<void(AccountInfo& info)> callback)
+    int BinanceApiWrapper::GetAccountInfo(function<void(AccountInfo& info, int err)> callback)
     {
         uint64_t now = time(NULL);
 
@@ -166,23 +167,25 @@ namespace HttpWrapper
         return 0;
     }
 
-    void BinanceApiWrapper::accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo& info)> callback)
+    void BinanceApiWrapper::accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo& info, int err)> callback)
     {
-        if (this->CheckResp(res) > 0)
+        AccountInfo info;
+        if (auto err = this->CheckResp(res); err > 0)
         {
+            // todo error日志
             cout << __func__ << " " << __LINE__ << " get_account_info error " << endl;
-            return;
+            return callback(info, err);
         }
 
         rapidjson::Document accountInfoDocument;
         accountInfoDocument.Parse(res->payload().c_str());
         if (not accountInfoDocument.HasMember("balances"))
         {
+            // todo error日志
             cout << __func__ << " " << __LINE__ << "no balance data " << res->payload().c_str() << endl;
-            return;
+            return callback(info, define::ErrorDefault);
         }
 
-        AccountInfo info;
         auto balances = accountInfoDocument["balances"].GetArray();
         for (int i = 0; i < balances.Size(); i++)
         {
@@ -191,22 +194,21 @@ namespace HttpWrapper
             std::string locked = balances[i].FindMember("locked")->value.GetString();
 
             BalanceData data;
-            data.Asset = asset;
+            data.Token = asset;
             String2Double(free, data.Free);
             String2Double(locked, data.Locked);
             info.Balances.push_back(data);
         }
 
-        callback(info);
-        return;
+        return callback(info, 0);
     }
 
-    int BinanceApiWrapper::CreateOrder(CreateOrderReq &req, function<void(OrderData& data)> callback)
+    int BinanceApiWrapper::CreateOrder(CreateOrderReq &req, function<void(OrderData& data, int err)> callback)
     {
         if (req.OrderId == "")
         {
             // todo error日志处理
-            return 1;
+            return define::ErrorDefault;
         }
 
         map<string, string> args;
@@ -215,8 +217,14 @@ namespace HttpWrapper
         auto symbol = GetSymbol(req.FromToken, req.ToToken);
         auto side = GetSide(req.FromToken, req.ToToken);
 
+        if (symbol == "" || side == define::INVALID_SIDE)
+        {
+            // todo error日志处理
+            return define::ErrorDefault;
+        }
+
         pair<double, double> priceQuantity;
-        priceQuantity = GetPriceQuantity(req, side);
+        priceQuantity = SelectPriceQuantity(req, side);
         auto price = priceQuantity.first;
         auto quantity = priceQuantity.second;
 
@@ -237,6 +245,7 @@ namespace HttpWrapper
             args["price"] = price;
         }
 
+        // todo 日志处理
         cout << "Create order " << symbol << " " << side << " " << price << " " << quantity << endl;
 
         ApiRequest apiReq;
@@ -250,46 +259,40 @@ namespace HttpWrapper
         return 0;
     }
 
-    void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, string orderId, function<void(OrderData& data)> callback)
+    void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, string orderId, function<void(OrderData& data, int err)> callback)
     {
-        if (res == nullptr || res->payload().empty())
+        OrderData data;
+        if (auto checkResult = this->CheckRespWithCode(res); checkResult.Err > 0)
         {
-            cout << __func__ << " " << __LINE__ << " get_balance error " << endl;
-            return;
+            if (checkResult.Code == -2010 && checkResult.Msg == "Account has insufficient balance for requested action.") {
+                // todo error日志
+                // cout << "余额不足" << endl;
+                // GetBalanceAndCheckNoWait();
+                // todo 特殊错误码
+                return callback(data, define::ErrorInsufficientBalance);
+            }
+
+            return callback(data, checkResult.Err);
         }
 
-        auto &msg = res->payload();
         rapidjson::Document order;
-        order.Parse(msg.c_str());
-        if (res->http_status() != 200)
-        {
-            cout << __func__ << " " << __LINE__ << "***** get_balance http status error *****" << res->http_status() << " msg: " << msg << endl;
-            int code = order.FindMember("code")->value.GetInt();
-            std::string msg = order.FindMember("msg")->value.GetString();
-            if (code == -2010 && msg == "Account has insufficient balance for requested action.")
-            {
-                cout << "余额不足" << endl;
-                // GetBalanceAndCheckNoWait();
-            }
-            return;
-        } else {
-            string clientOrderId = order.FindMember("clientOrderId")->value.GetString();
-            orderIdMap[orderId] = clientOrderId;
-            outOrderIdMap[clientOrderId] = orderId;
-        }
-        
+        order.Parse(res->payload().c_str());
+
+        string clientOrderId = order.FindMember("clientOrderId")->value.GetString();
+        orderIdMap[orderId] = clientOrderId;
+        outOrderIdMap[clientOrderId] = orderId;
+
         // 当前均为IOC数据推送
         auto symbol = order["s"].GetString();
         auto side = stringToSide(order["S"].GetString());
 
-        if (side == define::UNKNOWN)
+        if (side == define::INVALID_SIDE)
         {
             // error
             // todo 需要增加以下参数的合法性校验
             return;
         }
 
-        OrderData data;
         data.OrderId = this->orderIdMap[order["c"].GetString()];
         data.ExecuteTime = order["E"].GetUint64();
         data.OrderStatus = stringToOrderStatus(order["X"].GetString());
@@ -299,8 +302,7 @@ namespace HttpWrapper
         data.ExecuteQuantity = order["l"].GetDouble();
         data.OriginQuantity = order["q"].GetDouble();
 
-        callback(data);
-        return;
+        return callback(data, 0);
     }
 
     void BinanceApiWrapper::cancelOrder(string orderId, string symbol)
@@ -346,38 +348,25 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::cancelOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, std::string ori_symbol)
     {
-        if (res == nullptr || res->payload().empty())
+        if (auto checkResult = this->CheckRespWithCode(res); checkResult.Err > 0)
         {
-            cout << __func__ << " " << __LINE__ << " cancel all error " << endl;
-            return;
-        }
-
-        auto &msg = res->payload();
-        rapidjson::Document order;
-        order.Parse(msg.c_str());
-
-        if (res->http_status() != 200)
-        {
-            cout << __func__ << " " << __LINE__ << "***** cancel all http status error *****" << res->http_status() << " msg: " << msg << endl;
-            int code = order.FindMember("code")->value.GetInt();
-            std::string msg = order.FindMember("msg")->value.GetString();
-
-            // 找不到订单了
-            if (code == -2011 && msg == "Unknown order sent.")
-            {
+            if (checkResult.Code == -2011 && checkResult.Msg == "Unknown order sent.") {
+                // todo error日志
+                // 找不到订单
                 // todo 改成回调通知订单管理层
                 // mapSymbolBalanceOrderStatus[ori_symbol] = 0;
+                return;
             }
+
             return;
         }
-
-        cout << __func__ << " " << __LINE__ << msg.c_str() << endl;
 
         // todo 改成回调通知订单管理层
         // mapSymbolBalanceOrderStatus[ori_symbol] = 0;
+        return;
     }
 
-    void BinanceApiWrapper::CreateListenKey(string listenKey, function<void(int errCode, string listenKey)> callback)
+    void BinanceApiWrapper::CreateListenKey(string listenKey, function<void(string listenKey, int err)> callback)
     {
         string uri = "https://api.binance.com/api/v3/userDataStream";
         ApiRequest req;
@@ -397,31 +386,26 @@ namespace HttpWrapper
         this->MakeRequest(req, apiCallback);
     }
 
-    void BinanceApiWrapper::createListkeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(int errCode, string listenKey)> callback)
+    void BinanceApiWrapper::createListkeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(string listenKey, int err)> callback)
     {
-        if (res == nullptr || res->payload().empty())
+        if (auto err = this->CheckResp(res); err > 0)
         {
+            // todo error日志
             cout << __func__ << " " << __LINE__ << " CreateListkey error " << endl;
-            return callback(1, "");
-        }
-
-        auto &msg = res->payload();
-        if (res->http_status() != 200)
-        {
-            cout << __func__ << " " << __LINE__ << "***** CreateListkey http status error *****" << res->http_status() << " msg: " << msg << endl;
-            return callback(1, "");
+            return callback("", err);
         }
 
         rapidjson::Document listenKeyInfo;
-        listenKeyInfo.Parse(msg.c_str());
+        listenKeyInfo.Parse(res->payload().c_str());
 
-        if (listenKeyInfo.HasMember("listenKey"))
+        if (!listenKeyInfo.HasMember("listenKey"))
         {
-            auto listenKey = listenKeyInfo.FindMember("listenKey")->value.GetString();
-            return callback(0, listenKey);
+            // todo error日志
+            return callback("", define::ErrorDefault);
         }
 
-        return callback(2, "");
+        auto listenKey = listenKeyInfo.FindMember("listenKey")->value.GetString();
+        return callback(listenKey, 0);
     }
 
     define::OrderStatus BinanceApiWrapper::stringToOrderStatus(string status)
@@ -457,7 +441,7 @@ namespace HttpWrapper
             return define::EXPIRED;
         }
 
-        return define::NEW;
+        return define::INVALID_ORDER_STATUS;
     }
 
     define::OrderSide BinanceApiWrapper::stringToSide(string side)
@@ -468,7 +452,7 @@ namespace HttpWrapper
             return define::SELL;
         }
 
-        return define::UNKNOWN;
+        return define::INVALID_SIDE;
     }
 
     string BinanceApiWrapper::sideToString(uint32_t side)

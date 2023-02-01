@@ -8,6 +8,13 @@
 using namespace std;
 namespace HttpWrapper
 {
+    struct CheckRespWithCodeResp
+    {
+        int Err;
+        int Code;
+        string Msg;
+    };
+
     struct ApiRequest
     {
         map<string, string> args;
@@ -15,15 +22,6 @@ namespace HttpWrapper
         string uri;
         string data;
         bool sign;
-
-        ApiRequest()
-        {
-            this->args = {};
-            this->method = "";
-            this->uri = "";
-            this->data = "";
-            this->sign = false;
-        }
     };
 
     struct CreateOrderReq
@@ -62,7 +60,6 @@ namespace HttpWrapper
         template <typename T, typename outer>
         string hmac(const std::string &key, const std::string &data, T evp, outer filter);
 
-
     public:
         BaseApiWrapper(websocketpp::lib::asio::io_service& ioService, string accessKey, string secretKey);
         ~BaseApiWrapper();
@@ -75,8 +72,10 @@ namespace HttpWrapper
 
         string GetOrderId(string outOrderId);
         string GetOutOrderId(string orderId);
+        pair<double, double> SelectPriceQuantity(CreateOrderReq req, define::OrderSide side);
+
         int CheckResp(shared_ptr<HttpRespone> &res);
-        pair<double, double> GetPriceQuantity(CreateOrderReq req, define::OrderSide side);
-        void MakeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback);
+        CheckRespWithCodeResp &CheckRespWithCode(shared_ptr<HttpRespone> &res);
+        void MakeRequest(ApiRequest &req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback);
     };
 }

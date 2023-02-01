@@ -14,6 +14,7 @@ cc_binary(
     deps = [
         "//lib/triangular:triangular",
         "//lib/executor:executor",
+        "//lib/capital_pool:capital_pool",
         "//lib/api:api",
     ],
 )

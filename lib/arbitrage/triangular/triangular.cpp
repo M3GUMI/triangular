@@ -4,12 +4,13 @@
 #include "define/define.h"
 #include "utils/utils.h"
 #include "lib/pathfinder/pathfinder.h"
+#include "lib/capital_pool/capital_pool.h"
 #include "lib/api/api.h"
 
 std::stringstream ss;
 namespace Arbitrage
 {
-	TriangularArbitrage::TriangularArbitrage(Pathfinder::Pathfinder &pathfinder): pathfinder(pathfinder)
+	TriangularArbitrage::TriangularArbitrage(Pathfinder::Pathfinder &pathfinder) : pathfinder(pathfinder)
 	{
 	}
 
@@ -22,6 +23,7 @@ namespace Arbitrage
 		Pathfinder::TransactionPathItem firstPath = path.Path[0];
 		this->OriginToken = firstPath.FromToken;
 
+		CapitalPool::GetCapitalPool().LockAsset(firstPath.FromToken, firstPath.FromQuantity);
 		ExecuteTrans(firstPath);
 		return 0;
 	}
@@ -29,7 +31,7 @@ namespace Arbitrage
 	int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path)
 	{
 		HttpWrapper::CreateOrderReq req;
-		req.OrderId = GenerateOrderId();
+		req.OrderId = GenerateId();
 		req.FromToken = path.FromToken;
 		req.FromPrice = path.FromPrice;
 		req.FromQuantity = path.FromQuantity;
@@ -38,29 +40,34 @@ namespace Arbitrage
 		req.ToQuantity = path.ToQuantity;
 		req.OrderType = define::LIMIT;
 		req.TimeInForce = define::IOC;
-		auto callback = bind(&TriangularArbitrage::orderDataHandler, this, placeholders::_1);
+		auto callback = bind(&TriangularArbitrage::orderDataHandler, this, placeholders::_1, placeholders::_2);
 
 		API::GetBinanceApiWrapper().CreateOrder(req, callback);
-		// Arbitrage::orderStore[OrderId] = &order;
 	}
 
-	void TriangularArbitrage::orderDataHandler(HttpWrapper::OrderData& data)
+	void TriangularArbitrage::orderDataHandler(HttpWrapper::OrderData &data, int createErr)
 	{
-		int ec;
+		if (createErr > 0)
+		{
+			// todo 错误日志处理
+			return;
+		}
+
+		int err;
 		if (data.OrderStatus == define::FILLED)
 		{
-			ec = filledHandler(data);
+			err = filledHandler(data);
 		}
 		else if (data.OrderStatus == define::PARTIALLY_FILLED)
 		{
-			ec = partiallyFilledHandler(data);
+			err = partiallyFilledHandler(data);
 		}
 		else
 		{
 			return;
 		}
 
-		if (ec > 0)
+		if (err > 0)
 		{
 			// todo error处理
 			return;
@@ -69,8 +76,10 @@ namespace Arbitrage
 
 	int TriangularArbitrage::filledHandler(HttpWrapper::OrderData &data)
 	{
-		if (data.ToToken == this->TargetToken) {
+		if (data.ToToken == this->TargetToken)
+		{
 			// 套利完成
+			CapitalPool::GetCapitalPool().Refresh();
 			return 0;
 		}
 
@@ -82,18 +91,18 @@ namespace Arbitrage
 		req.End = this->TargetToken;
 		req.PositionQuantity = data.ExecuteQuantity * data.ExecutePrice;
 
-		auto ec = this->pathfinder.RevisePath(req, resp);
-		if (ec > 0)
+		auto err = this->pathfinder.RevisePath(req, resp);
+		if (err > 0)
 		{
 			// todo error日志处理
-			return ec;
+			return err;
 		}
 
-		ec = ExecuteTrans(resp.Path.front());
-		if (ec > 0)
+		err = ExecuteTrans(resp.Path.front());
+		if (err > 0)
 		{
 			// todo error日志处理
-			return ec;
+			return err;
 		}
 
 		return 0;
@@ -104,6 +113,7 @@ namespace Arbitrage
 		if (define::IsStableCoin(data.FromToken))
 		{
 			// 稳定币持仓，等待rebalance
+			CapitalPool::GetCapitalPool().FreeAsset(data.FromToken, data.ExecuteQuantity);
 			return 0;
 		}
 		else if (define::NotStableCoin(data.FromToken))
@@ -116,18 +126,18 @@ namespace Arbitrage
 			req.End = this->TargetToken;
 			req.PositionQuantity = data.OriginQuantity - data.ExecuteQuantity;
 
-			auto ec = this->pathfinder.RevisePath(req, resp);
-			if (ec > 0)
+			auto err = this->pathfinder.RevisePath(req, resp);
+			if (err > 0)
 			{
 				// todo error日志处理
-				return ec;
+				return err;
 			}
 
-			ec = ExecuteTrans(resp.Path.front());
-			if (ec > 0)
+			err = ExecuteTrans(resp.Path.front());
+			if (err > 0)
 			{
 				// todo error日志处理
-				return ec;
+				return err;
 			}
 
 			return 0;

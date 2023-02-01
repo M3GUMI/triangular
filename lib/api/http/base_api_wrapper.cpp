@@ -18,30 +18,67 @@ namespace HttpWrapper
 
     string BaseApiWrapper::GetOrderId(string outOrderId)
     {
-        return outOrderIdMap[outOrderId];
+        if (outOrderIdMap.count(outOrderId))
+        {
+            return outOrderIdMap[outOrderId];
+        }
+
+        return "";
     }
 
     string BaseApiWrapper::GetOutOrderId(string orderId)
     {
-        return orderIdMap[orderId];
+        if (orderIdMap.count(orderId))
+        {
+            return orderIdMap[orderId];
+        }
+
+        return "";
     }
 
     int BaseApiWrapper::CheckResp(shared_ptr<HttpRespone> &res)
     {
         if (res == nullptr || res->payload().empty())
         {
+            // todo error处理
             return 1;
         }
 
         if (res->http_status() != 200)
         {
+            // todo error处理
             return 2;
         }
 
         return 0;
     }
 
-    pair<double, double> BaseApiWrapper::GetPriceQuantity(CreateOrderReq req, define::OrderSide side)
+    CheckRespWithCodeResp& BaseApiWrapper::CheckRespWithCode(shared_ptr<HttpRespone> &res)
+    {
+        CheckRespWithCodeResp resp;
+        if (res == nullptr || res->payload().empty())
+        {
+            // todo error处理
+            resp.Err = 1;
+            return resp;
+        }
+
+        rapidjson::Document json;
+        json.Parse(res->payload().c_str());
+        if (res->http_status() != 200)
+        {
+            // todo error处理
+            resp.Err = 1;
+            resp.Code = json.FindMember("code")->value.GetInt();
+            resp.Msg = json.FindMember("msg")->value.GetString();
+            return resp;
+        }
+
+        resp.Err = 0;
+        return resp;
+    }
+
+    pair<double, double> BaseApiWrapper::SelectPriceQuantity(CreateOrderReq req, define::OrderSide side)
     {
         double price, quantity;
         if (side == define::SELL)

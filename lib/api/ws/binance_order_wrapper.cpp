@@ -23,12 +23,12 @@ namespace WebsocketWrapper
         binance.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
     }
 
-    void BinanceOrderWrapper::createListenKeyHandler(int errCode, string listenKey)
+    void BinanceOrderWrapper::createListenKeyHandler(string listenKey, int err)
     {
         string msg = R"({"method":"SUBSCRIBE","params":[],"id":)" + to_string(time(NULL) % 1000) + R"(})";
         WebsocketWrapper::Connect(listenKey, msg, bind(&BinanceOrderWrapper::msgHandler, this, placeholders::_1, placeholders::_2));
 
-        uint64_t next_keep_time_ms = errCode > 0 ? 1000 * 60:1000 * 60 * 20;
+        uint64_t next_keep_time_ms = err > 0 ? 1000 * 60:1000 * 60 * 20;
         auto listenkeyKeepTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(this->ioService, websocketpp::lib::asio::milliseconds(next_keep_time_ms));
         listenkeyKeepTimer->async_wait(bind(&BinanceOrderWrapper::keepListenKeyHandler, this));
     }
@@ -46,6 +46,7 @@ namespace WebsocketWrapper
 
         if (not msgInfoJson.HasMember("e"))
         {
+            // todo error处理
             cout << __func__ << " " << __LINE__ << "unknown msg " << msg->get_payload().c_str() << endl;
             return;
         }
@@ -57,6 +58,7 @@ namespace WebsocketWrapper
             return executionReportHandler(msgInfoJson);
         }
 
+        // todo error处理
         cout << __func__ << " " << __LINE__ << "unkown msg type " << e << endl;
         cout << __func__ << " " << __LINE__ << "[" << msg->get_payload().c_str() << "]" << endl;
     }
@@ -79,6 +81,7 @@ namespace WebsocketWrapper
         from = symbolData.BaseToken;
         to = symbolData.QuoteToken;
 
+        // todo 日志处理
         cout << __func__ << " " << __LINE__ << " " << symbol << " ExecutionReportHandler " << side << " " << ori << " " << exced << endl;
 
         if (side == "BUY")
@@ -87,7 +90,7 @@ namespace WebsocketWrapper
         }
 
         OrderData data;
-        data.OrderId = clientOrderID; // todo 加个映射转换
+        data.OrderId = apiWrapper.GetOrderId(clientOrderID);
         data.OrderStatus = status;
         data.UpdateTime = updateTime;
         return this->subscriber(data);

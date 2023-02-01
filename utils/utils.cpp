@@ -20,7 +20,7 @@ uint64_t GetNowTime()
 	return time;
 }
 
-pair<string, string> GetAccessKey()
+pair<string, string> GetExchangeKey()
 {
 	return make_pair("access", "secret");
 }
@@ -31,13 +31,7 @@ unsigned long getRand()
 	return e();
 }
 
-string GeneratePositionId()
-{
-	// todo 临时
-	return GenerateOrderId();
-}
-
-string GenerateOrderId()
+string GenerateId()
 {
 	std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
 		std::chrono::system_clock::now().time_since_epoch());
