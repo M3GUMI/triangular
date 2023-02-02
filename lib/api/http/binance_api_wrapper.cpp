@@ -18,7 +18,6 @@ namespace HttpWrapper
     {
         LogDebug("func", "InitBinanceSymbol", "msg", "start");
 
-        this->SymbolDataReady = false;
         ApiRequest req;
         req.args = {};
         req.method = "GET";
@@ -38,7 +37,7 @@ namespace HttpWrapper
         exchangeInfoJson.Parse(res->payload().c_str());
         if (!exchangeInfoJson.HasMember("symbols"))
         {
-            LogError("func", "initBinanceSymbolCallback", "msg", define::WrapErr(define::ErrorInvalidResp));
+            LogError("func", "initBinanceSymbolCallback", "msg", WrapErr(define::ErrorInvalidResp));
             return;
         }
 
@@ -90,7 +89,6 @@ namespace HttpWrapper
             baseCoins.insert(quoteAsset);
         }
 
-        this->SymbolDataReady = true;
         LogDebug("func", "InitBinanceSymbol", "msg", "load symbol data success");
     }
 

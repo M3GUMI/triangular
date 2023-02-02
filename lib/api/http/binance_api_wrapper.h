@@ -68,7 +68,6 @@ namespace HttpWrapper
         ~BinanceApiWrapper();
 
         // 交易对
-        bool SymbolDataReady = false; // 交易对数据是否就绪 
         void InitBinanceSymbol();
         BinanceSymbolData& GetSymbolData(std::string token0, std::string token1);
         BinanceSymbolData& GetSymbolData(std::string symbol);

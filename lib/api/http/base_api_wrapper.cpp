@@ -44,13 +44,13 @@ namespace HttpWrapper
     {
         if (res == nullptr || res->payload().empty())
         {
-            LogError("func", "CheckResp", "msg", define::WrapErr(define::ErrorHttpFail));
+            LogError("func", "CheckResp", "msg", WrapErr(define::ErrorHttpFail));
             return define::ErrorHttpFail;
         }
 
         if (res->http_status() != 200)
         {
-            LogError("func", "CheckResp", "msg", define::WrapErr(define::ErrorEmptyResponse));
+            LogError("func", "CheckResp", "msg", WrapErr(define::ErrorEmptyResponse));
             return define::ErrorEmptyResponse;
         }
 
@@ -62,7 +62,7 @@ namespace HttpWrapper
         CheckRespWithCodeResp resp;
         if (res == nullptr || res->payload().empty())
         {
-            LogError("func", "CheckResp", "msg", define::WrapErr(define::ErrorHttpFail));
+            LogError("func", "CheckResp", "msg", WrapErr(define::ErrorHttpFail));
             resp.Err = define::ErrorHttpFail;
             return resp;
         }
@@ -71,7 +71,7 @@ namespace HttpWrapper
         json.Parse(res->payload().c_str());
         if (res->http_status() != 200)
         {
-            LogError("func", "CheckResp", "msg", define::WrapErr(define::ErrorEmptyResponse));
+            LogError("func", "CheckResp", "msg", WrapErr(define::ErrorEmptyResponse));
             resp.Err = define::ErrorEmptyResponse;
             resp.Code = json.FindMember("code")->value.GetInt();
             resp.Msg = json.FindMember("msg")->value.GetString();

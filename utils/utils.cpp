@@ -24,7 +24,9 @@ uint64_t GetNowTime()
 
 pair<string, string> GetExchangeKey()
 {
-	return make_pair("access", "secret");
+    auto accessKey = "c52zdrltx6vSMgojFzxJcVQ1v7qiD55G0PgTe31v3fCfEazqgnBu3xNRWOPVOj86";
+    auto secretKey = "lDOZfpTNBIG8ICteeNfoOIoOHBONvBsiAP88GJ5rgDMF6bGGPETkM1Ri14mrbkfJ";
+	return make_pair(accessKey, secretKey);
 }
 
 unsigned long getRand()
@@ -103,4 +105,14 @@ void log(string level, vector<string> args)
 	}
 
 	cout << endl;
+}
+
+string WrapErr(int err)
+{
+	if (!define::ErrorMsgMap.count(err))
+	{
+		return "未定义错误";
+	}
+
+	return define::ErrorMsgMap[err];
 }
