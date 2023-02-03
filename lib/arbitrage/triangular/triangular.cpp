@@ -20,12 +20,27 @@ namespace Arbitrage
 
 	int TriangularArbitrage::Run(Pathfinder::TransactionPath &path)
 	{
+		LogInfo("func", "Run", "msg", "TriangularArbitrage start");
 		Pathfinder::TransactionPathItem firstPath = path.Path[0];
-		this->OriginToken = firstPath.FromToken;
-
 		CapitalPool::GetCapitalPool().LockAsset(firstPath.FromToken, firstPath.FromQuantity);
+		this->OriginToken = firstPath.FromToken;
+		this->OriginQuantity = firstPath.FromQuantity;
+		this->TargetToken = firstPath.FromToken;
 		ExecuteTrans(firstPath);
 		return 0;
+	}
+
+	int TriangularArbitrage::Finish(int finalQuantiy)
+	{
+		LogInfo("func", "Finish", "finalQuantity", to_string(finalQuantiy), "originQuantity", to_string(this->OriginQuantity));
+		CapitalPool::GetCapitalPool().Refresh();
+		this->subscriber();
+		return 0;
+	}
+
+	void TriangularArbitrage::SubscribeFinish(function<void()> callback)
+	{
+		this->subscriber = callback;
 	}
 
 	int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path)
@@ -49,7 +64,6 @@ namespace Arbitrage
 	{
 		if (createErr > 0)
 		{
-			// todo 错误日志处理
 			return;
 		}
 
@@ -69,8 +83,7 @@ namespace Arbitrage
 
 		if (err > 0)
 		{
-			// todo error处理
-			return;
+			LogError("func", "orderDataHandler", "err", WrapErr(err));
 		}
 	}
 
@@ -79,8 +92,7 @@ namespace Arbitrage
 		if (data.ToToken == this->TargetToken)
 		{
 			// 套利完成
-			CapitalPool::GetCapitalPool().Refresh();
-			return 0;
+			return Finish(data.ExecuteQuantity * data.ExecutePrice);
 		}
 
 		// 执行下一步路径
@@ -94,14 +106,12 @@ namespace Arbitrage
 		auto err = this->pathfinder.RevisePath(req, resp);
 		if (err > 0)
 		{
-			// todo error日志处理
 			return err;
 		}
 
 		err = ExecuteTrans(resp.Path.front());
 		if (err > 0)
 		{
-			// todo error日志处理
 			return err;
 		}
 
@@ -129,35 +139,16 @@ namespace Arbitrage
 			auto err = this->pathfinder.RevisePath(req, resp);
 			if (err > 0)
 			{
-				// todo error日志处理
 				return err;
 			}
 
 			err = ExecuteTrans(resp.Path.front());
 			if (err > 0)
 			{
-				// todo error日志处理
 				return err;
 			}
 
 			return 0;
 		}
 	}
-
-	/*int TriangularArbitrage::SearchOrder(string orderId, SearchOrderResp &resp)
-	{
-		auto val = orderStore.find(orderId);
-		if (val == orderStore.end())
-		{
-			return 1;
-		}
-
-		resp.OrderData = val->second;
-		if (resp.OrderData == NULL)
-		{
-			return 1;
-		}
-
-		return 0;
-	}*/
 }

@@ -8,8 +8,11 @@ namespace Executor
 	class Executor
 	{
 	private:
+		bool lock; // 同时只执行一个套利任务
+
 		Pathfinder::Pathfinder &pathfinder;
-		void arbitrageDataHandler(Pathfinder::TransactionPath &path);
+		void arbitragePathHandler(Pathfinder::TransactionPath &path);
+		void arbitrageFinishHandler();
 
 	public:
 		Executor(Pathfinder::Pathfinder& pathfinder);

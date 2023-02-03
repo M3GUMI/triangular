@@ -19,6 +19,7 @@ cc_library(
         "//lib/arbitrage/triangular:triangular_arbitrage",
         "//lib/pathfinder:pathfinder",
         "//lib/capital_pool:capital_pool",
+        "//utils:utils",
         "//lib/api:api",
     ],
     visibility = ["//visibility:public"],

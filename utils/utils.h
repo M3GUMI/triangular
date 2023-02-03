@@ -6,7 +6,6 @@
 using namespace std;
 using namespace define;
 
-pair<string, string> GetExchangeKey();
 void String2Double(const string &str, double &d);
 
 uint64_t GetNowTime();
@@ -16,5 +15,7 @@ string GenerateId();
 string WrapErr(int err);
 void LogDebug(string arg1, string arg2, string arg3, string arg4);
 void LogInfo(string arg1, string arg2, string arg3, string arg4);
+void LogInfo(string arg1, string arg2, string arg3, string arg4, string arg5, string arg6);
 void LogError(string arg1, string arg2, string arg3, string arg4);
+void LogError(string arg1, string arg2, string arg3, string arg4, string arg5, string arg6);
 void log(string level, vector<string> args);

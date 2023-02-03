@@ -22,13 +22,6 @@ uint64_t GetNowTime()
 	return time;
 }
 
-pair<string, string> GetExchangeKey()
-{
-    auto accessKey = "c52zdrltx6vSMgojFzxJcVQ1v7qiD55G0PgTe31v3fCfEazqgnBu3xNRWOPVOj86";
-    auto secretKey = "lDOZfpTNBIG8ICteeNfoOIoOHBONvBsiAP88GJ5rgDMF6bGGPETkM1Ri14mrbkfJ";
-	return make_pair(accessKey, secretKey);
-}
-
 unsigned long getRand()
 {
 	static default_random_engine e(chrono::system_clock::now().time_since_epoch().count() / chrono::system_clock::period::den);
@@ -71,12 +64,34 @@ void LogInfo(string arg1, string arg2, string arg3, string arg4) {
 	log("[Info]", args);
 }
 
+void LogInfo(string arg1, string arg2, string arg3, string arg4, string arg5, string arg6) {
+	vector<string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	args.push_back(arg3);
+	args.push_back(arg4);
+	args.push_back(arg5);
+	args.push_back(arg6);
+	log("[Info]", args);
+}
+
 void LogError(string arg1, string arg2, string arg3, string arg4) {
 	vector<string> args;
 	args.push_back(arg1);
 	args.push_back(arg2);
 	args.push_back(arg3);
 	args.push_back(arg4);
+	log("[Error]", args);
+}
+
+void LogError(string arg1, string arg2, string arg3, string arg4, string arg5, string arg6) {
+	vector<string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	args.push_back(arg3);
+	args.push_back(arg4);
+	args.push_back(arg5);
+	args.push_back(arg6);
 	log("[Error]", args);
 }
 

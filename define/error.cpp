@@ -11,5 +11,7 @@ namespace define
         // 100-199 http错误
         {ErrorHttpFail, "http请求失败"},
         {ErrorEmptyResponse, "返回数据为空"},
+
+        {ErrorInsufficientBalance, "账户余额不足"},
     };
 }

@@ -3,6 +3,7 @@
 #include "openssl/hmac.h"
 #include "lib/libmix/libmix.h"
 #include "lib/ahttp/http_client.hpp"
+#include "conf/conf.h"
 #include "utils/utils.h"
 #include "base_api_wrapper.h"
 
@@ -101,6 +102,12 @@ namespace HttpWrapper
 
     void BaseApiWrapper::MakeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback)
     {
+        if (conf::EnableMock) {
+            shared_ptr<HttpRespone> res;
+            ahttp::error_code ec;
+            return callback(res, ec);
+        }
+
         auto args = req.args;
         auto method = req.method;
         auto uri = req.uri;

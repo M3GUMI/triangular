@@ -26,12 +26,6 @@ namespace Arbitrage
 	private:
 	};
 
-	// map<std::string, Order*> orderStore; // 订单存储
-	// struct SearchOrderResp
-	// {
-	//	 Order *OrderData; // 订单数据
-	// };
-
 	// 三角套利
 	class TriangularArbitrage
 	{
@@ -41,13 +35,16 @@ namespace Arbitrage
 
 		int Run(Pathfinder::TransactionPath &path);
 		int ExecuteTrans(Pathfinder::TransactionPathItem &path);
-		// int SearchOrder(string orderId, SearchOrderResp& resp);
+		void SubscribeFinish(function<void()> callback);
 	private:
 		Pathfinder::Pathfinder &pathfinder;
-		string TaskId;		// 任务id
+		function<void()> subscriber = NULL;
+
 		string OriginToken; // 原始起点token
+		double OriginQuantity; // 原始起点token数量
 		string TargetToken; // 目标token
 
+		int Finish(int finalQuantiy);
 		void orderDataHandler(HttpWrapper::OrderData &orderData, int err);
 		int filledHandler(HttpWrapper::OrderData &data);
 		int partiallyFilledHandler(HttpWrapper::OrderData &data);

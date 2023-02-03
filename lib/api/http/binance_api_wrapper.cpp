@@ -1,4 +1,5 @@
 #include <rapidjson/document.h>
+#include "conf/conf.h"
 #include "define/define.h"
 #include "utils/utils.h"
 #include "binance_api_wrapper.h"
@@ -6,7 +7,7 @@
 using namespace std;
 namespace HttpWrapper
 {
-    BinanceApiWrapper::BinanceApiWrapper(websocketpp::lib::asio::io_service &ioService) : BaseApiWrapper(ioService, GetExchangeKey().first, GetExchangeKey().second)
+    BinanceApiWrapper::BinanceApiWrapper(websocketpp::lib::asio::io_service &ioService) : BaseApiWrapper(ioService, conf::AccessKey, conf::SecretKey)
     {
     }
 
@@ -82,7 +83,6 @@ namespace HttpWrapper
             }
 
             BinanceSymbolData data;
-            data.Valid = true;
             data.Symbol = symbol;
             data.BaseToken = baseAsset;
             data.QuoteToken = quoteAsset;
@@ -107,10 +107,9 @@ namespace HttpWrapper
         auto symbol = token0 + token1;
         if (symbolMap.count(symbol) != 1)
         {
-            // todo 错误日志输出
-            cout << "not found error" << endl;
+            // todo 直接退出
+            LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             BinanceSymbolData data;
-            data.Valid = false;
             return data;
         }
 
@@ -121,10 +120,9 @@ namespace HttpWrapper
     {
         if (symbolMap.count(symbol) != 1)
         {
-            // todo 错误日志输出
-            cout << "not found error" << endl;
+            // todo 直接退出
+            LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             BinanceSymbolData data;
-            data.Valid = false;
             return data;
         }
 
@@ -136,8 +134,8 @@ namespace HttpWrapper
         auto symbol = token0 + token1;
         if (symbolMap.count(symbol) != 1)
         {
-            // todo 错误日志输出
-            cout << "not found error" << endl;
+            // todo 直接退出
+            LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             return "";
         }
 
@@ -150,8 +148,8 @@ namespace HttpWrapper
         auto symbol = token0 + token1;
         if (symbolMap.count(symbol) != 1)
         {
-            // todo error日志输出
-            cout << "not found error" << endl;
+            // todo 直接退出
+            LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             return define::INVALID_SIDE;
         }
 
@@ -173,6 +171,7 @@ namespace HttpWrapper
         req.sign = true;
         auto apiCallback = bind(&BinanceApiWrapper::accountInfoHandler, this, ::_1, ::_2, callback);
 
+        LogInfo("func", "GetAccountInfo", "msg", "start execute");
         this->MakeRequest(req, apiCallback);
         return 0;
     }
@@ -180,10 +179,18 @@ namespace HttpWrapper
     void BinanceApiWrapper::accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo& info, int err)> callback)
     {
         AccountInfo info;
+        if (conf::EnableMock) {
+            BalanceData data;
+            data.Token = "USDT";
+            data.Free = 100;
+            data.Locked = 0;
+            info.Balances.push_back(data);
+            LogInfo("func", "GetAccountInfo", "msg", "request success");
+            return callback(info, 0);
+        }
+
         if (auto err = this->CheckResp(res); err > 0)
         {
-            // todo error日志
-            cout << __func__ << " " << __LINE__ << " get_account_info error " << endl;
             return callback(info, err);
         }
 
@@ -191,8 +198,7 @@ namespace HttpWrapper
         accountInfoDocument.Parse(res->payload().c_str());
         if (not accountInfoDocument.HasMember("balances"))
         {
-            // todo error日志
-            cout << __func__ << " " << __LINE__ << "no balance data " << res->payload().c_str() << endl;
+            LogError("func", "accountInfoHandler", "msg", "no balance data", "err", WrapErr(define::ErrorInvalidResp));
             return callback(info, define::ErrorDefault);
         }
 
@@ -210,6 +216,7 @@ namespace HttpWrapper
             info.Balances.push_back(data);
         }
 
+        LogInfo("func", "GetAccountInfo", "msg", "request success");
         return callback(info, 0);
     }
 
@@ -217,8 +224,8 @@ namespace HttpWrapper
     {
         if (req.OrderId == "")
         {
-            // todo error日志处理
-            return define::ErrorDefault;
+            LogError("func", "CreateOrder", "msg", "orderId invalid", "err", WrapErr(define::ErrorInvalidParam));
+            return define::ErrorInvalidParam;
         }
 
         map<string, string> args;
@@ -229,7 +236,7 @@ namespace HttpWrapper
 
         if (symbol == "" || side == define::INVALID_SIDE)
         {
-            // todo error日志处理
+            LogError("func", "CreateOrder", "msg", "symbol or side invalid", "err", WrapErr(define::ErrorInvalidParam));
             return define::ErrorDefault;
         }
 
@@ -255,8 +262,8 @@ namespace HttpWrapper
             args["price"] = price;
         }
 
-        // todo 日志处理
-        cout << "Create order " << symbol << " " << side << " " << price << " " << quantity << endl;
+        LogInfo("func", "CreateOrder", "msg", "start execute", "symbol", symbol);
+        LogInfo("side", to_string(side), "price", to_string(price), "quantity", to_string(quantity));
 
         ApiRequest apiReq;
         apiReq.args = args;
@@ -264,21 +271,30 @@ namespace HttpWrapper
         apiReq.uri = uri;
         apiReq.data = "";
         apiReq.sign = true;
-        auto apiCallback = bind(&BinanceApiWrapper::createOrderCallback, this, placeholders::_1, placeholders::_2, req.OrderId, callback);
+        auto apiCallback = bind(&BinanceApiWrapper::createOrderCallback, this, placeholders::_1, placeholders::_2, req, callback);
         this->MakeRequest(apiReq, apiCallback);
         return 0;
     }
 
-    void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, string orderId, function<void(OrderData& data, int err)> callback)
+    void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, CreateOrderReq &req, function<void(OrderData& data, int err)> callback)
     {
         OrderData data;
+        if (conf::EnableMock) {
+            data.OrderId = req.OrderId;
+            data.ExecuteTime = GetNowTime();
+            data.OrderStatus = define::FILLED;
+            data.FromToken = req.FromToken;
+            data.ToToken = req.ToToken;
+            data.ExecutePrice = req.FromPrice;
+            data.ExecuteQuantity = req.FromQuantity;
+            data.OriginQuantity = req.FromQuantity;
+            return callback(data, 0);
+        }
+
         if (auto checkResult = this->CheckRespWithCode(res); checkResult.Err > 0)
         {
             if (checkResult.Code == -2010 && checkResult.Msg == "Account has insufficient balance for requested action.") {
-                // todo error日志
-                // cout << "余额不足" << endl;
-                // GetBalanceAndCheckNoWait();
-                // todo 特殊错误码
+                LogError("func", "CreateOrder", "err", WrapErr(define::ErrorInsufficientBalance));
                 return callback(data, define::ErrorInsufficientBalance);
             }
 
@@ -289,8 +305,8 @@ namespace HttpWrapper
         order.Parse(res->payload().c_str());
 
         string clientOrderId = order.FindMember("clientOrderId")->value.GetString();
-        orderIdMap[orderId] = clientOrderId;
-        outOrderIdMap[clientOrderId] = orderId;
+        orderIdMap[req.OrderId] = clientOrderId;
+        outOrderIdMap[clientOrderId] = req.OrderId;
 
         // 当前均为IOC数据推送
         auto symbol = order["s"].GetString();
@@ -298,8 +314,7 @@ namespace HttpWrapper
 
         if (side == define::INVALID_SIDE)
         {
-            // error
-            // todo 需要增加以下参数的合法性校验
+            LogError("func", "CreateOrder", "msg", "invalid side", "err", WrapErr(define::ErrorInvalidResp));
             return;
         }
 

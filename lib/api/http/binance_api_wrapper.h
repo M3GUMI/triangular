@@ -11,7 +11,6 @@ using namespace std;
 namespace HttpWrapper
 {
     struct BinanceSymbolData {
-        bool Valid; // 数据是否合法
         string Symbol;
         string BaseToken;
         string QuoteToken;
@@ -57,7 +56,7 @@ namespace HttpWrapper
 
         void initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec);
         void accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo &info, int err)> callback);
-        void createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, string orderId, function<void(OrderData& data, int err)> callback);
+        void createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, CreateOrderReq &req, function<void(OrderData& data, int err)> callback);
 
         void cancelOrder(string orderId, string symbol);
         void cancelOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, std::string ori_symbol);
