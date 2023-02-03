@@ -6,8 +6,24 @@
 using namespace std;
 namespace WebsocketWrapper
 {
-    BinanceDepthWrapper::BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper): WebsocketWrapper("", "", ioService), apiWrapper(binanceApiWrapper)
+    BinanceDepthWrapper::BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper, string hostname, string hostport): WebsocketWrapper(hostname, hostport, ioService), apiWrapper(binanceApiWrapper)
     {
+        /*LogDebug("func", "BinanceDepthWrapper", "msg", "start init depth websocket");
+
+        auto num = 0;
+        for (auto data : this->apiWrapper.GetSymbolMap())
+        {
+            auto symbol = data.first;
+            auto symbolData = data.second;
+
+            if (symbol == symbolData.BaseToken + symbolData.QuoteToken)
+            {
+                num++;
+                this->subscribeSymbol(symbolData.BaseToken, symbolData.QuoteToken);
+            }
+        }
+        LogDebug("func", "BinanceDepthWrapper", "msg", "init depth websocket success");
+        LogDebug("func", "BinanceDepthWrapper", "client_num", to_string(num));*/
     }
 
     BinanceDepthWrapper::~BinanceDepthWrapper()

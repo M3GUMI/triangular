@@ -9,8 +9,8 @@ namespace API
     void Init(websocketpp::lib::asio::io_service& ioService)
     {
         HttpWrapper::BinanceApiWrapper apiWrapper(ioService);
-        WebsocketWrapper::BinanceDepthWrapper depthWrapper(ioService, apiWrapper);
-        WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper);
+        WebsocketWrapper::BinanceDepthWrapper depthWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
+        WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
         apiWrapper.InitBinanceSymbol();
 
         api = &apiWrapper;

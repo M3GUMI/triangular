@@ -25,7 +25,7 @@ namespace WebsocketWrapper
         void executionReportHandler(const rapidjson::Document &msg);
 
     public:
-        BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper);
+        BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper, string hostname, string hostport);
         ~BinanceOrderWrapper();
 
         void Connect();

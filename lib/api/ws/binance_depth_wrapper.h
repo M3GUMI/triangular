@@ -31,12 +31,12 @@ namespace WebsocketWrapper
         void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string token0, string token1);
 
     public:
-        BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper);
+        BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper, string hostname, string hostport);
         ~BinanceDepthWrapper();
 
         // 创建连接
         void Connect(string token0, string token1);
         // 订阅depth数据
-        void SubscribeDepth(function<void(DepthData& data)> handler);
+        void SubscribeDepth(function<void(DepthData &data)> handler);
     };
 }

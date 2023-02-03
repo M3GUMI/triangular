@@ -13,7 +13,7 @@ namespace HttpWrapper
     {
         HttpClient *client = new HttpClient(ioService);
         hclientPtr = std::shared_ptr<HttpClient>(client);
-        hclientPtr->set_timeout(5000);
+        hclientPtr->set_timeout(10000);
     }
 
     BaseApiWrapper::~BaseApiWrapper()
@@ -45,13 +45,13 @@ namespace HttpWrapper
         if (res == nullptr || res->payload().empty())
         {
             LogError("func", "CheckResp", "msg", WrapErr(define::ErrorHttpFail));
-            return define::ErrorHttpFail;
+            return define::ErrorEmptyResponse;
         }
 
         if (res->http_status() != 200)
         {
             LogError("func", "CheckResp", "msg", WrapErr(define::ErrorEmptyResponse));
-            return define::ErrorEmptyResponse;
+            return define::ErrorHttpFail;
         }
 
         return 0;
