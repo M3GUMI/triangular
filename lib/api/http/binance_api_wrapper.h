@@ -46,6 +46,7 @@ namespace HttpWrapper
     {
     private:
         map<string, BinanceSymbolData> symbolMap;
+        vector<function<void(map<string, BinanceSymbolData> &data)>> symbolReadySubscriber;
 
         define::OrderStatus stringToOrderStatus(string status);
         define::OrderSide stringToSide(string side);
@@ -69,6 +70,7 @@ namespace HttpWrapper
 
         // 交易对
         void InitBinanceSymbol();
+        void SubscribeSymbolReady(function<void(map<string, BinanceSymbolData> &data)> callback);
         BinanceSymbolData& GetSymbolData(std::string token0, std::string token1);
         BinanceSymbolData& GetSymbolData(std::string symbol);
         string GetSymbol(std::string token0, std::string token1);

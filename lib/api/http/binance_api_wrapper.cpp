@@ -27,6 +27,11 @@ namespace HttpWrapper
         MakeRequest(req, bind(&BinanceApiWrapper::initBinanceSymbolCallback, this, placeholders::_1, placeholders::_2));
     }
 
+    void BinanceApiWrapper::SubscribeSymbolReady(function<void(map<string, BinanceSymbolData> &data)> callback)
+    {
+        this->symbolReadySubscriber.push_back(callback);
+    }
+
     void BinanceApiWrapper::initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
     {
         if (auto err = CheckResp(res); err > 0) {
@@ -90,6 +95,10 @@ namespace HttpWrapper
         }
 
         LogDebug("func", "InitBinanceSymbol", "msg", "load symbol data success");
+        for (auto func : this->symbolReadySubscriber)
+        {
+            func(symbolMap);
+        }
     }
 
     BinanceSymbolData& BinanceApiWrapper::GetSymbolData(std::string token0, std::string token1)
