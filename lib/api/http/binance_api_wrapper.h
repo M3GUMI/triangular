@@ -65,14 +65,14 @@ namespace HttpWrapper
         void createListkeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(string listenKey, int err)> callback);
 
     public:
-        BinanceApiWrapper(websocketpp::lib::asio::io_service& ioService);
+        BinanceApiWrapper(websocketpp::lib::asio::io_service &ioService);
         ~BinanceApiWrapper();
 
         // 交易对
         void InitBinanceSymbol();
         void SubscribeSymbolReady(function<void(map<string, BinanceSymbolData> &data)> callback);
-        BinanceSymbolData& GetSymbolData(std::string token0, std::string token1);
-        BinanceSymbolData& GetSymbolData(std::string symbol);
+        BinanceSymbolData &GetSymbolData(std::string token0, std::string token1);
+        BinanceSymbolData &GetSymbolData(std::string symbol);
         string GetSymbol(std::string token0, std::string token1);
         define::OrderSide GetSide(std::string token0, std::string token1);
 

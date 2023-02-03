@@ -8,6 +8,7 @@ namespace WebsocketWrapper
 {
     BinanceDepthWrapper::BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper, string hostname, string hostport): WebsocketWrapper(hostname, hostport, ioService), apiWrapper(binanceApiWrapper)
     {
+        this->apiWrapper.SubscribeSymbolReady(bind(&BinanceDepthWrapper::symbolReadyHandler, this, placeholders::_1));
         /*LogDebug("func", "BinanceDepthWrapper", "msg", "start init depth websocket");
 
         auto num = 0;
@@ -33,6 +34,11 @@ namespace WebsocketWrapper
     void BinanceDepthWrapper::SubscribeDepth(function<void(DepthData& data)> handler)
     {
         this->subscriber = handler;
+    }
+
+    void BinanceDepthWrapper::symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data)
+    {
+        LogDebug("func", "BinanceDepthWrapper", "msg", "init depth websocket success");
     }
 
     void BinanceDepthWrapper::Connect(string token0, string token1)

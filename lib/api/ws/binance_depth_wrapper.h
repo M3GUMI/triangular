@@ -28,6 +28,7 @@ namespace WebsocketWrapper
         function<void(DepthData &data)> subscriber = NULL;
         HttpWrapper::BinanceApiWrapper& apiWrapper;
 
+        void symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data);
         void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string token0, string token1);
 
     public:

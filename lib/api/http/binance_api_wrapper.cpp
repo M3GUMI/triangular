@@ -95,6 +95,7 @@ namespace HttpWrapper
         }
 
         LogDebug("func", "InitBinanceSymbol", "msg", "load symbol data success");
+        LogDebug("func", "InitBinanceSymbol", "msg", to_string(this->symbolReadySubscriber.size()));
         for (auto func : this->symbolReadySubscriber)
         {
             func(symbolMap);
