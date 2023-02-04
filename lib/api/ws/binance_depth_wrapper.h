@@ -26,16 +26,15 @@ namespace WebsocketWrapper
     private:
         uint64_t lastUpdateId = 0;
         function<void(DepthData &data)> subscriber = NULL;
-        HttpWrapper::BinanceApiWrapper& apiWrapper;
+        HttpWrapper::BinanceApiWrapper &apiWrapper;
 
-        void connect(string token0, string token1);
-        void symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data);
         void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string token0, string token1);
 
     public:
-        BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper, string hostname, string hostport);
+        BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper &apiWrapper, string hostname, string hostport);
         ~BinanceDepthWrapper();
 
+        int Connect(string token0, string token1);
         void SubscribeDepth(function<void(DepthData &data)> handler);
     };
 }

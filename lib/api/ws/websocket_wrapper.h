@@ -31,7 +31,7 @@ namespace WebsocketWrapper
         WebsocketWrapper(string hostname, string hostport, websocketpp::lib::asio::io_service& ioService);
         ~WebsocketWrapper();
 
-        void Connect(string uri, string msg, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler);
+        int Connect(string uri, string msg, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler);
     };
 
 }

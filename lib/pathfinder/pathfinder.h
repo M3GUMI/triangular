@@ -46,11 +46,13 @@ namespace Pathfinder
     {
     private:
 		function<void(TransactionPath &path)> subscriber = NULL;
-		WebsocketWrapper::BinanceDepthWrapper &depthWrapper;
+		HttpWrapper::BinanceApiWrapper &apiWrapper;
+		websocketpp::lib::asio::io_service &ioService;
 
-		void depthDataHandler(WebsocketWrapper::DepthData& data); // 接收depth数据处理
+		void symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data); // symbol数据就绪
+		void depthDataHandler(WebsocketWrapper::DepthData& data);                   // 接收depth数据处理
     public:
-        Pathfinder(WebsocketWrapper::BinanceDepthWrapper &depthWrapper);
+        Pathfinder(websocketpp::lib::asio::io_service &ioService, HttpWrapper::BinanceApiWrapper &apiWrapper);
         ~Pathfinder();
 
 		void SubscribeArbitrage(function<void(TransactionPath &path)> handler);		// 订阅套利机会推送

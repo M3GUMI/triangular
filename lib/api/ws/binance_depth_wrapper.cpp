@@ -8,7 +8,6 @@ namespace WebsocketWrapper
 {
     BinanceDepthWrapper::BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper, string hostname, string hostport): WebsocketWrapper(hostname, hostport, ioService), apiWrapper(binanceApiWrapper)
     {
-        this->apiWrapper.SubscribeSymbolReady(bind(&BinanceDepthWrapper::symbolReadyHandler, this, placeholders::_1));
     }
 
     BinanceDepthWrapper::~BinanceDepthWrapper()
@@ -20,31 +19,11 @@ namespace WebsocketWrapper
         this->subscriber = handler;
     }
 
-    void BinanceDepthWrapper::symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data)
-    {
-        LogDebug("func", "symbolReadyHandler", "msg", "init depth websocket");
-
-        auto num = 0;
-        for (auto item : data)
-        {
-            auto symbol = item.first;
-            auto symbolData = item.second;
-
-            if (symbol == symbolData.BaseToken + symbolData.QuoteToken)
-            {
-                num++;
-                this->connect(symbolData.BaseToken, symbolData.QuoteToken);
-            }
-            break;
-        }
-        LogInfo("func", "symbolReadyHandler", "client_num", to_string(num), "msg", "success, init depth websocket");
-    }
-
-    void BinanceDepthWrapper::connect(string token0, string token1)
+    int BinanceDepthWrapper::Connect(string token0, string token1)
     {
         auto symbol = this->apiWrapper.GetSymbol(token0, token1);
         string msg = R"({"method":"SUBSCRIBE","params":[")" + symbol + R"(@depth5@100ms"],"id":)" + to_string(time(NULL) % 1000) + R"(})";
-        WebsocketWrapper::Connect("", msg, bind(&BinanceDepthWrapper::msgHandler, this, placeholders::_1, placeholders::_2, token0, token1));
+        return WebsocketWrapper::Connect("", msg, bind(&BinanceDepthWrapper::msgHandler, this, placeholders::_1, placeholders::_2, token0, token1));
     }
 
     void BinanceDepthWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string token0, string token1)

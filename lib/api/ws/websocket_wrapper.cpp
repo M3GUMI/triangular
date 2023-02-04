@@ -12,7 +12,7 @@ namespace WebsocketWrapper
     {
     }
 
-    void WebsocketWrapper::Connect(string uri, string msg, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler)
+    int WebsocketWrapper::Connect(string uri, string msg, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler)
     {
         try
         {
@@ -26,23 +26,20 @@ namespace WebsocketWrapper
             client.set_open_handler(websocketpp::lib::bind(&WebsocketWrapper::on_open, this, websocketpp::lib::placeholders::_1));
             websocketpp::lib::error_code ec;
 
-            std::string uri = "wss://" + hostname + ":" + hostport + "/ws" + uri;
-            cout << "wss get connection : " << uri << endl;
-            auto con = client.get_connection(uri, ec);
+            std::string clientUri = "wss://" + hostname + ":" + hostport + "/ws" + uri;
+            auto con = client.get_connection(clientUri, ec);
             if (ec)
             {
-                std::cout << "could not create connection because: " << ec.message() << std::endl;
-                return;
+                return ErrorCreateWebsocketFail;
             }
 
             client.connect(con);
         }
         catch (websocketpp::exception const &e)
         {
-            std::cout << e.what() << std::endl;
+            // std::cout << e.what() << std::endl;
+            return ErrorCreateWebsocketFail;
         }
-
-        std::cout << "connection end" << std::endl;
     }
 
     websocketpp::lib::shared_ptr<websocketpp::lib::asio::ssl::context> WebsocketWrapper::on_tls_init(websocketpp::connection_hdl)
