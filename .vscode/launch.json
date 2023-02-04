@@ -8,6 +8,7 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
+      "preLaunchTask": "build",
       "cwd": "/workspaces/money_triangular",
       "program": "/workspaces/money_triangular/bazel-bin/test/test",
       "MIMode": "gdb",
