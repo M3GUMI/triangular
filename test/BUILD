@@ -12,9 +12,8 @@ cc_binary(
         "-lcrypto",
     ],
     deps = [
-        "//lib/triangular:triangular",
         "//lib/executor:executor",
-        "//lib/capital_pool:capital_pool",
-        "//lib/api:api",
+        "//lib/api/http:http",
+        "//lib/api/ws:ws",
     ],
 )

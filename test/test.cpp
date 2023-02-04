@@ -1,17 +1,23 @@
 #include <iostream>
 #include <sys/timeb.h>
-#include "lib/api/api.h"
-#include "lib/capital_pool/capital_pool.h"
+#include "lib/api/http/binance_api_wrapper.h"
+#include "lib/api/ws/binance_depth_wrapper.h"
+#include "lib/api/ws/binance_order_wrapper.h"
 #include "lib/executor/executor.h"
-#include "lib/triangular/triangular.h"
 
 int main()
 {
     websocketpp::lib::asio::io_service ioService;
-    API::Init(ioService);
-    Pathfinder::Init();
-    CapitalPool::GetCapitalPool().Refresh();
-    // Executor::Executor executor(pathfinder);
+    HttpWrapper::BinanceApiWrapper apiWrapper(ioService);
+    WebsocketWrapper::BinanceDepthWrapper depthWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
+    WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
+    // apiWrapper.InitBinanceSymbol();
+
+    Pathfinder::Pathfinder pathfinder(depthWrapper);
+    CapitalPool::CapitalPool capitalPool(pathfinder, apiWrapper);
+    Executor::Executor executor(pathfinder, capitalPool, apiWrapper);
+
+    pathfinder.MockRun();
     ioService.run();
 
     // Triangular::Triangular triangular;

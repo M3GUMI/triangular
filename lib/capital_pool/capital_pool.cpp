@@ -1,17 +1,10 @@
 #include <functional>
 #include "utils/utils.h"
-#include "lib/pathfinder/pathfinder.h"
 #include "capital_pool.h"
 
 namespace CapitalPool
 {
-    CapitalPool capitalPool;
-    CapitalPool &GetCapitalPool()
-    {
-        return capitalPool;
-    }
-
-    CapitalPool::CapitalPool()
+    CapitalPool::CapitalPool(Pathfinder::Pathfinder pathfinder, HttpWrapper::BinanceApiWrapper api) : pathfinder(pathfinder), apiWrapper(api)
     {
         vector<pair<string, double>> assets; // todo define获取
         for (auto asset : assets)
@@ -99,7 +92,7 @@ namespace CapitalPool
         priceReq.ToToken = toToken;
 
         Pathfinder::GetExchangePriceResp priceResp;
-        if (auto err = Pathfinder::GetPathfinder().GetExchangePrice(priceReq, priceResp); err > 0) {
+        if (auto err = pathfinder.GetExchangePrice(priceReq, priceResp); err > 0) {
             return err;
         }
 
@@ -115,7 +108,7 @@ namespace CapitalPool
         req.OrderType = define::LIMIT;
         req.TimeInForce = define::IOC;
 
-        return API::GetBinanceApiWrapper().CreateOrder(req, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
+        return apiWrapper.CreateOrder(req, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
     }
 
     void CapitalPool::rebalanceHandler(HttpWrapper::OrderData &data)
@@ -168,7 +161,7 @@ namespace CapitalPool
     int CapitalPool::Refresh()
     {
         locked = true;
-        API::GetBinanceApiWrapper().GetAccountInfo(bind(&CapitalPool::refreshAccountHandler, this, placeholders::_1, placeholders::_2));
+        apiWrapper.GetAccountInfo(bind(&CapitalPool::refreshAccountHandler, this, placeholders::_1, placeholders::_2));
     }
 
     void CapitalPool::refreshAccountHandler(HttpWrapper::AccountInfo &info, int err)

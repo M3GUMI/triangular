@@ -18,7 +18,7 @@ cc_library(
     deps = [
         "//lib/pathfinder:pathfinder",
         "//lib/capital_pool:capital_pool",
-        "//lib/api:api",
+        "//lib/api/http:http",
         "//define:define",
         "//utils:utils",
     ],

@@ -2,7 +2,7 @@
 #include <string>
 #include <time.h>
 #include <functional>
-#include "lib/api/api.h"
+#include "lib/api/ws/binance_depth_wrapper.h"
 
 using namespace std;
 namespace Pathfinder
@@ -42,23 +42,21 @@ namespace Pathfinder
 		double ToPrice;
 	};
 
-	class Pathfinder
-	{
-	private:
+    class Pathfinder
+    {
+    private:
 		function<void(TransactionPath &path)> subscriber = NULL;
+		WebsocketWrapper::BinanceDepthWrapper &depthWrapper;
 
 		void depthDataHandler(WebsocketWrapper::DepthData& data); // 接收depth数据处理
-
-	public:
-		Pathfinder();
-		~Pathfinder();
+    public:
+        Pathfinder(WebsocketWrapper::BinanceDepthWrapper &depthWrapper);
+        ~Pathfinder();
 
 		void SubscribeArbitrage(function<void(TransactionPath &path)> handler);		// 订阅套利机会推送
 		int RevisePath(RevisePathReq req, TransactionPath &resp);					// 路径修正
 		int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
-	};
 
-	extern Pathfinder *pathfinder;
-	void Init();
-	Pathfinder &GetPathfinder();
+		void MockRun(); // 临时mock找到链路
+    };
 }
