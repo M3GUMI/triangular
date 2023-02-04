@@ -55,6 +55,7 @@ namespace HttpWrapper
 
         // 签名
         string accessKey, secretKey;
+        void makeRequest(ApiRequest &req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback);
         map<string, string> sign(map<string, string> &args, string &query, bool need_sign);
         string toURI(const map<string, string> &mp);
         template <typename T, typename outer>
@@ -77,5 +78,6 @@ namespace HttpWrapper
         int CheckResp(shared_ptr<HttpRespone> &res);
         CheckRespWithCodeResp &CheckRespWithCode(shared_ptr<HttpRespone> &res);
         void MakeRequest(ApiRequest &req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback);
+        void MakeRequest(ApiRequest &req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback, bool mock);
     };
 }

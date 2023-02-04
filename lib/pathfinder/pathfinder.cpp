@@ -14,8 +14,14 @@ namespace Pathfinder
 
     void Pathfinder::MockRun()
 	{
-		TransactionPath path;
-		subscriber(path);
+		TransactionPathItem item;
+		vector<TransactionPathItem> Path;
+		Path.push_back(item);
+
+		TransactionPath data;
+		data.Path = Path; 
+
+		subscriber(data);
 	}
 
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData& data)

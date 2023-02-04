@@ -1,4 +1,5 @@
 #include "websocket_wrapper.h"
+#include "utils/utils.h"
 
 namespace WebsocketWrapper
 {

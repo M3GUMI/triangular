@@ -103,11 +103,28 @@ namespace HttpWrapper
 
     void BaseApiWrapper::MakeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback)
     {
-        if (conf::EnableMock) {
+        if (conf::EnableMock)
+        {
             shared_ptr<HttpRespone> res;
             ahttp::error_code ec;
             return callback(res, ec);
         }
+
+        return makeRequest(req, callback);
+    }
+
+    void BaseApiWrapper::MakeRequest(ApiRequest &req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback, bool noMock)
+    {
+        if (noMock) {
+            return makeRequest(req, callback);
+        }
+
+        return MakeRequest(req, callback);
+    }
+
+    void BaseApiWrapper::makeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback)
+    {
+        
 
         auto args = req.args;
         auto method = req.method;
