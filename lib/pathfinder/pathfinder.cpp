@@ -49,4 +49,12 @@ namespace Pathfinder
 		// 1. 在负权图中计算路径
 		// 2. 返回下一步交易路径
 	}
+
+	int Pathfinder::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
+	{
+		// 获取负权图中价格
+		resp.FromPrice = 0;
+		resp.ToPrice = 0;
+		return 0;
+	}
 }

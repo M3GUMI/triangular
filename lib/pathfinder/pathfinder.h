@@ -50,15 +50,15 @@ namespace Pathfinder
 		void depthDataHandler(WebsocketWrapper::DepthData& data); // 接收depth数据处理
 
 	public:
-		Pathfinder(); 
-		~Pathfinder(); 
+		Pathfinder();
+		~Pathfinder();
 
-		void SubscribeArbitrage(function<void(TransactionPath &path)> handler); // 订阅套利机会推送
-		int RevisePath(RevisePathReq req, TransactionPath& resp);				// 路径修正
-		int GetExchangePrice(GetExchangePriceReq& req, GetExchangePriceResp& resp);				// 路径修正
+		void SubscribeArbitrage(function<void(TransactionPath &path)> handler);		// 订阅套利机会推送
+		int RevisePath(RevisePathReq req, TransactionPath &resp);					// 路径修正
+		int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
 	};
 
-    extern Pathfinder* pathfinder;
-    void Init();
-    Pathfinder& GetPathfinder();
+	extern Pathfinder *pathfinder;
+	void Init();
+	Pathfinder &GetPathfinder();
 }
