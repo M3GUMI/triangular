@@ -1,3 +1,4 @@
+#include "client.h"
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include "openssl/hmac.h"
@@ -148,8 +149,7 @@ namespace HttpWrapper
             query = toURI(args);
             if (need_sign)
             {
-                // todo 奇怪依赖问题
-                // args["signature"] = this->hmac(secretKey, query, EVP_sha256(), Strings::hex_to_string);
+                args["signature"] = this->hmac(secretKey, query, EVP_sha256(), Strings::hex_to_string);
                 query = toURI(args);
             }
         }
@@ -167,7 +167,7 @@ namespace HttpWrapper
         HMAC(evp, key.data(), int(key.size()),
              (unsigned char *)data.data(), data.size(),
              mac, &mac_length);
-
+             
         // openssl 1.0.2k
         // HMAC_CTX ctx;
         // HMAC_CTX_new(&ctx);

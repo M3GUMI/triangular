@@ -1,6 +1,7 @@
 cc_library(
     name = "http",
     hdrs = [
+        "client.h",
         "base_api_wrapper.h",
         "binance_api_wrapper.h",
     ],
@@ -15,7 +16,7 @@ cc_library(
         "--std=c++11",
         "-lssl",
         "-lcrypto",
-        "-DASIO_STANDALONE"
+        "-DASIO_STANDALONE",
     ],
     deps = [
         "//lib/ahttp:ahttp",
