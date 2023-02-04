@@ -38,8 +38,8 @@ namespace Pathfinder
 
 	struct GetExchangePriceResp
 	{
-		string FromPrice;
-		string ToPrice;
+		double FromPrice;
+		double ToPrice;
 	};
 
 	class Pathfinder
@@ -57,4 +57,8 @@ namespace Pathfinder
 		int RevisePath(RevisePathReq req, TransactionPath& resp);				// 路径修正
 		int GetExchangePrice(GetExchangePriceReq& req, GetExchangePriceResp& resp);				// 路径修正
 	};
+
+    extern Pathfinder* pathfinder;
+    void Init();
+    Pathfinder& GetPathfinder();
 }

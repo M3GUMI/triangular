@@ -10,7 +10,7 @@
 std::stringstream ss;
 namespace Arbitrage
 {
-	TriangularArbitrage::TriangularArbitrage(Pathfinder::Pathfinder &pathfinder) : pathfinder(pathfinder)
+	TriangularArbitrage::TriangularArbitrage()
 	{
 	}
 
@@ -24,7 +24,6 @@ namespace Arbitrage
 		Pathfinder::TransactionPathItem firstPath = path.Path[0];
 		CapitalPool::GetCapitalPool().LockAsset(firstPath.FromToken, firstPath.FromQuantity);
 
-		this->OriginToken = firstPath.FromToken;
 		this->OriginQuantity = firstPath.FromQuantity;
 		this->TargetToken = firstPath.FromToken;
 		ExecuteTrans(firstPath);
@@ -104,7 +103,7 @@ namespace Arbitrage
 		req.End = this->TargetToken;
 		req.PositionQuantity = data.ExecuteQuantity * data.ExecutePrice;
 
-		auto err = this->pathfinder.RevisePath(req, resp);
+		auto err = Pathfinder::GetPathfinder().RevisePath(req, resp);
 		if (err > 0)
 		{
 			return err;
@@ -137,7 +136,7 @@ namespace Arbitrage
 			req.End = this->TargetToken;
 			req.PositionQuantity = data.OriginQuantity - data.ExecuteQuantity;
 
-			auto err = this->pathfinder.RevisePath(req, resp);
+			auto err = Pathfinder::GetPathfinder().RevisePath(req, resp);
 			if (err > 0)
 			{
 				return err;

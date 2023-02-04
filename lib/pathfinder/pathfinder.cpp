@@ -4,6 +4,21 @@
 using namespace std;
 namespace Pathfinder
 {
+    Pathfinder* pathfinder;
+
+    void Init() {
+		auto data = Pathfinder();
+		pathfinder = &data;
+	}
+
+	Pathfinder& GetPathfinder() {
+		if (pathfinder == NULL) {
+			Init();
+		}
+
+		return *pathfinder;
+	}
+
 	Pathfinder::Pathfinder()
 	{
 		API::GetBinanceDepthWrapper().SubscribeDepth(bind(&Pathfinder::depthDataHandler, this, placeholders::_1));

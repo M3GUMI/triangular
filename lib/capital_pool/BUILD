@@ -17,6 +17,7 @@ cc_library(
     ],
     deps = [
         "//lib/api:api",
+        "//lib/pathfinder:pathfinder",
         "//utils:utils",
     ],
     visibility = ["//visibility:public"],

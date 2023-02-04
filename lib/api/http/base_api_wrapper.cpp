@@ -106,6 +106,7 @@ namespace HttpWrapper
         if (conf::EnableMock) {
             shared_ptr<HttpRespone> res;
             ahttp::error_code ec;
+            sleep(500); // 延迟500ms成功
             return callback(res, ec);
         }
 

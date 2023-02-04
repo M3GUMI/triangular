@@ -1,5 +1,6 @@
 #include <functional>
 #include "utils/utils.h"
+#include "lib/pathfinder/pathfinder.h"
 #include "capital_pool.h"
 
 namespace CapitalPool
@@ -93,14 +94,23 @@ namespace CapitalPool
 
     int CapitalPool::tryRebalance(string fromToken, string toToken, double amount)
     {
+        Pathfinder::GetExchangePriceReq priceReq;
+        priceReq.FromToken = fromToken;
+        priceReq.ToToken = toToken;
+
+        Pathfinder::GetExchangePriceResp priceResp;
+        if (auto err = Pathfinder::GetPathfinder().GetExchangePrice(priceReq, priceResp); err > 0) {
+            return err;
+        }
+
         // todo ticketSize校验补充
         HttpWrapper::CreateOrderReq req;
         req.OrderId = GenerateId();
         req.FromToken = fromToken;
-        req.FromPrice = 0; // todo 算法层获取最新价格
+        req.FromPrice = priceResp.FromPrice;
         req.FromQuantity = amount;
         req.ToToken = toToken;
-        req.ToPrice = 0; // todo 算法层获取最新价格
+        req.ToPrice = priceResp.ToPrice;
         req.ToQuantity = req.FromPrice * req.FromQuantity;
         req.OrderType = define::LIMIT;
         req.TimeInForce = define::IOC;

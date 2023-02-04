@@ -30,19 +30,18 @@ namespace Arbitrage
 	class TriangularArbitrage
 	{
 	public:
-		TriangularArbitrage(Pathfinder::Pathfinder &pathfinder);
+		TriangularArbitrage();
 		~TriangularArbitrage();
 
 		int Run(Pathfinder::TransactionPath &path);
 		int ExecuteTrans(Pathfinder::TransactionPathItem &path);
 		void SubscribeFinish(function<void()> callback);
 	private:
-		Pathfinder::Pathfinder &pathfinder;
 		function<void()> subscriber = NULL;
 
-		string OriginToken; // 原始起点token
+		string OriginToken;	   // 原始起点token
 		double OriginQuantity; // 原始起点token数量
-		string TargetToken; // 目标token
+		string TargetToken;	   // 目标token
 
 		int Finish(int finalQuantiy);
 		void orderDataHandler(HttpWrapper::OrderData &orderData, int err);

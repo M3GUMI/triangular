@@ -8,9 +8,10 @@
 using namespace std;
 namespace Executor
 {
-	Executor::Executor(Pathfinder::Pathfinder &pathfinder) : pathfinder(pathfinder)
+	Executor::Executor()
 	{
-		this->pathfinder.SubscribeArbitrage(bind(&Executor::arbitragePathHandler, this, placeholders::_1));
+		auto pathfinder = Pathfinder::GetPathfinder();
+		pathfinder.SubscribeArbitrage(bind(&Executor::arbitragePathHandler, this, placeholders::_1));
 		return;
 	}
 
@@ -25,7 +26,7 @@ namespace Executor
 			return;
 		}
 
-		Arbitrage::TriangularArbitrage triangular(this->pathfinder);
+		Arbitrage::TriangularArbitrage triangular;
 		triangular.SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
 		triangular.Run(path);
 		lock = true;

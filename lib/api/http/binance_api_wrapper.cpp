@@ -107,7 +107,6 @@ namespace HttpWrapper
         auto symbol = token0 + token1;
         if (symbolMap.count(symbol) != 1)
         {
-            // todo 直接退出
             LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             BinanceSymbolData data;
             return data;
@@ -120,7 +119,6 @@ namespace HttpWrapper
     {
         if (symbolMap.count(symbol) != 1)
         {
-            // todo 直接退出
             LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             BinanceSymbolData data;
             return data;
@@ -134,7 +132,6 @@ namespace HttpWrapper
         auto symbol = token0 + token1;
         if (symbolMap.count(symbol) != 1)
         {
-            // todo 直接退出
             LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             return "";
         }
@@ -148,7 +145,6 @@ namespace HttpWrapper
         auto symbol = token0 + token1;
         if (symbolMap.count(symbol) != 1)
         {
-            // todo 直接退出
             LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             return define::INVALID_SIDE;
         }
