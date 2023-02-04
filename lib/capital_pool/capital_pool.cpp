@@ -38,10 +38,10 @@ namespace CapitalPool
             // 非初始稳定币，清仓
             if (not basePool.count(token))
             {
-                auto ec = tryRebalance(token, "USDT", freeAmount);
-                if (ec > 0)
+                auto err = tryRebalance(token, "USDT", freeAmount);
+                if (err > 0)
                 {
-                    // todo error日志处理
+                    LogError("func", "RebalancePool", "err", WrapErr(err));
                     return;
                 }
                 continue;
@@ -64,10 +64,10 @@ namespace CapitalPool
         // 交换两种token
         if (not addToken.empty() && not delToken.empty())
         {
-            auto ec = tryRebalance(delToken, addToken, balancePool[delToken] - basePool[delToken]);
-            if (ec > 0)
+            auto err = tryRebalance(delToken, addToken, balancePool[delToken] - basePool[delToken]);
+            if (err > 0)
             {
-                // todo error日志处理
+                LogError("func", "RebalancePool", "err", WrapErr(err));
                 return;
             }
         }
@@ -75,10 +75,10 @@ namespace CapitalPool
         // 多余token换为USDT
         if (addToken.empty() && not delToken.empty())
         {
-            auto ec = tryRebalance(delToken, "USDT", balancePool[delToken] - basePool[delToken]);
-            if (ec > 0)
+            auto err = tryRebalance(delToken, "USDT", balancePool[delToken] - basePool[delToken]);
+            if (err > 0)
             {
-                // todo error日志处理
+                LogError("func", "RebalancePool", "err", WrapErr(err));
                 return;
             }
         }
@@ -86,7 +86,8 @@ namespace CapitalPool
         // 需补充资金
         if (not addToken.empty() && delToken.empty())
         {
-            // todo 资金不足告警
+            LogError("func", "RebalancePool", "err", "need more asset");
+            return;
         }
     }
 
@@ -114,20 +115,20 @@ namespace CapitalPool
     int CapitalPool::LockAsset(string token, double amount)
     {
         if (locked) {
-            // todo error刷新中
-            return 1;
+            LogError("func", "LockAsset", "err", WrapErr(define::ErrorCapitalRefresh));
+            return define::ErrorCapitalRefresh;
         }
 
         if (not balancePool.count(token))
         {
-            // todo error资金不足
-            return 1;
+            LogError("func", "LockAsset", "err", WrapErr(define::ErrorInsufficientBalance));
+            return define::ErrorInsufficientBalance;
         }
 
         if (balancePool[token] < amount)
         {
-            // todo error资金不足
-            return 1;
+            LogError("func", "LockAsset", "err", WrapErr(define::ErrorInsufficientBalance));
+            return define::ErrorInsufficientBalance;
         }
 
         balancePool[token] = balancePool[token] - amount; 
@@ -138,8 +139,8 @@ namespace CapitalPool
     {
         if (locked)
         {
-            // todo error刷新中
-            return 1;
+            LogError("func", "LockAsset", "err", WrapErr(define::ErrorCapitalRefresh));
+            return define::ErrorCapitalRefresh;
         }
 
         if (balancePool.count(token))
@@ -164,7 +165,7 @@ namespace CapitalPool
     {
         if (err > 0)
         {
-            // todo error处理+重试
+            LogError("func", "refreshAccountHandler", "err", WrapErr(err));
             Refresh();
             return;
         }

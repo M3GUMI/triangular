@@ -23,6 +23,7 @@ namespace Arbitrage
 		LogInfo("func", "Run", "msg", "TriangularArbitrage start");
 		Pathfinder::TransactionPathItem firstPath = path.Path[0];
 		CapitalPool::GetCapitalPool().LockAsset(firstPath.FromToken, firstPath.FromQuantity);
+
 		this->OriginToken = firstPath.FromToken;
 		this->OriginQuantity = firstPath.FromQuantity;
 		this->TargetToken = firstPath.FromToken;

@@ -13,5 +13,6 @@ namespace define
         {ErrorEmptyResponse, "返回数据为空"},
 
         {ErrorInsufficientBalance, "账户余额不足"},
+        {ErrorCapitalRefresh, "资金池刷新中"},
     };
 }

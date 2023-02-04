@@ -16,5 +16,6 @@ namespace define
     const int ErrorHttpFail = 100;
     const int ErrorEmptyResponse = 101;
 
-    const int ErrorInsufficientBalance = 200;
+    const int ErrorInsufficientBalance = 200; // 账户资金不足
+    const int ErrorCapitalRefresh = 201; // 资金池锁定
 }
