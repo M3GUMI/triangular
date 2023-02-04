@@ -16,7 +16,8 @@ cc_library(
         "-DASIO_STANDALONE"
     ],
     deps = [
-        "//lib/api:api",
+        "//utils:utils",
+        "//lib/api/ws:ws",
     ],
     visibility = ["//visibility:public"],
 )

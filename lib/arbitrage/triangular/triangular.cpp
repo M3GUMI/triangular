@@ -3,14 +3,11 @@
 #include "triangular.h"
 #include "define/define.h"
 #include "utils/utils.h"
-#include "lib/pathfinder/pathfinder.h"
-#include "lib/capital_pool/capital_pool.h"
-#include "lib/api/api.h"
 
 std::stringstream ss;
 namespace Arbitrage
 {
-	TriangularArbitrage::TriangularArbitrage()
+	TriangularArbitrage::TriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool, HttpWrapper::BinanceApiWrapper &apiWrapper) : pathfinder(pathfinder), capitalPool(pool), apiWrapper(apiWrapper)
 	{
 	}
 
@@ -22,7 +19,7 @@ namespace Arbitrage
 	{
 		LogInfo("func", "Run", "msg", "TriangularArbitrage start");
 		Pathfinder::TransactionPathItem firstPath = path.Path[0];
-		CapitalPool::GetCapitalPool().LockAsset(firstPath.FromToken, firstPath.FromQuantity);
+		capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity);
 
 		this->OriginQuantity = firstPath.FromQuantity;
 		this->TargetToken = firstPath.FromToken;
@@ -33,7 +30,7 @@ namespace Arbitrage
 	int TriangularArbitrage::Finish(int finalQuantiy)
 	{
 		LogInfo("func", "Finish", "finalQuantity", to_string(finalQuantiy), "originQuantity", to_string(this->OriginQuantity));
-		CapitalPool::GetCapitalPool().Refresh();
+		capitalPool.Refresh();
 		this->subscriber();
 		return 0;
 	}
@@ -57,7 +54,7 @@ namespace Arbitrage
 		req.TimeInForce = define::IOC;
 		auto callback = bind(&TriangularArbitrage::orderDataHandler, this, placeholders::_1, placeholders::_2);
 
-		API::GetBinanceApiWrapper().CreateOrder(req, callback);
+		apiWrapper.CreateOrder(req, callback);
 	}
 
 	void TriangularArbitrage::orderDataHandler(HttpWrapper::OrderData &data, int createErr)
@@ -103,7 +100,7 @@ namespace Arbitrage
 		req.End = this->TargetToken;
 		req.PositionQuantity = data.ExecuteQuantity * data.ExecutePrice;
 
-		auto err = Pathfinder::GetPathfinder().RevisePath(req, resp);
+		auto err = pathfinder.RevisePath(req, resp);
 		if (err > 0)
 		{
 			return err;
@@ -123,7 +120,7 @@ namespace Arbitrage
 		if (define::IsStableCoin(data.FromToken))
 		{
 			// 稳定币持仓，等待rebalance
-			CapitalPool::GetCapitalPool().FreeAsset(data.FromToken, data.ExecuteQuantity);
+			capitalPool.FreeAsset(data.FromToken, data.ExecuteQuantity);
 			return 0;
 		}
 		else if (define::NotStableCoin(data.FromToken))
@@ -136,7 +133,7 @@ namespace Arbitrage
 			req.End = this->TargetToken;
 			req.PositionQuantity = data.OriginQuantity - data.ExecuteQuantity;
 
-			auto err = Pathfinder::GetPathfinder().RevisePath(req, resp);
+			auto err = pathfinder.RevisePath(req, resp);
 			if (err > 0)
 			{
 				return err;

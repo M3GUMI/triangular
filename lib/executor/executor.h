@@ -1,20 +1,25 @@
 #pragma once
-#include <string>
-#include <time.h>
+#include <functional>
+#include "utils/utils.h"
 #include "lib/arbitrage/triangular/triangular.h"
+#include "lib/pathfinder/pathfinder.h"
 
+using namespace std;
 namespace Executor
 {
-	class Executor
-	{
-	private:
-		bool lock; // 同时只执行一个套利任务
+  class Executor
+  {
+  private:
+    Pathfinder::Pathfinder &pathfinder;
+    CapitalPool::CapitalPool &capitalPool;
+    HttpWrapper::BinanceApiWrapper &apiWrapper;
 
-		void arbitragePathHandler(Pathfinder::TransactionPath &path);
-		void arbitrageFinishHandler();
+    bool lock; // 同时只执行一个套利任务
+    void arbitragePathHandler(Pathfinder::TransactionPath &path);
+    void arbitrageFinishHandler();
 
-	public:
-		Executor();
-		~Executor();
-	};
+  public:
+    Executor(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &capitalPool, HttpWrapper::BinanceApiWrapper &apiWrapper);
+    ~Executor();
+  };
 }

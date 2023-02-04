@@ -1,31 +1,21 @@
-#include <string>
 #include "pathfinder.h"
 
 using namespace std;
 namespace Pathfinder
 {
-    Pathfinder* pathfinder;
+    Pathfinder::Pathfinder(WebsocketWrapper::BinanceDepthWrapper &depthWrapper) : depthWrapper(depthWrapper)
+    {
+		depthWrapper.SubscribeDepth(bind(&Pathfinder::depthDataHandler, this, placeholders::_1));
+    }
 
-    void Init() {
-		auto data = Pathfinder();
-		pathfinder = &data;
-	}
+    Pathfinder::~Pathfinder()
+    {
+    }
 
-	Pathfinder& GetPathfinder() {
-		if (pathfinder == NULL) {
-			Init();
-		}
-
-		return *pathfinder;
-	}
-
-	Pathfinder::Pathfinder()
+    void Pathfinder::MockRun()
 	{
-		API::GetBinanceDepthWrapper().SubscribeDepth(bind(&Pathfinder::depthDataHandler, this, placeholders::_1));
-	}
-
-	Pathfinder::~Pathfinder()
-	{
+		TransactionPath path;
+		subscriber(path);
 	}
 
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData& data)

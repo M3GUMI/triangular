@@ -1,23 +1,18 @@
 #include <functional>
-#include "lib/arbitrage/triangular/triangular.h"
-#include "lib/pathfinder/pathfinder.h"
-#include "lib/arbitrage/triangular/triangular.h"
 #include "utils/utils.h"
 #include "executor.h"
 
 using namespace std;
 namespace Executor
 {
-	Executor::Executor()
+	Executor::Executor(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &capitalPool, HttpWrapper::BinanceApiWrapper &apiWrapper) : pathfinder(pathfinder), capitalPool(capitalPool), apiWrapper(apiWrapper)
 	{
-		auto pathfinder = Pathfinder::GetPathfinder();
-		pathfinder.SubscribeArbitrage(bind(&Executor::arbitragePathHandler, this, placeholders::_1));
-		return;
+		pathfinder.SubscribeArbitrage((bind(&Executor::arbitragePathHandler, this, placeholders::_1)));
 	}
 
 	Executor::~Executor()
-	{
-	}
+    {
+    }
 
 	void Executor::arbitragePathHandler(Pathfinder::TransactionPath& path)
 	{
@@ -26,7 +21,7 @@ namespace Executor
 			return;
 		}
 
-		Arbitrage::TriangularArbitrage triangular;
+		Arbitrage::TriangularArbitrage triangular(pathfinder, capitalPool, apiWrapper);
 		triangular.SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
 		triangular.Run(path);
 		lock = true;

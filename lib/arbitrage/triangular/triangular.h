@@ -3,6 +3,8 @@
 #include <map>
 #include <set>
 #include "lib/pathfinder/pathfinder.h"
+#include "lib/capital_pool/capital_pool.h"
+#include "lib/api/http/binance_api_wrapper.h"
 #include "define/define.h"
 
 using namespace std;
@@ -30,7 +32,7 @@ namespace Arbitrage
 	class TriangularArbitrage
 	{
 	public:
-		TriangularArbitrage();
+		TriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool, HttpWrapper::BinanceApiWrapper &apiWrapper);
 		~TriangularArbitrage();
 
 		int Run(Pathfinder::TransactionPath &path);
@@ -38,6 +40,9 @@ namespace Arbitrage
 		void SubscribeFinish(function<void()> callback);
 	private:
 		function<void()> subscriber = NULL;
+		Pathfinder::Pathfinder &pathfinder;
+		CapitalPool::CapitalPool &capitalPool;
+		HttpWrapper::BinanceApiWrapper &apiWrapper;
 
 		string OriginToken;	   // 原始起点token
 		double OriginQuantity; // 原始起点token数量

@@ -181,7 +181,7 @@ namespace HttpWrapper
             data.Free = 100;
             data.Locked = 0;
             info.Balances.push_back(data);
-            LogInfo("func", "GetAccountInfo", "msg", "request success");
+            LogInfo("func", "GetAccountInfo", "msg", "success");
             return callback(info, 0);
         }
 
