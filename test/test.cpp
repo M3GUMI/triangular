@@ -1,47 +1,25 @@
-#include <map>
-#include <iostream>
-#include <sys/timeb.h>
-#include "lib/api/http/binance_api_wrapper.h"
-#include "lib/api/ws/binance_depth_wrapper.h"
-#include "lib/api/ws/binance_order_wrapper.h"
-#include "lib/executor/executor.h"
+#include "lib/triangular/triangular.h"
 
 using namespace std;
 int main()
 {
-    websocketpp::lib::asio::io_service ioService;
-    HttpWrapper::BinanceApiWrapper apiWrapper(ioService);
-    WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
+    Triangular::Triangular triangular;
+    triangular.AddDepthSubscirbe("btcusdt", false);
+    triangular.AddDepthSubscirbe("ethusdt", false);
+    triangular.AddDepthSubscirbe("ethbtc", false);
 
-    Pathfinder::Pathfinder pathfinder(ioService, apiWrapper);
+    triangular.AddDepthSubscirbe("xrpbtc", false);
+    triangular.AddDepthSubscirbe("xrpusdt", false);
+    triangular.AddDepthSubscirbe("xrpeth", true);
 
-    apiWrapper.InitBinanceSymbol();
-    // CapitalPool::CapitalPool capitalPool(pathfinder, apiWrapper);
-    // Executor::Executor executor(pathfinder, capitalPool, apiWrapper);
+    triangular.AddDepthSubscirbe("ltcbtc", false);
+    triangular.AddDepthSubscirbe("ltcusdt", true);
+    triangular.AddDepthSubscirbe("ltceth", false);
 
-    // pathfinder.MockRun();
-    ioService.run();
+    triangular.AddDepthSubscirbe("maticbtc", false);
+    triangular.AddDepthSubscirbe("maticusdt", true);
+    triangular.AddDepthSubscirbe("maticeth", false);
 
-    // Triangular::Triangular triangular;
-    // triangular.AddDepthSubscirbe("btcusdt", false);
-    // triangular.AddDepthSubscirbe("ethusdt", false);
-    // triangular.AddDepthSubscirbe("ethbtc", false);
-
-    // triangular.AddDepthSubscirbe("xrpbtc", false);
-    // triangular.AddDepthSubscirbe("xrpusdt", false);
-    // triangular.AddDepthSubscirbe("xrpeth", true);
-
-    // triangular.AddDepthSubscirbe("ltcbtc", false);
-    // triangular.AddDepthSubscirbe("ltcusdt", true);
-    // triangular.AddDepthSubscirbe("ltceth", false);
-
-    // triangular.AddDepthSubscirbe("maticbtc", false);
-    // triangular.AddDepthSubscirbe("maticusdt", true);
-    // triangular.AddDepthSubscirbe("maticeth", false);
-
-    // triangular.run();
-    // client.Connect("wss://ws-api.binance.com/ws-api/v3");
-    // uint64_t num = uint64_t(time(NULL) << 32 | rand );
-    // std::cout << num << endl;
+    triangular.run();
     return 0;
 }

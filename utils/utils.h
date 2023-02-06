@@ -12,6 +12,9 @@ uint64_t GetNowTime();
 unsigned long getRand();
 string GenerateId();
 
+string toLower(const string &str);
+string toUpper(const string &str);
+
 string WrapErr(int err);
 void LogDebug(string arg1, string arg2, string arg3, string arg4);
 void LogInfo(string arg1, string arg2, string arg3, string arg4);

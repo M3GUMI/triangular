@@ -54,7 +54,7 @@ namespace WebsocketWrapper
         // todo ping timer
         // ping_timer = std::make_shared<websocketpp::lib::asio::steady_timer>(*_ios, websocketpp::lib::asio::milliseconds(10000));
         // ping_timer->async_wait(websocketpp::lib::bind(&BaseExchange::on_ping_timer, this, websocketpp::lib::placeholders::_1));
-        hdl = hdl;
+        this->hdl = hdl;
         send(sendMsg);
     }
 

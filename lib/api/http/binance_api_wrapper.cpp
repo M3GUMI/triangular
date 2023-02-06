@@ -103,10 +103,10 @@ namespace HttpWrapper
 
     BinanceSymbolData& BinanceApiWrapper::GetSymbolData(std::string token0, std::string token1)
     {
-        auto symbol = token0 + token1;
+        auto symbol = toUpper(token0 + token1);
         if (symbolMap.count(symbol) != 1)
         {
-            LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
+            LogError("func", "GetSymbolData", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             BinanceSymbolData data;
             return data;
         }
@@ -116,9 +116,9 @@ namespace HttpWrapper
 
     BinanceSymbolData& BinanceApiWrapper::GetSymbolData(std::string symbol)
     {
-        if (symbolMap.count(symbol) != 1)
+        if (symbolMap.count(toUpper(symbol)) != 1)
         {
-            LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
+            LogError("func", "GetSymbolData", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             BinanceSymbolData data;
             return data;
         }
@@ -128,10 +128,10 @@ namespace HttpWrapper
 
     string BinanceApiWrapper::GetSymbol(std::string token0, std::string token1)
     {
-        auto symbol = token0 + token1;
+        auto symbol = toUpper(token0 + token1);
         if (symbolMap.count(symbol) != 1)
         {
-            LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
+            LogError("func", "GetSymbol", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             return "";
         }
 
@@ -141,10 +141,10 @@ namespace HttpWrapper
 
     define::OrderSide BinanceApiWrapper::GetSide(std::string token0, std::string token1)
     {
-        auto symbol = token0 + token1;
+        auto symbol = toUpper(token0 + token1);
         if (symbolMap.count(symbol) != 1)
         {
-            LogError("func", "CreateOrder", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
+            LogError("func", "GetSide", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
             return define::INVALID_SIDE;
         }
 

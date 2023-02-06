@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cctype>
+#include <algorithm>
 #include <sstream>
 #include <string>
 #include <chrono>
@@ -44,6 +46,20 @@ string GenerateId()
 	stream << longOrderId;
 	stream >> result;
 	return result;
+}
+
+string toLower(const string &str)
+{
+	string s = str;
+	transform(s.begin(), s.end(), s.begin(), ::tolower);
+	return s;
+}
+
+string toUpper(const string &str)
+{
+	string s = str;
+	transform(s.begin(), s.end(), s.begin(), ::toupper);
+	return s;
 }
 
 void LogDebug(string arg1, string arg2, string arg3, string arg4) {

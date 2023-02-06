@@ -15,7 +15,7 @@ namespace Pathfinder
 
 	void Pathfinder::symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data)
 	{
-		LogDebug("func", "LoadDepth", "msg", "init depth websocket");
+		LogDebug("func", "symbolReadyHandler", "msg", "init depth websocket");
 
 		auto succNum = 0, failNum = 0;
 		for (auto item : data)
@@ -40,7 +40,7 @@ namespace Pathfinder
 			}
 		}
 
-		LogInfo("func", "LoadDepth", "success_num", to_string(succNum - failNum), "fail_num", to_string(failNum));
+		LogInfo("func", "symbolReadyHandler", "success_num", to_string(succNum - failNum), "fail_num", to_string(failNum));
 	}
 
 	void Pathfinder::MockRun()

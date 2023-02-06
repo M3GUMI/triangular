@@ -1,7 +1,7 @@
 cc_binary(
-    name = "test",
+    name = "src",
     srcs = [
-        "test.cpp"
+        "src.cpp"
     ],
     includes = ["."],
     linkopts = [
@@ -12,6 +12,8 @@ cc_binary(
         "-lcrypto",
     ],
     deps = [
-        "//lib/triangular:triangular",
+        "//lib/executor:executor",
+        "//lib/api/http:http",
+        "//lib/api/ws:ws",
     ],
 )

@@ -1,4 +1,4 @@
-bazel build test:test
+bazel build src:src
 
 #rm -f build
 #mkdir build
