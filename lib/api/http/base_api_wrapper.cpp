@@ -145,15 +145,10 @@ namespace HttpWrapper
             whole_uri = uri + "?" + query;
         }
 
-        // todo 日志整合
-        LogDebug("func", "MakeRequest", "uri", whole_uri);
-        LogDebug("method", method, "data", data);
-
         auto httpRequest = HttpRequest::make_request(method, whole_uri, data);
         httpRequest->Header = header;
         hclientPtr->Do(httpRequest, callback);
-
-        LogDebug("func", "MakeRequest", "msg", "send request success");
+        LogDebug("func", "MakeRequest", "uri", whole_uri, "method", method, "data", data);
     }
 
     std::map<std::string, std::string> BaseApiWrapper::sign(std::map<std::string, std::string> &args, std::string &query, bool need_sign)

@@ -17,6 +17,7 @@ cc_library(
     ],
     deps = [
         "//utils:utils",
+        "//conf:conf",
         "//lib/api/ws:ws",
     ],
     visibility = ["//visibility:public"],

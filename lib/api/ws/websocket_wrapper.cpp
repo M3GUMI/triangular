@@ -67,6 +67,5 @@ namespace WebsocketWrapper
 
         websocketpp::lib::error_code ec;
         client.send(hdl, data, websocketpp::frame::opcode::text, ec);
-        std::cout << "send info " << data << std::endl;
     }
 }

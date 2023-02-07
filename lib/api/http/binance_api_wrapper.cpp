@@ -17,15 +17,13 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::InitBinanceSymbol()
     {
-        LogDebug("func", "InitBinanceSymbol", "msg", "start");
-
         ApiRequest req;
         req.args = {};
         req.method = "GET";
         req.uri = "https://api.binance.com/api/v3/exchangeInfo";
         req.data = "";
         req.sign = false;
-        MakeRequest(req, bind(&BinanceApiWrapper::initBinanceSymbolCallback, this, placeholders::_1, placeholders::_2));
+        MakeRequest(req, bind(&BinanceApiWrapper::initBinanceSymbolCallback, this, placeholders::_1, placeholders::_2), true);
     }
 
     void BinanceApiWrapper::SubscribeSymbolReady(function<void(map<string, BinanceSymbolData> &data)> callback)
@@ -94,7 +92,7 @@ namespace HttpWrapper
             baseCoins.insert(quoteAsset);
         }
 
-        LogDebug("func", "InitBinanceSymbol", "msg", "load symbol data success");
+        LogInfo("func", "InitBinanceSymbol", "msg", "load symbol data success");
         for (auto func : this->symbolReadySubscriber)
         {
             func(symbolMap);
@@ -166,7 +164,6 @@ namespace HttpWrapper
         req.sign = true;
         auto apiCallback = bind(&BinanceApiWrapper::accountInfoHandler, this, ::_1, ::_2, callback);
 
-        LogInfo("func", "GetAccountInfo", "msg", "start execute");
         this->MakeRequest(req, apiCallback);
         return 0;
     }
@@ -177,10 +174,10 @@ namespace HttpWrapper
         if (conf::EnableMock) {
             BalanceData data;
             data.Token = "USDT";
-            data.Free = 100;
+            data.Free = 2000;
             data.Locked = 0;
             info.Balances.push_back(data);
-            LogInfo("func", "GetAccountInfo", "msg", "success");
+            LogInfo("func", "GetAccountInfo", "msg", "mock account_info");
             return callback(info, 0);
         }
 
@@ -211,7 +208,7 @@ namespace HttpWrapper
             info.Balances.push_back(data);
         }
 
-        LogInfo("func", "GetAccountInfo", "msg", "request success");
+        LogInfo("func", "GetAccountInfo", "msg", "get account_info success");
         return callback(info, 0);
     }
 
@@ -283,6 +280,7 @@ namespace HttpWrapper
             data.ExecutePrice = req.FromPrice;
             data.ExecuteQuantity = req.FromQuantity;
             data.OriginQuantity = req.FromQuantity;
+            LogInfo("func", "createOrderCallback", "msg", "mock data");
             return callback(data, 0);
         }
 

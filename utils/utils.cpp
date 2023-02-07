@@ -71,6 +71,19 @@ void LogDebug(string arg1, string arg2, string arg3, string arg4) {
 	log("[Debug]", args);
 }
 
+void LogDebug(string arg1, string arg2, string arg3, string arg4, string arg5, string arg6, string arg7, string arg8) {
+	vector<string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	args.push_back(arg3);
+	args.push_back(arg4);
+	args.push_back(arg5);
+	args.push_back(arg6);
+	args.push_back(arg7);
+	args.push_back(arg8);
+	log("[Debug]", args);
+}
+
 void LogInfo(string arg1, string arg2, string arg3, string arg4) {
 	vector<string> args;
 	args.push_back(arg1);
@@ -115,6 +128,7 @@ void log(string level, vector<string> args)
 {
 	bool first = true;
 	bool isVal = false;
+	cout << level;
 	for (auto arg : args)
 	{
 		if (!isVal)

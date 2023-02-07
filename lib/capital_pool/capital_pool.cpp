@@ -180,6 +180,7 @@ namespace CapitalPool
         }
 
         locked = false;
+        LogInfo("func", "refreshAccountHandler", "msg", "refresh account success");
         return;
     }
 }

@@ -45,20 +45,21 @@ namespace Pathfinder
     class Pathfinder
     {
     private:
+		TransactionPath mockPath;
+
 		function<void(TransactionPath &path)> subscriber = NULL;
 		HttpWrapper::BinanceApiWrapper &apiWrapper;
 		websocketpp::lib::asio::io_service &ioService;
 
 		void symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data); // symbol数据就绪
-		void depthDataHandler(WebsocketWrapper::DepthData& data);                   // 接收depth数据处理
-    public:
-        Pathfinder(websocketpp::lib::asio::io_service &ioService, HttpWrapper::BinanceApiWrapper &apiWrapper);
-        ~Pathfinder();
+		void depthDataHandler(WebsocketWrapper::DepthData &data);					// 接收depth数据处理
+		void loadMockPath();														// mock执行
+	public:
+		Pathfinder(websocketpp::lib::asio::io_service &ioService, HttpWrapper::BinanceApiWrapper &apiWrapper);
+		~Pathfinder();
 
 		void SubscribeArbitrage(function<void(TransactionPath &path)> handler);		// 订阅套利机会推送
 		int RevisePath(RevisePathReq req, TransactionPath &resp);					// 路径修正
 		int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
-
-		void MockRun(); // 临时mock找到链路
-    };
+	};
 }

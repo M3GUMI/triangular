@@ -12,12 +12,11 @@ int main()
     websocketpp::lib::asio::io_service ioService;
     HttpWrapper::BinanceApiWrapper apiWrapper(ioService);
     WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
-
     Pathfinder::Pathfinder pathfinder(ioService, apiWrapper);
 
     apiWrapper.InitBinanceSymbol();
-    // CapitalPool::CapitalPool capitalPool(pathfinder, apiWrapper);
-    // Executor::Executor executor(pathfinder, capitalPool, apiWrapper);
+    CapitalPool::CapitalPool capitalPool(pathfinder, apiWrapper);
+    Executor::Executor executor(pathfinder, capitalPool, apiWrapper);
 
     // pathfinder.MockRun();
     ioService.run();

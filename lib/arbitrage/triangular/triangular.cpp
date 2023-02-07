@@ -19,7 +19,9 @@ namespace Arbitrage
 	{
 		LogInfo("func", "Run", "msg", "TriangularArbitrage start");
 		Pathfinder::TransactionPathItem firstPath = path.Path[0];
-		capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity);
+		if (auto err = capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity); err > 0) {
+			return err;
+		}
 
 		this->OriginQuantity = firstPath.FromQuantity;
 		this->TargetToken = firstPath.FromToken;
@@ -54,6 +56,8 @@ namespace Arbitrage
 		req.TimeInForce = define::IOC;
 		auto callback = bind(&TriangularArbitrage::orderDataHandler, this, placeholders::_1, placeholders::_2);
 
+		LogInfo("func", "ExecuteTrans", "from", path.FromToken, "to", path.ToToken);
+		LogInfo("price", to_string(path.FromPrice), "quantity", to_string(path.FromQuantity));
 		apiWrapper.CreateOrder(req, callback);
 	}
 
