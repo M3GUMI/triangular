@@ -2,9 +2,11 @@ cc_library(
     name = "triangular_arbitrage",
     hdrs = [
         "triangular.h",
+        "ioc_triangular.h",
     ],
     srcs = [
         "triangular.cpp",
+        "ioc_triangular.cpp",
     ],
     includes = ["."],
     linkopts = [

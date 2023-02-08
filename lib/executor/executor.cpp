@@ -1,5 +1,6 @@
 #include <functional>
 #include "utils/utils.h"
+#include "lib/arbitrage/triangular/ioc_triangular.h"
 #include "executor.h"
 
 using namespace std;
@@ -21,9 +22,9 @@ namespace Executor
 			return;
 		}
 
-		Arbitrage::TriangularArbitrage triangular(pathfinder, capitalPool, apiWrapper);
-		triangular.SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
-		triangular.Run(path);
+		Arbitrage::IocTriangularArbitrage iocTriangular(pathfinder, capitalPool, apiWrapper);
+		iocTriangular.SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
+		iocTriangular.Run(path);
 		lock = true;
 	}
 

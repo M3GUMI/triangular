@@ -35,22 +35,22 @@ namespace Arbitrage
 		TriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool, HttpWrapper::BinanceApiWrapper &apiWrapper);
 		~TriangularArbitrage();
 
-		int Run(Pathfinder::TransactionPath &path);
-		int ExecuteTrans(Pathfinder::TransactionPathItem &path);
-		void SubscribeFinish(function<void()> callback);
-	private:
-		function<void()> subscriber = NULL;
-		Pathfinder::Pathfinder &pathfinder;
-		CapitalPool::CapitalPool &capitalPool;
-		HttpWrapper::BinanceApiWrapper &apiWrapper;
-
 		string OriginToken;	   // 原始起点token
 		double OriginQuantity; // 原始起点token数量
 		string TargetToken;	   // 目标token
 
+		Pathfinder::Pathfinder &pathfinder;
+		CapitalPool::CapitalPool &capitalPool;
+
+		virtual int Run(Pathfinder::TransactionPath &path);
+		int ExecuteTrans(Pathfinder::TransactionPathItem &path, function<void(HttpWrapper::OrderData &data, int createErr)> callback);
+		void SubscribeFinish(function<void()> callback);
 		int Finish(int finalQuantiy);
-		void executeTransHandler(HttpWrapper::OrderData &orderData, int err);
-		int filledHandler(HttpWrapper::OrderData &data);
-		int partiallyFilledHandler(HttpWrapper::OrderData &data);
+
+	private:
+		function<void()> subscriber = NULL;
+		HttpWrapper::BinanceApiWrapper &apiWrapper;
+
+		virtual void ExecuteTransHandler(HttpWrapper::OrderData &orderData, int err);
 	};
 }
