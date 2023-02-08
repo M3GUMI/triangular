@@ -15,5 +15,6 @@ namespace define
         {ErrorCreateWebsocketFail, "create websocket client fail"},
         {ErrorInsufficientBalance, "account balance insufficient"},
         {ErrorCapitalRefresh, "refreshing capital_pool"},
+        {ErrorBalanceNumber, "number error balance_pool"},
     };
 }

@@ -49,7 +49,7 @@ namespace Arbitrage
 		string TargetToken;	   // 目标token
 
 		int Finish(int finalQuantiy);
-		void orderDataHandler(HttpWrapper::OrderData &orderData, int err);
+		void executeTransHandler(HttpWrapper::OrderData &orderData, int err);
 		int filledHandler(HttpWrapper::OrderData &data);
 		int partiallyFilledHandler(HttpWrapper::OrderData &data);
 	};

@@ -19,4 +19,5 @@ namespace define
     const int ErrorInsufficientBalance = 200; // 账户资金不足
     const int ErrorCapitalRefresh = 201; // 资金池锁定
     const int ErrorCreateWebsocketFail = 202; // 建立websocket连接失败
+    const int ErrorBalanceNumber = 203; // 资金池金额计算错误
 }

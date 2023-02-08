@@ -114,8 +114,8 @@ namespace Pathfinder
 	int Pathfinder::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
 	{
 		// 获取负权图中价格
-		resp.FromPrice = 0;
-		resp.ToPrice = 0;
+		resp.FromPrice = 1;
+		resp.ToPrice = 1;
 		return 0;
 	}
 }

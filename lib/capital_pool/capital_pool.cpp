@@ -1,17 +1,20 @@
 #include <functional>
 #include "utils/utils.h"
+#include "conf/conf.h"
 #include "capital_pool.h"
 
 namespace CapitalPool
 {
-    CapitalPool::CapitalPool(Pathfinder::Pathfinder pathfinder, HttpWrapper::BinanceApiWrapper api) : pathfinder(pathfinder), apiWrapper(api)
+    CapitalPool::CapitalPool(websocketpp::lib::asio::io_service &ioService, Pathfinder::Pathfinder &pathfinder, HttpWrapper::BinanceApiWrapper &api) : ioService(ioService), pathfinder(pathfinder), apiWrapper(api)
     {
-        vector<pair<string, double>> assets; // todo define获取
-        for (auto asset : assets)
+        vector<pair<string, double>> assets;
+        for (auto asset : conf::BaseAssets)
         {
             basePool[asset.first] = asset.second;
         }
 
+        // 交易对数据就绪，开始rebalance
+        apiWrapper.SubscribeSymbolReady(bind(&CapitalPool::RebalancePool, this, placeholders::_1));
         Refresh();
     }
 
@@ -19,8 +22,19 @@ namespace CapitalPool
     {
     }
 
-    void CapitalPool::RebalancePool()
+    void CapitalPool::RebalancePool(map<string, HttpWrapper::BinanceSymbolData> &data)
     {
+        // 每秒执行一次重平衡
+        rebalanceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
+        rebalanceTimer->async_wait(bind(&CapitalPool::RebalancePool, this, data));
+
+        if (locked)
+        {
+            // 刷新期间不执行
+            LogDebug("func", "RebalancePool", "msg", "refresh execute, ignore");
+            return;
+        }
+
         string addToken, delToken;
         double minPercent = 100, maxPercent = 0;
 
@@ -39,6 +53,16 @@ namespace CapitalPool
                     return;
                 }
                 continue;
+            }
+        }
+
+        for (const auto &item : basePool)
+        {
+            auto token = item.first;
+            double freeAmount = 0;
+            if (balancePool.count(token))
+            {
+                freeAmount = balancePool[token];
             }
 
             // 获取偏差比例最大的两种token
@@ -67,7 +91,7 @@ namespace CapitalPool
         }
 
         // 多余token换为USDT
-        if (addToken.empty() && not delToken.empty())
+        if (addToken.empty() && not delToken.empty() && delToken != "USDT")
         {
             auto err = tryRebalance(delToken, "USDT", balancePool[delToken] - basePool[delToken]);
             if (err > 0)
@@ -80,7 +104,7 @@ namespace CapitalPool
         // 需补充资金
         if (not addToken.empty() && delToken.empty())
         {
-            LogError("func", "RebalancePool", "err", "need more asset");
+            LogError("func", "RebalancePool", "err", "need more money");
             return;
         }
     }
@@ -113,6 +137,44 @@ namespace CapitalPool
 
     void CapitalPool::rebalanceHandler(HttpWrapper::OrderData &data)
     {
+        if (locked)
+        {
+            // 刷新期间不执行
+            LogDebug("func", "rebalanceHandler", "msg", "refresh execute, ignore");
+            return;
+        }
+
+        if (not balancePool.count(data.FromToken))
+        {
+            LogError("func", "rebalanceHandler", "err", WrapErr(ErrorBalanceNumber));
+            balancePool[data.FromToken] = 0;
+        }
+        else if (balancePool[data.FromToken] < data.ExecuteQuantity)
+        {
+            LogError("func", "rebalanceHandler", "err", WrapErr(ErrorBalanceNumber));
+            balancePool[data.FromToken] = 0;
+        }
+        else
+        {
+            balancePool[data.FromToken] = balancePool[data.FromToken] - data.ExecuteQuantity;
+        }
+
+        if (not balancePool.count(data.ToToken))
+        {
+            balancePool[data.ToToken] = data.ExecuteQuantity * data.ExecutePrice;
+        }
+        else
+        {
+            balancePool[data.ToToken] = balancePool[data.ToToken] + data.ExecuteQuantity * data.ExecutePrice;
+        }
+
+        // todo 临时这样打日志
+        cout << "[Info]RebalancePool: ";
+        for (auto item : balancePool)
+        {
+            cout << item.first << " " << to_string(item.second) << ", ";
+        }
+        cout << endl;
     }
 
     int CapitalPool::LockAsset(string token, double amount)
@@ -161,6 +223,7 @@ namespace CapitalPool
     int CapitalPool::Refresh()
     {
         locked = true;
+        // todo 取消所有订单
         apiWrapper.GetAccountInfo(bind(&CapitalPool::refreshAccountHandler, this, placeholders::_1, placeholders::_2));
     }
 

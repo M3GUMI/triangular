@@ -54,14 +54,14 @@ namespace Arbitrage
 		req.ToQuantity = path.ToQuantity;
 		req.OrderType = define::LIMIT;
 		req.TimeInForce = define::IOC;
-		auto callback = bind(&TriangularArbitrage::orderDataHandler, this, placeholders::_1, placeholders::_2);
+		auto callback = bind(&TriangularArbitrage::executeTransHandler, this, placeholders::_1, placeholders::_2);
 
 		LogInfo("func", "ExecuteTrans", "from", path.FromToken, "to", path.ToToken);
 		LogInfo("price", to_string(path.FromPrice), "quantity", to_string(path.FromQuantity));
 		apiWrapper.CreateOrder(req, callback);
 	}
 
-	void TriangularArbitrage::orderDataHandler(HttpWrapper::OrderData &data, int createErr)
+	void TriangularArbitrage::executeTransHandler(HttpWrapper::OrderData &data, int createErr)
 	{
 		if (createErr > 0)
 		{
