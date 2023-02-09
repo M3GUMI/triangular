@@ -1,5 +1,6 @@
 #include <functional>
 #include "utils/utils.h"
+#include "lib/arbitrage/triangular/ioc_triangular.h"
 #include "executor.h"
 
 using namespace std;
@@ -11,19 +12,24 @@ namespace Executor
 	}
 
 	Executor::~Executor()
-    {
-    }
-
-	void Executor::arbitragePathHandler(Pathfinder::TransactionPath& path)
 	{
-		if (lock) {
+	}
+
+	void Executor::arbitragePathHandler(Pathfinder::TransactionPath &path)
+	{
+		if (lock)
+		{
 			LogDebug("func", "arbitragePathHandler", "msg", "arbitrage executing, ignore path");
 			return;
 		}
 
-		Arbitrage::TriangularArbitrage triangular(pathfinder, capitalPool, apiWrapper);
-		triangular.SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
-		triangular.Run(path);
+		Arbitrage::IocTriangularArbitrage iocTriangular(pathfinder, capitalPool, apiWrapper);
+		// todo 需要增加套利任务结束，清除subscribe
+		iocTriangular.SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
+		if (auto err = iocTriangular.Run(path); err > 0) {
+			return;
+		}
+
 		lock = true;
 	}
 

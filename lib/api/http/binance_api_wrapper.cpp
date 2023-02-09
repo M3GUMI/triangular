@@ -177,7 +177,7 @@ namespace HttpWrapper
             data.Free = 2000;
             data.Locked = 0;
             info.Balances.push_back(data);
-            LogInfo("func", "GetAccountInfo", "msg", "mock account_info");
+            LogDebug("func", "GetAccountInfo", "msg", "mock account_info");
             return callback(info, 0);
         }
 
@@ -254,8 +254,8 @@ namespace HttpWrapper
             args["price"] = price;
         }
 
-        LogInfo("func", "CreateOrder", "msg", "start execute", "symbol", symbol);
-        LogInfo("side", to_string(side), "price", to_string(price), "quantity", to_string(quantity));
+        LogDebug("func", "CreateOrder", "msg", "start execute", "symbol", symbol);
+        LogDebug("side", to_string(side), "price", to_string(price), "quantity", to_string(quantity));
 
         ApiRequest apiReq;
         apiReq.args = args;
@@ -280,7 +280,7 @@ namespace HttpWrapper
             data.ExecutePrice = req.FromPrice;
             data.ExecuteQuantity = req.FromQuantity;
             data.OriginQuantity = req.FromQuantity;
-            LogInfo("func", "createOrderCallback", "msg", "mock data");
+            LogDebug("func", "createOrderCallback", "msg", "mock data");
             return callback(data, 0);
         }
 

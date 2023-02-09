@@ -63,6 +63,10 @@ string toUpper(const string &str)
 }
 
 void LogDebug(string arg1, string arg2, string arg3, string arg4) {
+	if (conf::LogLevel < 3) {
+		return;
+	}
+
 	vector<string> args;
 	args.push_back(arg1);
 	args.push_back(arg2);
@@ -71,7 +75,27 @@ void LogDebug(string arg1, string arg2, string arg3, string arg4) {
 	log("[Debug]", args);
 }
 
+void LogDebug(string arg1, string arg2, string arg3, string arg4, string arg5, string arg6) {
+	if (conf::LogLevel < 3) {
+		return;
+	}
+
+	vector<string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	args.push_back(arg3);
+	args.push_back(arg4);
+	args.push_back(arg5);
+	args.push_back(arg6);
+	log("[Debug]", args);
+}
+
 void LogDebug(string arg1, string arg2, string arg3, string arg4, string arg5, string arg6, string arg7, string arg8) {
+	if (conf::LogLevel < 3)
+	{
+		return;
+	}
+
 	vector<string> args;
 	args.push_back(arg1);
 	args.push_back(arg2);
@@ -85,6 +109,11 @@ void LogDebug(string arg1, string arg2, string arg3, string arg4, string arg5, s
 }
 
 void LogInfo(string arg1, string arg2, string arg3, string arg4) {
+	if (conf::LogLevel < 2)
+	{
+		return;
+	}
+
 	vector<string> args;
 	args.push_back(arg1);
 	args.push_back(arg2);
@@ -94,6 +123,11 @@ void LogInfo(string arg1, string arg2, string arg3, string arg4) {
 }
 
 void LogInfo(string arg1, string arg2, string arg3, string arg4, string arg5, string arg6) {
+	if (conf::LogLevel < 2)
+	{
+		return;
+	}
+
 	vector<string> args;
 	args.push_back(arg1);
 	args.push_back(arg2);
@@ -105,6 +139,11 @@ void LogInfo(string arg1, string arg2, string arg3, string arg4, string arg5, st
 }
 
 void LogError(string arg1, string arg2, string arg3, string arg4) {
+	if (conf::LogLevel < 1)
+	{
+		return;
+	}
+
 	vector<string> args;
 	args.push_back(arg1);
 	args.push_back(arg2);
@@ -114,6 +153,11 @@ void LogError(string arg1, string arg2, string arg3, string arg4) {
 }
 
 void LogError(string arg1, string arg2, string arg3, string arg4, string arg5, string arg6) {
+	if (conf::LogLevel < 1)
+	{
+		return;
+	}
+
 	vector<string> args;
 	args.push_back(arg1);
 	args.push_back(arg2);
@@ -129,24 +173,22 @@ void log(string level, vector<string> args)
 	bool first = true;
 	bool isVal = false;
 	cout << level;
-	for (auto arg : args)
+	for (int i = 0; i < args.size(); i++)
 	{
-		if (!isVal)
+		if (i % 2 == 0)
 		{
-			if (!first)
-			{
-				cout << ", ";
-			}
-			isVal = true;
-			cout << arg << "=";
-		}
-		else
-		{
-			isVal = false;
-			cout << arg;
+			cout << args[i] << "=";
+			continue;
 		}
 
-		first = false;
+		if (i % 2 == 1)
+		{
+			cout << args[i];
+			if (i != (args.size() - 1)) {
+				cout << ", ";
+			}
+			continue;
+		}
 	}
 
 	cout << endl;

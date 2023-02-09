@@ -14,7 +14,7 @@ namespace WebsocketWrapper
 
     void BinanceOrderWrapper::SubscribeOrder(function<void(OrderData &req)> handler)
     {
-        this->subscriber = handler;
+        this->orderSubscriber.push_back(handler);
     }
 
     void BinanceOrderWrapper::Connect()
@@ -46,21 +46,19 @@ namespace WebsocketWrapper
 
         if (not msgInfoJson.HasMember("e"))
         {
-            // todo error处理
-            cout << __func__ << " " << __LINE__ << "unknown msg " << msg->get_payload().c_str() << endl;
+            LogError("func", "msgHandler", "err", WrapErr(ErrorInvalidResp));
             return;
         }
 
         std::string e = msgInfoJson.FindMember("e")->value.GetString();
 
-        if (e == "executionReport")
+        if (e != "executionReport")
         {
-            return executionReportHandler(msgInfoJson);
+            LogError("func", "msgHandler", "err", WrapErr(ErrorInvalidResp));
+            return;
         }
 
-        // todo error处理
-        cout << __func__ << " " << __LINE__ << "unkown msg type " << e << endl;
-        cout << __func__ << " " << __LINE__ << "[" << msg->get_payload().c_str() << "]" << endl;
+        return executionReportHandler(msgInfoJson);
     }
 
     void BinanceOrderWrapper::executionReportHandler(const rapidjson::Document &msg)
@@ -81,9 +79,6 @@ namespace WebsocketWrapper
         from = symbolData.BaseToken;
         to = symbolData.QuoteToken;
 
-        // todo 日志处理
-        cout << __func__ << " " << __LINE__ << " " << symbol << " ExecutionReportHandler " << side << " " << ori << " " << exced << endl;
-
         if (side == "BUY")
         {
             swap(from, to);
@@ -93,6 +88,10 @@ namespace WebsocketWrapper
         data.OrderId = apiWrapper.GetOrderId(clientOrderID);
         data.OrderStatus = status;
         data.UpdateTime = updateTime;
-        return this->subscriber(data);
+
+        for (auto func : this->orderSubscriber)
+        {
+            func(data);
+        }
     }
 }

@@ -25,7 +25,7 @@ namespace WebsocketWrapper
     {
     private:
         uint64_t lastUpdateId = 0;
-        function<void(DepthData &data)> subscriber = NULL;
+        vector<function<void(DepthData &data)>> depthSubscriber;
         HttpWrapper::BinanceApiWrapper &apiWrapper;
 
         void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string token0, string token1);

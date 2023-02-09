@@ -10,6 +10,9 @@ namespace WebsocketWrapper
 
     class WebsocketWrapper
     {
+    public:
+        int Connect(string uri, string msg, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler);
+
     private:
         // 连接配置
         string sendMsg;
@@ -24,14 +27,12 @@ namespace WebsocketWrapper
         void on_open(websocketpp::connection_hdl hdl);
         void send(const string &data);
 
-    public:
+    protected:
         // 连接
-        websocketpp::lib::asio::io_service& ioService;
+        websocketpp::lib::asio::io_service &ioService;
 
-        WebsocketWrapper(string hostname, string hostport, websocketpp::lib::asio::io_service& ioService);
+        WebsocketWrapper(string hostname, string hostport, websocketpp::lib::asio::io_service &ioService);
         ~WebsocketWrapper();
-
-        int Connect(string uri, string msg, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler);
     };
 
 }
