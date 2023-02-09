@@ -81,6 +81,12 @@ target_include_directories(MoneyTriangular
         PUBLIC
         .)
 
+set(TARGET_LOGGER spdlog)
+target_link_libraries(MoneyTriangular LINK_PUBLIC ${TARGET_LOGGER})
+add_subdirectory(
+        third-party/spdlog
+)
+
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
     target_include_directories(MoneyTriangular
