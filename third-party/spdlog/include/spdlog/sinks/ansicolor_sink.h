@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "third-party/spdlog/details/console_globals.h"
-#include "third-party/spdlog/details/null_mutex.h"
-#include "sink.h"
+#include <spdlog/details/console_globals.h>
+#include <spdlog/details/null_mutex.h>
+#include <spdlog/sinks/sink.h>
 #include <memory>
 #include <mutex>
 #include <string>

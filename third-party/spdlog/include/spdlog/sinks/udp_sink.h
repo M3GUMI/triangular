@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include "third-party/spdlog/common.h"
-#include "base_sink.h"
-#include "third-party/spdlog/details/null_mutex.h"
+#include <spdlog/common.h>
+#include <spdlog/sinks/base_sink.h>
+#include <spdlog/details/null_mutex.h>
 #ifdef _WIN32
 #    include <spdlog/details/udp_client-windows.h>
 #else
-#    include "third-party/spdlog/details/udp_client.h"
+#    include <spdlog/details/udp_client.h>
 #endif
 
 #include <mutex>

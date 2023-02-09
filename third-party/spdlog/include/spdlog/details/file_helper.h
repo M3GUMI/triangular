@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "third-party/spdlog/common.h"
+#include <spdlog/common.h>
 #include <tuple>
 
 namespace spdlog {

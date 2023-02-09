@@ -4,20 +4,20 @@
 #pragma once
 
 #ifndef SPDLOG_HEADER_ONLY
-#    include "registry.h"
+#    include <spdlog/details/registry.h>
 #endif
 
-#include "third-party/spdlog/common.h"
-#include "periodic_worker.h"
-#include "third-party/spdlog/logger.h"
-#include "third-party/spdlog/pattern_formatter.h"
+#include <spdlog/common.h>
+#include <spdlog/details/periodic_worker.h>
+#include <spdlog/logger.h>
+#include <spdlog/pattern_formatter.h>
 
 #ifndef SPDLOG_DISABLE_DEFAULT_LOGGER
 // support for the default stdout color logger
 #    ifdef _WIN32
 #        include <spdlog/sinks/wincolor_sink.h>
 #    else
-#        include "third-party/spdlog/sinks/ansicolor_sink.h"
+#        include <spdlog/sinks/ansicolor_sink.h>
 #    endif
 #endif // SPDLOG_DISABLE_DEFAULT_LOGGER
 

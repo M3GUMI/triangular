@@ -15,7 +15,7 @@
 #                define FMT_HEADER_ONLY
 #            endif
 #        endif
-#        include "third-party/spdlog/fmt/bundled/xchar.h"
+#        include <spdlog/fmt/bundled/xchar.h>
 #    else
 #        include <fmt/xchar.h>
 #    endif

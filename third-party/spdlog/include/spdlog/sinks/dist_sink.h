@@ -4,9 +4,9 @@
 #pragma once
 
 #include "base_sink.h"
-#include "third-party/spdlog/details/log_msg.h"
-#include "third-party/spdlog/details/null_mutex.h"
-#include "third-party/spdlog/pattern_formatter.h"
+#include <spdlog/details/log_msg.h>
+#include <spdlog/details/null_mutex.h>
+#include <spdlog/pattern_formatter.h>
 
 #include <algorithm>
 #include <memory>

@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "log_msg_buffer.h"
-#include "mpmc_blocking_q.h"
-#include "os.h"
+#include <spdlog/details/log_msg_buffer.h>
+#include <spdlog/details/mpmc_blocking_q.h>
+#include <spdlog/details/os.h>
 
 #include <chrono>
 #include <memory>

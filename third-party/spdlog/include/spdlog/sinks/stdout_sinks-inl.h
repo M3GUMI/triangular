@@ -4,11 +4,11 @@
 #pragma once
 
 #ifndef SPDLOG_HEADER_ONLY
-#    include "stdout_sinks.h"
+#    include <spdlog/sinks/stdout_sinks.h>
 #endif
 
-#include "third-party/spdlog/details/console_globals.h"
-#include "third-party/spdlog/pattern_formatter.h"
+#include <spdlog/details/console_globals.h>
+#include <spdlog/pattern_formatter.h>
 #include <memory>
 
 #ifdef _WIN32

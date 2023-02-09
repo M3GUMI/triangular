@@ -8,10 +8,10 @@
 // etc) Building and using requires Qt library.
 //
 
-#include "third-party/spdlog/common.h"
-#include "third-party/spdlog/details/log_msg.h"
-#include "third-party/spdlog/details/synchronous_factory.h"
-#include "base_sink.h"
+#include "spdlog/common.h"
+#include "spdlog/details/log_msg.h"
+#include "spdlog/details/synchronous_factory.h"
+#include "spdlog/sinks/base_sink.h"
 
 #include <QTextEdit>
 #include <QPlainTextEdit>
@@ -53,7 +53,7 @@ private:
     std::string meta_method_;
 };
 
-#include "third-party/spdlog/details/null_mutex.h"
+#include "spdlog/details/null_mutex.h"
 #include <mutex>
 using qt_sink_mt = qt_sink<std::mutex>;
 using qt_sink_st = qt_sink<spdlog::details::null_mutex>;

@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "third-party/spdlog/details/file_helper.h"
-#include "third-party/spdlog/details/null_mutex.h"
-#include "base_sink.h"
-#include "third-party/spdlog/details/synchronous_factory.h"
+#include <spdlog/details/file_helper.h>
+#include <spdlog/details/null_mutex.h>
+#include <spdlog/sinks/base_sink.h>
+#include <spdlog/details/synchronous_factory.h>
 
 #include <mutex>
 #include <string>

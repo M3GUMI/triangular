@@ -4,11 +4,11 @@
 #pragma once
 
 #ifndef SPDLOG_HEADER_ONLY
-#    include "spdlog.h"
+#    include <spdlog/spdlog.h>
 #endif
 
-#include "common.h"
-#include "pattern_formatter.h"
+#include <spdlog/common.h>
+#include <spdlog/pattern_formatter.h>
 
 namespace spdlog {
 

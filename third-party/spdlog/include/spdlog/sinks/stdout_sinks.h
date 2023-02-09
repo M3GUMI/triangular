@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "third-party/spdlog/details/console_globals.h"
-#include "third-party/spdlog/details/synchronous_factory.h"
-#include "sink.h"
+#include <spdlog/details/console_globals.h>
+#include <spdlog/details/synchronous_factory.h>
+#include <spdlog/sinks/sink.h>
 #include <cstdio>
 
 #ifdef _WIN32

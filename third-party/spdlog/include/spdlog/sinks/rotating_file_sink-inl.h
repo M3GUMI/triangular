@@ -4,14 +4,14 @@
 #pragma once
 
 #ifndef SPDLOG_HEADER_ONLY
-#    include "rotating_file_sink.h"
+#    include <spdlog/sinks/rotating_file_sink.h>
 #endif
 
-#include "third-party/spdlog/common.h"
+#include <spdlog/common.h>
 
-#include "third-party/spdlog/details/file_helper.h"
-#include "third-party/spdlog/details/null_mutex.h"
-#include "third-party/spdlog/fmt/fmt.h"
+#include <spdlog/details/file_helper.h>
+#include <spdlog/details/null_mutex.h>
+#include <spdlog/fmt/fmt.h>
 
 #include <cerrno>
 #include <chrono>

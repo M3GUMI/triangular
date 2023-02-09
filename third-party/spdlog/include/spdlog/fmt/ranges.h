@@ -15,7 +15,7 @@
 #                define FMT_HEADER_ONLY
 #            endif
 #        endif
-#        include "third-party/spdlog/fmt/bundled/ranges.h"
+#        include <spdlog/fmt/bundled/ranges.h>
 #    else
 #        include <fmt/ranges.h>
 #    endif

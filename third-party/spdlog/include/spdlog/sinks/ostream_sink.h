@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "third-party/spdlog/details/null_mutex.h"
-#include "base_sink.h"
+#include <spdlog/details/null_mutex.h>
+#include <spdlog/sinks/base_sink.h>
 
 #include <mutex>
 #include <ostream>
