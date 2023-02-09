@@ -1,7 +1,4 @@
-#include "iostream"
-#include <sstream>
 #include "triangular.h"
-#include "define/define.h"
 #include "utils/utils.h"
 
 namespace Arbitrage
@@ -14,9 +11,9 @@ namespace Arbitrage
 	{
 	}
 
-	int TriangularArbitrage::Finish(int finalQuantiy)
+	int TriangularArbitrage::Finish(int finalQuantity)
 	{
-		LogInfo("func", "Finish", "finalQuantity", to_string(finalQuantiy), "originQuantity", to_string(this->OriginQuantity));
+		LogInfo("func", "Finish", "finalQuantity", to_string(finalQuantity), "originQuantity", to_string(this->OriginQuantity));
 		capitalPool.Refresh();
 		this->subscriber();
 		return 0;

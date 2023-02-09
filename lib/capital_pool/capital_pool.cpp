@@ -22,7 +22,7 @@ namespace CapitalPool
     {
     }
 
-    // todo 重平衡逻辑有误，需要考虑maker执行中情况
+    // todo 重平衡最好改成maker，考虑maker执行中的锁定情况
     void CapitalPool::RebalancePool(map<string, HttpWrapper::BinanceSymbolData> &data)
     {
         // 每秒执行一次重平衡

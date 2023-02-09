@@ -37,6 +37,10 @@ set(ALL_FILES
         lib/api/ws/websocket_wrapper.h
         lib/arbitrage/triangular/triangular.cpp
         lib/arbitrage/triangular/triangular.h
+        lib/arbitrage/triangular/ioc_triangular.cpp
+        lib/arbitrage/triangular/ioc_triangular.cpp
+        lib/arbitrage/triangular/maker_triangular.cpp
+        lib/arbitrage/triangular/maker_triangular.h
         lib/binance/binancecommondef.h
         lib/binance/binancerestapiwrapper.cpp
         lib/binance/binancerestapiwrapper.h
