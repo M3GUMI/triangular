@@ -249,7 +249,7 @@ namespace CapitalPool
         }
 
         locked = false;
-        LogInfo("func", "refreshAccountHandler", "msg", "refresh account success");
+        spdlog::info("func: {}, msg: {}", "refreshAccountHandler", "refresh account success");
         return;
     }
 }

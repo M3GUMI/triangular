@@ -4,6 +4,8 @@
 #include "lib/api/http/binance_api_wrapper.h"
 #include "lib/pathfinder/pathfinder.h"
 
+#include "spdlog/spdlog.h"
+
 using namespace std;
 namespace CapitalPool
 {
