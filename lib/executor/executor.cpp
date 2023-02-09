@@ -24,8 +24,12 @@ namespace Executor
 		}
 
 		Arbitrage::IocTriangularArbitrage iocTriangular(pathfinder, capitalPool, apiWrapper);
+		// todo 需要增加套利任务结束，清除subscribe
 		iocTriangular.SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
-		iocTriangular.Run(path);
+		if (auto err = iocTriangular.Run(path); err > 0) {
+			return;
+		}
+
 		lock = true;
 	}
 

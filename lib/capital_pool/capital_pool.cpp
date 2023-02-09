@@ -22,6 +22,7 @@ namespace CapitalPool
     {
     }
 
+    // todo 重平衡逻辑有误，需要考虑maker执行中情况
     void CapitalPool::RebalancePool(map<string, HttpWrapper::BinanceSymbolData> &data)
     {
         // 每秒执行一次重平衡
@@ -120,7 +121,12 @@ namespace CapitalPool
             return err;
         }
 
-        // todo ticketSize校验补充
+        // ticketSize校验
+        auto data = this->apiWrapper.GetSymbolData(fromToken, toToken);
+        double ticketSize = (data.TicketSize == 0 ? 1 : data.TicketSize);
+        uint32_t tmp = amount / ticketSize;
+        amount = tmp * ticketSize;
+
         HttpWrapper::CreateOrderReq req;
         req.OrderId = GenerateId();
         req.FromToken = fromToken;

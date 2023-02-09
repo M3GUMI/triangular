@@ -17,6 +17,7 @@ cc_library(
     ],
     deps = [
         "//define:define",
+        "//conf:conf",
     ],
     visibility = ["//visibility:public"],
 )

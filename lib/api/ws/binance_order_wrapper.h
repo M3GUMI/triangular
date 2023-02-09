@@ -16,8 +16,8 @@ namespace WebsocketWrapper
     {
     private:
         string listenKey = "";
-		function<void(OrderData& data)> subscriber = NULL;
-        HttpWrapper::BinanceApiWrapper& apiWrapper;
+        vector<function<void(OrderData &data)>> orderSubscriber;
+        HttpWrapper::BinanceApiWrapper &apiWrapper;
 
         void createListenKeyHandler(string listenKey, int err);
         void keepListenKeyHandler();

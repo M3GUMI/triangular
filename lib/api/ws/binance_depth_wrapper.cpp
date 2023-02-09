@@ -16,7 +16,7 @@ namespace WebsocketWrapper
 
     void BinanceDepthWrapper::SubscribeDepth(function<void(DepthData& data)> handler)
     {
-        this->subscriber = handler;
+        this->depthSubscriber.push_back(handler);
     }
 
     int BinanceDepthWrapper::Connect(string token0, string token1)
@@ -89,6 +89,9 @@ namespace WebsocketWrapper
             data.Asks.push_back(askData);
         }
 
-        this->subscriber(data);
+        for (auto func : this->depthSubscriber)
+        {
+            func(data);
+        }
     }
 }

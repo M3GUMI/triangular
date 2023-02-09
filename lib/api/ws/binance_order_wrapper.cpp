@@ -14,7 +14,7 @@ namespace WebsocketWrapper
 
     void BinanceOrderWrapper::SubscribeOrder(function<void(OrderData &req)> handler)
     {
-        this->subscriber = handler;
+        this->orderSubscriber.push_back(handler);
     }
 
     void BinanceOrderWrapper::Connect()
@@ -88,6 +88,10 @@ namespace WebsocketWrapper
         data.OrderId = apiWrapper.GetOrderId(clientOrderID);
         data.OrderStatus = status;
         data.UpdateTime = updateTime;
-        return this->subscriber(data);
+
+        for (auto func : this->orderSubscriber)
+        {
+            func(data);
+        }
     }
 }
