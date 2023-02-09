@@ -17,7 +17,6 @@ int main()
     Executor::Executor executor(pathfinder, capitalPool, apiWrapper);
 
     apiWrapper.InitBinanceSymbol();
-
     ioService.run();
 
     return 0;

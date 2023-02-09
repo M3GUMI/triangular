@@ -1,7 +1,7 @@
 #pragma once
 #include <functional>
 #include "utils/utils.h"
-#include "lib/arbitrage/triangular/triangular.h"
+#include "lib/arbitrage/triangular/ioc_triangular.h"
 #include "lib/pathfinder/pathfinder.h"
 
 using namespace std;

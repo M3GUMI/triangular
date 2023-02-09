@@ -3,10 +3,12 @@ cc_library(
     hdrs = [
         "triangular.h",
         "ioc_triangular.h",
+        "maker_triangular.h",
     ],
     srcs = [
         "triangular.cpp",
         "ioc_triangular.cpp",
+        "maker_triangular.cpp",
     ],
     includes = ["."],
     linkopts = [

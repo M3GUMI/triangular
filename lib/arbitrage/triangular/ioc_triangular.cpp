@@ -1,11 +1,8 @@
 #include "iostream"
 #include <sstream>
 #include "ioc_triangular.h"
-#include "triangular.h"
-#include "define/define.h"
 #include "utils/utils.h"
 
-std::stringstream ss;
 namespace Arbitrage
 {
 	IocTriangularArbitrage::IocTriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool, HttpWrapper::BinanceApiWrapper &apiWrapper) : TriangularArbitrage(pathfinder, pool, apiWrapper)
@@ -18,13 +15,14 @@ namespace Arbitrage
 
 	int IocTriangularArbitrage::Run(Pathfinder::TransactionPath &path)
 	{
-		LogInfo("func", "Run", "msg", "TriangularArbitrage start");
+		LogInfo("func", "Run", "msg", "IocTriangularArbitrage start");
 		Pathfinder::TransactionPathItem firstPath = path.Path[0];
 		if (auto err = capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity); err > 0) {
 			return err;
 		}
 
 		this->OriginQuantity = firstPath.FromQuantity;
+		this->OriginToken = firstPath.FromToken;
 		this->TargetToken = firstPath.FromToken;
 		TriangularArbitrage::ExecuteTrans(firstPath, bind(&IocTriangularArbitrage::ExecuteTransHandler, this, placeholders::_1, placeholders::_2));
 		return 0;
@@ -93,7 +91,7 @@ namespace Arbitrage
 		if (define::IsStableCoin(data.FromToken))
 		{
 			// 稳定币持仓，等待rebalance
-			capitalPool.FreeAsset(data.FromToken, data.ExecuteQuantity);
+			TriangularArbitrage::capitalPool.FreeAsset(data.FromToken, data.ExecuteQuantity);
 			return 0;
 		}
 		else if (define::NotStableCoin(data.FromToken))

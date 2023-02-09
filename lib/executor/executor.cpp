@@ -12,12 +12,13 @@ namespace Executor
 	}
 
 	Executor::~Executor()
-    {
-    }
-
-	void Executor::arbitragePathHandler(Pathfinder::TransactionPath& path)
 	{
-		if (lock) {
+	}
+
+	void Executor::arbitragePathHandler(Pathfinder::TransactionPath &path)
+	{
+		if (lock)
+		{
 			LogDebug("func", "arbitragePathHandler", "msg", "arbitrage executing, ignore path");
 			return;
 		}

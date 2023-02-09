@@ -4,7 +4,6 @@
 #include "define/define.h"
 #include "utils/utils.h"
 
-std::stringstream ss;
 namespace Arbitrage
 {
 	TriangularArbitrage::TriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool, HttpWrapper::BinanceApiWrapper &apiWrapper) : pathfinder(pathfinder), capitalPool(pool), apiWrapper(apiWrapper)

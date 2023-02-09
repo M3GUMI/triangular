@@ -32,6 +32,9 @@ namespace Arbitrage
 	class TriangularArbitrage
 	{
 	public:
+		void SubscribeFinish(function<void()> callback);
+
+	protected:
 		TriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool, HttpWrapper::BinanceApiWrapper &apiWrapper);
 		~TriangularArbitrage();
 
@@ -41,16 +44,12 @@ namespace Arbitrage
 
 		Pathfinder::Pathfinder &pathfinder;
 		CapitalPool::CapitalPool &capitalPool;
+		HttpWrapper::BinanceApiWrapper &apiWrapper;
 
-		virtual int Run(Pathfinder::TransactionPath &path);
 		int ExecuteTrans(Pathfinder::TransactionPathItem &path, function<void(HttpWrapper::OrderData &data, int createErr)> callback);
-		void SubscribeFinish(function<void()> callback);
 		int Finish(int finalQuantiy);
 
 	private:
 		function<void()> subscriber = NULL;
-		HttpWrapper::BinanceApiWrapper &apiWrapper;
-
-		virtual void ExecuteTransHandler(HttpWrapper::OrderData &orderData, int err);
 	};
 }
