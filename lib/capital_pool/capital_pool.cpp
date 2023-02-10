@@ -32,7 +32,7 @@ namespace CapitalPool
         if (locked)
         {
             // 刷新期间不执行
-            LogDebug("func", "RebalancePool", "msg", "refresh execute, ignore");
+            spdlog::debug("func: {}, msg: {}", "RebalancePool", "refresh execute, ignore");
             return;
         }
 
@@ -50,7 +50,7 @@ namespace CapitalPool
                 auto err = tryRebalance(token, "USDT", freeAmount);
                 if (err > 0)
                 {
-                    LogError("func", "RebalancePool", "err", WrapErr(err));
+                    spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
                     return;
                 }
                 continue;
@@ -86,7 +86,7 @@ namespace CapitalPool
             auto err = tryRebalance(delToken, addToken, balancePool[delToken] - basePool[delToken]);
             if (err > 0)
             {
-                LogError("func", "RebalancePool", "err", WrapErr(err));
+                spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
                 return;
             }
         }
@@ -97,7 +97,7 @@ namespace CapitalPool
             auto err = tryRebalance(delToken, "USDT", balancePool[delToken] - basePool[delToken]);
             if (err > 0)
             {
-                LogError("func", "RebalancePool", "err", WrapErr(err));
+                spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
                 return;
             }
         }
@@ -105,7 +105,7 @@ namespace CapitalPool
         // 需补充资金
         if (not addToken.empty() && delToken.empty())
         {
-            LogError("func", "RebalancePool", "err", "need more money");
+            spdlog::error("func: {}, err: {}", "RebalancePool", "need more money");
             return;
         }
     }
@@ -146,18 +146,18 @@ namespace CapitalPool
         if (locked)
         {
             // 刷新期间不执行
-            LogDebug("func", "rebalanceHandler", "msg", "refresh execute, ignore");
+            spdlog::debug("func: {}, msg: {}", "rebalanceHandler", "refresh execute, ignore");
             return;
         }
 
         if (not balancePool.count(data.FromToken))
         {
-            LogError("func", "rebalanceHandler", "err", WrapErr(ErrorBalanceNumber));
+            spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.FromToken] = 0;
         }
         else if (balancePool[data.FromToken] < data.ExecuteQuantity)
         {
-            LogError("func", "rebalanceHandler", "err", WrapErr(ErrorBalanceNumber));
+            spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.FromToken] = 0;
         }
         else
@@ -175,30 +175,31 @@ namespace CapitalPool
         }
 
         // todo 临时这样打日志
-        cout << "[Info]RebalancePool: ";
-        for (auto item : balancePool)
+        string info;
+        for (const auto& item : balancePool)
         {
-            cout << item.first << " " << to_string(item.second) << ", ";
+            info += item.first + "=";
+            info += to_string(item.second) + ", ";
         }
-        cout << endl;
+        spdlog::debug("func: {}, balancePool: {}", "rebalanceHandler", info);
     }
 
     int CapitalPool::LockAsset(string token, double amount)
     {
         if (locked) {
-            LogError("func", "LockAsset", "err", WrapErr(define::ErrorCapitalRefresh));
+            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorCapitalRefresh));
             return define::ErrorCapitalRefresh;
         }
 
         if (not balancePool.count(token))
         {
-            LogError("func", "LockAsset", "err", WrapErr(define::ErrorInsufficientBalance));
+            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorInsufficientBalance));
             return define::ErrorInsufficientBalance;
         }
 
         if (balancePool[token] < amount)
         {
-            LogError("func", "LockAsset", "err", WrapErr(define::ErrorInsufficientBalance));
+            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorInsufficientBalance));
             return define::ErrorInsufficientBalance;
         }
 
@@ -210,7 +211,7 @@ namespace CapitalPool
     {
         if (locked)
         {
-            LogError("func", "LockAsset", "err", WrapErr(define::ErrorCapitalRefresh));
+            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorCapitalRefresh));
             return define::ErrorCapitalRefresh;
         }
 
@@ -237,7 +238,7 @@ namespace CapitalPool
     {
         if (err > 0)
         {
-            LogError("func", "refreshAccountHandler", "err", WrapErr(err));
+            spdlog::error("func: {}, err: {}", "refreshAccountHandler", WrapErr(err));
             Refresh();
             return;
         }

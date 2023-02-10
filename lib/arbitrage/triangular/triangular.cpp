@@ -12,8 +12,7 @@ namespace Arbitrage {
     }
 
     int TriangularArbitrage::Finish(double finalQuantity) {
-        LogInfo("func", "Finish", "finalQuantity", to_string(finalQuantity), "originQuantity",
-                to_string(this->OriginQuantity));
+        spdlog::info("func: {}, finalQuantity: {}, originQuantity: {}", "Finish", finalQuantity, this->OriginQuantity);
         capitalPool.Refresh();
         this->subscriber();
         return 0;
@@ -47,8 +46,7 @@ namespace Arbitrage {
         req.OrderType = define::LIMIT;
         req.TimeInForce = define::IOC;
 
-        LogInfo("func", "ExecuteTrans", "from", path.FromToken, "to", path.ToToken);
-        LogInfo("price", to_string(path.FromPrice), "quantity", to_string(path.FromQuantity));
+        spdlog::info("func: {}, from: {}, to: {}, price: {}, quantity: {}", "ExecuteTrans", path.FromToken, path.ToToken, path.FromPrice, path.FromQuantity);
         return apiWrapper.CreateOrder(req, bind(&TriangularArbitrage::baseOrderHandler, this, placeholders::_1,
                                                 placeholders::_2));
     }
@@ -75,7 +73,7 @@ namespace Arbitrage {
 
     void TriangularArbitrage::baseOrderHandler(HttpWrapper::OrderData &data, int err) {
         if (err > 0) {
-            LogError("func", "baseOrderHandler", "err", WrapErr(err));
+            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(err));
             return;
         }
 

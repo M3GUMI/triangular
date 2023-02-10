@@ -46,7 +46,7 @@ namespace WebsocketWrapper
 
         if (not msgInfoJson.HasMember("e"))
         {
-            LogError("func", "msgHandler", "err", WrapErr(ErrorInvalidResp));
+            spdlog::error("func: {}, err: {}", "msgHandler", WrapErr(define::ErrorInvalidResp));
             return;
         }
 
@@ -54,7 +54,7 @@ namespace WebsocketWrapper
 
         if (e != "executionReport")
         {
-            LogError("func", "msgHandler", "err", WrapErr(ErrorInvalidResp));
+            spdlog::error("func: {}, err: {}", "msgHandler", WrapErr(define::ErrorInvalidResp));
             return;
         }
 

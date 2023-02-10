@@ -15,7 +15,7 @@ namespace Arbitrage {
     }
 
     int MakerTriangularArbitrage::Run(Pathfinder::TransactionPath &path) {
-        LogInfo("func", "Run", "msg", "MakerTriangularArbitrage start");
+        spdlog::info("func: {}, msg: {}", "Run", "MakerTriangularArbitrage start");
         Pathfinder::TransactionPathItem firstPath = path.Path[0];
         if (auto err = capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity); err > 0) {
             return err;

@@ -42,7 +42,7 @@ namespace Pathfinder
 			}
 		}
 
-		LogInfo("func", "symbolReadyHandler", "init_num", to_string(succNum - failNum), "fail_num", to_string(failNum));
+        spdlog::info("func: {}, init_num: {}, fail_num: {}", "symbolReadyHandler", succNum - failNum, failNum);
 	}
 
 	void Pathfinder::loadMockPath()

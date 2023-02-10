@@ -14,7 +14,7 @@ namespace Arbitrage {
     }
 
     int IocTriangularArbitrage::Run(Pathfinder::TransactionPath &path) {
-        LogInfo("func", "Run", "msg", "IocTriangularArbitrage start");
+        spdlog::info("func: {}, msg: {}", "Run", "IocTriangularArbitrage start");
         Pathfinder::TransactionPathItem firstPath = path.Path.front();
         if (auto err = capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity); err > 0) {
             return err;
@@ -28,6 +28,7 @@ namespace Arbitrage {
     }
 
     void IocTriangularArbitrage::TransHandler(HttpWrapper::OrderData &data) {
+        spdlog::info("func: {}, OrderStatus: {}, ExecuteQuantity: {}, OriginQuantity: {}", "TransHandler", data.OrderStatus, data.ExecuteQuantity, data.OriginQuantity);
         int err;
         if (data.OrderStatus == define::FILLED) {
             err = filledHandler(data);
@@ -38,7 +39,7 @@ namespace Arbitrage {
         }
 
         if (err > 0) {
-            LogError("func", "orderDataHandler", "err", WrapErr(err));
+            spdlog::error("func: {}, err: {}", "orderDataHandler", WrapErr(err));
         }
     }
 

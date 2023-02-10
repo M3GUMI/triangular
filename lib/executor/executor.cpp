@@ -19,7 +19,7 @@ namespace Executor
 	{
 		if (lock)
 		{
-			LogDebug("func", "arbitragePathHandler", "msg", "arbitrage executing, ignore path");
+            spdlog::debug("func: {}, msg: {}", "arbitragePathHandler", "arbitrage executing, ignore path");
 			return;
 		}
 
