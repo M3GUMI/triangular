@@ -29,16 +29,19 @@ namespace HttpWrapper
         vector<BalanceData> Balances;
     };
 
-	struct OrderData
-	{
+    struct OrderData {
         string OrderId;
-        uint64_t ExecuteTime;
-        define::OrderStatus OrderStatus;
-        std::string FromToken;
-        std::string ToToken;
-        double ExecutePrice;
-        double ExecuteQuantity;
+        string FromToken;
+        string ToToken;
+        double OriginPrice;
         double OriginQuantity;
+        define::OrderType OrderType;
+        define::TimeInForce TimeInForce;
+
+        define::OrderStatus OrderStatus; // 订单状态
+        double ExecutePrice; // 成交价格
+        double ExecuteQuantity; // 已成交数量
+        uint64_t UpdateTime; // 最后一次更新实际
     };
 
     class BinanceApiWrapper: public BaseApiWrapper

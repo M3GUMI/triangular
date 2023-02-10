@@ -273,13 +273,20 @@ namespace HttpWrapper
         OrderData data;
         if (conf::EnableMock) {
             data.OrderId = req.OrderId;
-            data.ExecuteTime = GetNowTime();
+            data.UpdateTime = GetNowTime();
             data.OrderStatus = define::FILLED;
             data.FromToken = req.FromToken;
             data.ToToken = req.ToToken;
             data.ExecutePrice = req.FromPrice;
             data.ExecuteQuantity = req.FromQuantity;
             data.OriginQuantity = req.FromQuantity;
+
+            // 最大成交500
+            if (req.FromQuantity > 500) {
+                data.ExecuteQuantity = req.FromQuantity - 500;
+                data.OrderStatus = define::PARTIALLY_FILLED;
+            }
+
             LogDebug("func", "createOrderCallback", "msg", "mock data");
             return callback(data, 0);
         }
@@ -312,7 +319,7 @@ namespace HttpWrapper
         }
 
         data.OrderId = this->orderIdMap[order["c"].GetString()];
-        data.ExecuteTime = order["E"].GetUint64();
+        data.UpdateTime = order["E"].GetUint64();
         data.OrderStatus = stringToOrderStatus(order["X"].GetString());
         data.FromToken = parseToken(symbol, side).first; 
         data.ToToken = parseToken(symbol, side).second; 

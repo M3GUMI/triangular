@@ -8,48 +8,38 @@
 #include "define/define.h"
 
 using namespace std;
-namespace Arbitrage
-{
-	class Order // 订单
-	{
-	public:
-		std::string TaskId;		 // 套利任务Id
-		std::string OrderId;	 // 订单Id
-		std::string OrderStatus; // 订单状态
-		std::string FromToken;
-		double FromPrice;
-		double FromQuantity;
-		std::string ToToken;
-		double ToPrice;
-		double ToQuantity;
-		std::string OrderType;
-		std::string TimeInForce;
+namespace Arbitrage {
+    // 三角套利
+    class TriangularArbitrage {
+    public:
+        void SubscribeFinish(function<void()> callback);
 
-	private:
-	};
+    protected:
+        TriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool,
+                            HttpWrapper::BinanceApiWrapper &apiWrapper);
 
-	// 三角套利
-	class TriangularArbitrage
-	{
-	public:
-		void SubscribeFinish(function<void()> callback);
+        ~TriangularArbitrage();
 
-	protected:
-		TriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool, HttpWrapper::BinanceApiWrapper &apiWrapper);
-		~TriangularArbitrage();
+        map<string, HttpWrapper::OrderData> orderMap; // 订单map
+        function<void(HttpWrapper::OrderData &data)> transHandler; // 交易策略
 
-		string OriginToken;	   // 原始起点token
-		double OriginQuantity; // 原始起点token数量
-		string TargetToken;	   // 目标token
+        string OriginToken;       // 原始起点token
+        double OriginQuantity; // 原始起点token数量
+        string TargetToken;       // 目标token
 
-		Pathfinder::Pathfinder &pathfinder;
-		CapitalPool::CapitalPool &capitalPool;
-		HttpWrapper::BinanceApiWrapper &apiWrapper;
+        Pathfinder::Pathfinder &pathfinder;
+        CapitalPool::CapitalPool &capitalPool;
+        HttpWrapper::BinanceApiWrapper &apiWrapper;
 
-		int ExecuteTrans(Pathfinder::TransactionPathItem &path, function<void(HttpWrapper::OrderData &data, int createErr)> callback);
-		int Finish(int finalQuantiy);
+        int ExecuteTrans(Pathfinder::TransactionPathItem &path);
 
-	private:
-		function<void()> subscriber = NULL;
-	};
+        int ReviseTrans(string origin, string end, double quantity);
+
+        int Finish(double finalQuantity);
+
+    private:
+        function<void()> subscriber = nullptr;
+
+        void baseOrderHandler(HttpWrapper::OrderData &data, int err);
+    };
 }

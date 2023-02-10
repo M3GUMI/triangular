@@ -2,19 +2,22 @@
 #include "triangular.h"
 
 using namespace std;
-namespace Arbitrage
-{
-	// 两次ioc三角套利
-	class IocTriangularArbitrage : public TriangularArbitrage
-	{
-	public:
-		IocTriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool, HttpWrapper::BinanceApiWrapper &apiWrapper);
-		~IocTriangularArbitrage();
+namespace Arbitrage {
+    // 两次ioc三角套利
+    class IocTriangularArbitrage : public TriangularArbitrage {
+    public:
+        IocTriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool,
+                               HttpWrapper::BinanceApiWrapper &apiWrapper);
 
-		int Run(Pathfinder::TransactionPath &path);
-	private:
-		void ExecuteTransHandler(HttpWrapper::OrderData &orderData, int err);
-		int filledHandler(HttpWrapper::OrderData &data);
-		int partiallyFilledHandler(HttpWrapper::OrderData &data);
-	};
+        ~IocTriangularArbitrage();
+
+        int Run(Pathfinder::TransactionPath &path);
+
+    private:
+        void TransHandler(HttpWrapper::OrderData &orderData);
+
+        int filledHandler(HttpWrapper::OrderData &data);
+
+        int partiallyFilledHandler(HttpWrapper::OrderData &data);
+    };
 }

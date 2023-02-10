@@ -1,5 +1,5 @@
-bazel build src:src
+#bazel build src:src
 
-#rm -f build
-#mkdir build
-#cd build && cmake .. && make
+rm -f build
+mkdir build
+cd build && cmake .. && make
