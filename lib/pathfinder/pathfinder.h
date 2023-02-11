@@ -46,7 +46,6 @@ namespace Pathfinder
     class Pathfinder
     {
     private:
-		TransactionPath mockPath;
         map<string, WebsocketWrapper::BinanceDepthWrapper*> depthSocketMap; // depth连接管理
         std::shared_ptr<websocketpp::lib::asio::steady_timer> scanDepthTimer; // depth检查计时器
 
@@ -57,7 +56,6 @@ namespace Pathfinder
 		void symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data); // symbol数据就绪
 		void depthDataHandler(WebsocketWrapper::DepthData &data);					// 接收depth数据处理
         void scanDepthSocket();                                                     // 检查socket连接有效性
-		void loadMockPath();														// mock执行
 	public:
 		Pathfinder(websocketpp::lib::asio::io_service &ioService, HttpWrapper::BinanceApiWrapper &apiWrapper);
 		~Pathfinder();

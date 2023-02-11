@@ -26,7 +26,7 @@ namespace HttpWrapper
 
     struct CreateOrderReq
     {
-        string OrderId;
+        uint64_t OrderId;
         string FromToken;
         double FromPrice;
         double FromQuantity;
@@ -68,11 +68,11 @@ namespace HttpWrapper
         // 交易对基础货币
         set<string> baseCoins;
         // 订单号映射
-        map<string, string> orderIdMap; // 内部id转外部id
-        map<string, string> outOrderIdMap; // 外部id转内部id
+        map<uint64_t, string> orderIdMap; // 内部id转外部id
+        map<string, uint64_t> outOrderIdMap; // 外部id转内部id
 
-        string GetOrderId(string outOrderId);
-        string GetOutOrderId(string orderId);
+        uint64_t GetOrderId(const string& outOrderId);
+        string GetOutOrderId(uint64_t orderId);
         pair<double, double> SelectPriceQuantity(CreateOrderReq req, define::OrderSide side);
 
         int CheckResp(shared_ptr<HttpRespone> &res);

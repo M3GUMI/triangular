@@ -30,7 +30,7 @@ namespace HttpWrapper
     };
 
     struct OrderData {
-        string OrderId;
+        uint64_t OrderId;
         string FromToken;
         string ToToken;
         double OriginPrice;
@@ -61,7 +61,7 @@ namespace HttpWrapper
         void accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo &info, int err)> callback);
         void createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, CreateOrderReq &req, function<void(OrderData& data, int err)> callback);
 
-        void cancelOrder(string orderId, string symbol);
+        void cancelOrder(uint64_t orderId, string symbol);
         void cancelOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, std::string ori_symbol);
 
         void createListkeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(string listenKey, int err)> callback);
@@ -85,7 +85,7 @@ namespace HttpWrapper
         int CreateOrder(CreateOrderReq &req, function<void(OrderData& data, int err)> callback);
 
         // 取消订单
-        void CancelOrder(string orderId);
+        void CancelOrder(uint64_t orderId);
         void CancelOrderSymbol(vector<pair<string, string>> symbols);
         void CancelOrderAll();
 

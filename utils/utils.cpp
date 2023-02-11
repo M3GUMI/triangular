@@ -4,8 +4,6 @@
 #include <sstream>
 #include <string>
 #include <chrono>
-#include <random>
-#include <map>
 #include "utils.h"
 
 void String2Double(const string &str, double &d)
@@ -14,38 +12,24 @@ void String2Double(const string &str, double &d)
 	s >> d;
 }
 
-uint64_t GetNowTime()
-{
+uint64_t GetNowTime() {
+    std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+    );
 
-	timeb t;
-	ftime(&t); // 获取毫秒
-	time_t curr = t.time * 1000 + t.millitm;
-	uint64_t time = ((uint64_t)curr);
-	return time;
+    return ms.count();
 }
 
-unsigned long getRand()
+uint32_t autoIncr = 0; // 自增id
+
+uint64_t GenerateId()
 {
-	static default_random_engine e(chrono::system_clock::now().time_since_epoch().count() / chrono::system_clock::period::den);
-	return e();
-}
+    if (autoIncr == UINT32_MAX) {
+        autoIncr = 0;
+    }
 
-string GenerateId()
-{
-	std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::system_clock::now().time_since_epoch());
-
-	// 获取 long long的OrderId
-	unsigned long long timestamp = ms.count();
-	unsigned long long longOrderId = (timestamp << 32 | getRand());
-
-	// 转long long 转 string
-	stringstream stream;
-	string result;
-
-	stream << longOrderId;
-	stream >> result;
-	return result;
+    autoIncr++;
+    return GetNowTime() << 32 | (autoIncr & 0xFFFFFFFF);
 }
 
 string toLower(const string &str)

@@ -214,7 +214,7 @@ namespace HttpWrapper
 
     int BinanceApiWrapper::CreateOrder(CreateOrderReq &req, function<void(OrderData& data, int err)> callback)
     {
-        if (req.OrderId == "")
+        if (req.OrderId == 0)
         {
             spdlog::error("func: {}, msg: {}, err: {}", "CreateOrder", "orderId invalid", define::ErrorInvalidParam);
             return define::ErrorInvalidParam;
@@ -317,7 +317,7 @@ namespace HttpWrapper
             return;
         }
 
-        data.OrderId = this->orderIdMap[order["c"].GetString()];
+        data.OrderId = this->outOrderIdMap[order["c"].GetString()];
         data.UpdateTime = order["E"].GetUint64();
         data.OrderStatus = stringToOrderStatus(order["X"].GetString());
         data.FromToken = parseToken(symbol, side).first; 
@@ -329,7 +329,7 @@ namespace HttpWrapper
         return callback(data, 0);
     }
 
-    void BinanceApiWrapper::cancelOrder(string orderId, string symbol)
+    void BinanceApiWrapper::cancelOrder(uint64_t orderId, string symbol)
     {
         map<string, string> args;
         string uri = "https://api.binance.com/api/v3/openOrders";
@@ -349,7 +349,7 @@ namespace HttpWrapper
         MakeRequest(req, callback);
     }
 
-    void BinanceApiWrapper::CancelOrder(string orderId)
+    void BinanceApiWrapper::CancelOrder(uint64_t orderId)
     {
         this->cancelOrder(orderId, "");
     }
@@ -359,7 +359,7 @@ namespace HttpWrapper
         for (auto symbol : symbols)
         {
             auto symbolStr = this->GetSymbol(symbol.first, symbol.second);
-            this->cancelOrder("", symbolStr);
+            this->cancelOrder(0, symbolStr);
         }
     }
 

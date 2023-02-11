@@ -22,17 +22,17 @@ namespace HttpWrapper
     {
     }
 
-    string BaseApiWrapper::GetOrderId(string outOrderId)
+    uint64_t BaseApiWrapper::GetOrderId(const string& outOrderId)
     {
         if (outOrderIdMap.count(outOrderId))
         {
             return outOrderIdMap[outOrderId];
         }
 
-        return "";
+        return 0;
     }
 
-    string BaseApiWrapper::GetOutOrderId(string orderId)
+    string BaseApiWrapper::GetOutOrderId(uint64_t orderId)
     {
         if (orderIdMap.count(orderId))
         {

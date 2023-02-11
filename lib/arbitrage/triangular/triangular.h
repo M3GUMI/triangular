@@ -20,7 +20,7 @@ namespace Arbitrage {
 
         ~TriangularArbitrage();
 
-        map<string, HttpWrapper::OrderData> orderMap; // 订单map
+        map<uint64_t, HttpWrapper::OrderData> orderMap; // 订单map
         function<void(HttpWrapper::OrderData &data)> transHandler; // 交易策略
 
         string OriginToken;       // 原始起点token

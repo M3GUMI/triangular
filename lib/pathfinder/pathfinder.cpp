@@ -68,37 +68,6 @@ namespace Pathfinder
         spdlog::debug("func: {}, init: {}, connected: {}, reconnect: {}", "scanDepthSocket", initNum, succNum, failNum);
     }
 
-    void Pathfinder::loadMockPath()
-	{
-		TransactionPathItem pathItem1;
-		pathItem1.FromToken = "USDT";
-		pathItem1.FromPrice = double(1) / double(1258);
-		pathItem1.FromQuantity = 1258;
-		pathItem1.ToToken = "ETH";
-		pathItem1.ToPrice = 1258;
-		pathItem1.ToQuantity = 1;
-
-		TransactionPathItem pathItem2;
-		pathItem2.FromToken = "ETH";
-		pathItem2.FromPrice = 1259;
-		pathItem2.FromQuantity = 1;
-		pathItem2.ToToken = "BUSD";
-		pathItem2.ToPrice = double(1) / double(1259);
-		pathItem2.ToQuantity = 1259;
-
-		TransactionPathItem pathItem3;
-		pathItem3.FromToken = "BUSD";
-		pathItem3.FromPrice = 1;
-		pathItem3.FromQuantity = 1259;
-		pathItem3.ToToken = "USDT";
-		pathItem3.ToPrice = 1258;
-		pathItem3.ToQuantity = double(1259) / double(1258);
-
-		this->mockPath.Path.push_back(pathItem1);
-		this->mockPath.Path.push_back(pathItem2);
-		this->mockPath.Path.push_back(pathItem3);
-	}
-
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data)
 	{
 		// 1. 更新负权图
