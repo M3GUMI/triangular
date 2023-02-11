@@ -6,6 +6,7 @@ namespace WebsocketWrapper
 
     WebsocketWrapper::WebsocketWrapper(string hostname, string hostport, websocketpp::lib::asio::io_service& ioService) : hostname(hostname), hostport(hostport), ioService(ioService)
     {
+        this->Status = define::SocketStatusInit;
     }
 
     WebsocketWrapper::~WebsocketWrapper()
@@ -14,6 +15,10 @@ namespace WebsocketWrapper
 
     int WebsocketWrapper::Connect(string uri, string msg, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler)
     {
+        this->uri = uri;
+        this->sendMsg = msg;
+        this->Status = define::SocketStatusInit;
+
         try
         {
             this->sendMsg = msg;
@@ -34,10 +39,12 @@ namespace WebsocketWrapper
             }
 
             client.connect(con);
+            this->Status = define::SocketStatusConnected;
         }
         catch (websocketpp::exception const &e)
         {
-            // std::cout << e.what() << std::endl;
+            std::cout << e.what() << std::endl;
+            this->Status = define::SocketStatusFailConnect;
             return ErrorCreateWebsocketFail;
         }
     }

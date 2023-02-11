@@ -46,13 +46,13 @@ namespace HttpWrapper
     {
         if (res == nullptr || res->payload().empty())
         {
-            LogError("func", "CheckResp", "msg", WrapErr(define::ErrorHttpFail));
+            spdlog::error("func: {}, err: {}", "CheckResp", WrapErr(define::ErrorHttpFail));
             return define::ErrorEmptyResponse;
         }
 
         if (res->http_status() != 200)
         {
-            LogError("func", "CheckResp", "msg", WrapErr(define::ErrorEmptyResponse));
+            spdlog::error("func: {}, err: {}", "CheckResp", WrapErr(define::ErrorEmptyResponse));
             return define::ErrorHttpFail;
         }
 
@@ -64,7 +64,7 @@ namespace HttpWrapper
         CheckRespWithCodeResp resp;
         if (res == nullptr || res->payload().empty())
         {
-            LogError("func", "CheckResp", "msg", WrapErr(define::ErrorHttpFail));
+            spdlog::error("func: {}, err: {}", "CheckRespWithCode", WrapErr(define::ErrorHttpFail));
             resp.Err = define::ErrorHttpFail;
             return resp;
         }
@@ -73,7 +73,7 @@ namespace HttpWrapper
         json.Parse(res->payload().c_str());
         if (res->http_status() != 200)
         {
-            LogError("func", "CheckResp", "msg", WrapErr(define::ErrorEmptyResponse));
+            spdlog::error("func: {}, err: {}", "CheckRespWithCode", WrapErr(define::ErrorEmptyResponse));
             resp.Err = define::ErrorEmptyResponse;
             resp.Code = json.FindMember("code")->value.GetInt();
             resp.Msg = json.FindMember("msg")->value.GetString();
@@ -148,7 +148,7 @@ namespace HttpWrapper
         auto httpRequest = HttpRequest::make_request(method, whole_uri, data);
         httpRequest->Header = header;
         hclientPtr->Do(httpRequest, callback);
-        LogDebug("func", "MakeRequest", "uri", whole_uri, "method", method, "data", data);
+        spdlog::debug("func: {}, method: {}, url: {}, data: {}", "MakeRequest", method, whole_uri, data);
     }
 
     std::map<std::string, std::string> BaseApiWrapper::sign(std::map<std::string, std::string> &args, std::string &query, bool need_sign)

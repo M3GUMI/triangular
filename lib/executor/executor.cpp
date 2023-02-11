@@ -19,14 +19,14 @@ namespace Executor
 	{
 		if (lock)
 		{
-			LogDebug("func", "arbitragePathHandler", "msg", "arbitrage executing, ignore path");
+            spdlog::debug("func: {}, msg: {}", "arbitragePathHandler", "arbitrage executing, ignore path");
 			return;
 		}
 
-		Arbitrage::IocTriangularArbitrage iocTriangular(pathfinder, capitalPool, apiWrapper);
-		// todo 需要增加套利任务结束，清除subscribe
-		iocTriangular.SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
-		if (auto err = iocTriangular.Run(path); err > 0) {
+        // todo 此处需要内存管理。需要增加套利任务结束，清除subscribe
+        auto iocTriangular = new Arbitrage::IocTriangularArbitrage(pathfinder, capitalPool, apiWrapper);
+        iocTriangular->SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
+        if (auto err = iocTriangular->Run(path); err > 0) {
 			return;
 		}
 

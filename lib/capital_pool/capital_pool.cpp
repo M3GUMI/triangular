@@ -32,7 +32,7 @@ namespace CapitalPool
         if (locked)
         {
             // 刷新期间不执行
-            LogDebug("func", "RebalancePool", "msg", "refresh execute, ignore");
+            spdlog::debug("func: {}, msg: {}", "RebalancePool", "refresh execute, ignore");
             return;
         }
 
@@ -50,13 +50,14 @@ namespace CapitalPool
                 auto err = tryRebalance(token, "USDT", freeAmount);
                 if (err > 0)
                 {
-                    LogError("func", "RebalancePool", "err", WrapErr(err));
+                    spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
                     return;
                 }
                 continue;
             }
         }
 
+        // 获取需补充的token
         for (const auto &item : basePool)
         {
             auto token = item.first;
@@ -66,11 +67,26 @@ namespace CapitalPool
                 freeAmount = balancePool[token];
             }
 
-            // 获取偏差比例最大的两种token
             if (freeAmount < basePool[token] && freeAmount / basePool[token] < minPercent)
             {
                 addToken = token;
                 minPercent = freeAmount / basePool[token];
+            }
+        }
+
+        // 获取需减少的token
+        for (const auto &item : basePool)
+        {
+            auto token = item.first;
+            double freeAmount = 0;
+            if (balancePool.count(token))
+            {
+                freeAmount = balancePool[token];
+            }
+
+            if (addToken.empty() && token == "USDT")  {
+                // 无需补充时，不清仓USDT
+                continue;
             }
 
             if (freeAmount > basePool[token] && freeAmount / basePool[token] > maxPercent)
@@ -86,18 +102,18 @@ namespace CapitalPool
             auto err = tryRebalance(delToken, addToken, balancePool[delToken] - basePool[delToken]);
             if (err > 0)
             {
-                LogError("func", "RebalancePool", "err", WrapErr(err));
+                spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
                 return;
             }
         }
 
         // 多余token换为USDT
-        if (addToken.empty() && not delToken.empty() && delToken != "USDT")
+        if (addToken.empty() && not delToken.empty())
         {
             auto err = tryRebalance(delToken, "USDT", balancePool[delToken] - basePool[delToken]);
             if (err > 0)
             {
-                LogError("func", "RebalancePool", "err", WrapErr(err));
+                spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
                 return;
             }
         }
@@ -105,18 +121,18 @@ namespace CapitalPool
         // 需补充资金
         if (not addToken.empty() && delToken.empty())
         {
-            LogError("func", "RebalancePool", "err", "need more money");
+            spdlog::error("func: {}, err: {}", "RebalancePool", "need more money");
             return;
         }
     }
 
-    int CapitalPool::tryRebalance(string fromToken, string toToken, double amount)
+    int CapitalPool::tryRebalance(const string& fromToken, const string& toToken, double amount)
     {
-        Pathfinder::GetExchangePriceReq priceReq;
+        Pathfinder::GetExchangePriceReq priceReq{};
         priceReq.FromToken = fromToken;
         priceReq.ToToken = toToken;
 
-        Pathfinder::GetExchangePriceResp priceResp;
+        Pathfinder::GetExchangePriceResp priceResp{};
         if (auto err = pathfinder.GetExchangePrice(priceReq, priceResp); err > 0) {
             return err;
         }
@@ -141,64 +157,53 @@ namespace CapitalPool
         return apiWrapper.CreateOrder(req, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
     }
 
-    void CapitalPool::rebalanceHandler(HttpWrapper::OrderData &data)
-    {
-        if (locked)
-        {
+    void CapitalPool::rebalanceHandler(HttpWrapper::OrderData &data) {
+        if (locked) {
             // 刷新期间不执行
-            LogDebug("func", "rebalanceHandler", "msg", "refresh execute, ignore");
+            spdlog::debug("func: {}, msg: {}", "rebalanceHandler", "refresh execute, ignore");
             return;
         }
 
-        if (not balancePool.count(data.FromToken))
-        {
-            LogError("func", "rebalanceHandler", "err", WrapErr(ErrorBalanceNumber));
+        if (not balancePool.count(data.FromToken)) {
+            spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.FromToken] = 0;
-        }
-        else if (balancePool[data.FromToken] < data.ExecuteQuantity)
-        {
-            LogError("func", "rebalanceHandler", "err", WrapErr(ErrorBalanceNumber));
+        } else if (balancePool[data.FromToken] < data.ExecuteQuantity) {
+            spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.FromToken] = 0;
-        }
-        else
-        {
+        } else {
             balancePool[data.FromToken] = balancePool[data.FromToken] - data.ExecuteQuantity;
         }
 
-        if (not balancePool.count(data.ToToken))
-        {
+        if (not balancePool.count(data.ToToken)) {
             balancePool[data.ToToken] = data.ExecuteQuantity * data.ExecutePrice;
-        }
-        else
-        {
+        } else {
             balancePool[data.ToToken] = balancePool[data.ToToken] + data.ExecuteQuantity * data.ExecutePrice;
         }
 
-        // todo 临时这样打日志
-        cout << "[Info]RebalancePool: ";
-        for (auto item : balancePool)
-        {
-            cout << item.first << " " << to_string(item.second) << ", ";
+        vector<string> info;
+        for (const auto &item: balancePool) {
+            info.push_back(item.first);
+            info.push_back(to_string(item.second));
         }
-        cout << endl;
+        spdlog::debug("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
     }
 
-    int CapitalPool::LockAsset(string token, double amount)
+    int CapitalPool::LockAsset(const string& token, double amount)
     {
         if (locked) {
-            LogError("func", "LockAsset", "err", WrapErr(define::ErrorCapitalRefresh));
+            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorCapitalRefresh));
             return define::ErrorCapitalRefresh;
         }
 
         if (not balancePool.count(token))
         {
-            LogError("func", "LockAsset", "err", WrapErr(define::ErrorInsufficientBalance));
+            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorInsufficientBalance));
             return define::ErrorInsufficientBalance;
         }
 
         if (balancePool[token] < amount)
         {
-            LogError("func", "LockAsset", "err", WrapErr(define::ErrorInsufficientBalance));
+            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorInsufficientBalance));
             return define::ErrorInsufficientBalance;
         }
 
@@ -206,11 +211,11 @@ namespace CapitalPool
         return 0;
     }
 
-    int CapitalPool::FreeAsset(string token, double amount)
+    int CapitalPool::FreeAsset(const string& token, double amount)
     {
         if (locked)
         {
-            LogError("func", "LockAsset", "err", WrapErr(define::ErrorCapitalRefresh));
+            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorCapitalRefresh));
             return define::ErrorCapitalRefresh;
         }
 
@@ -237,12 +242,12 @@ namespace CapitalPool
     {
         if (err > 0)
         {
-            LogError("func", "refreshAccountHandler", "err", WrapErr(err));
+            spdlog::error("func: {}, err: {}", "refreshAccountHandler", WrapErr(err));
             Refresh();
             return;
         }
 
-        for (auto asset : info.Balances)
+        for (const auto& asset : info.Balances)
         {
             this->balancePool = {};
             this->balancePool[asset.Token] = asset.Free;
@@ -250,6 +255,5 @@ namespace CapitalPool
 
         locked = false;
         spdlog::info("func: {}, msg: {}", "refreshAccountHandler", "refresh account success");
-        return;
     }
 }

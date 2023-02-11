@@ -41,7 +41,7 @@ namespace HttpWrapper
         exchangeInfoJson.Parse(res->payload().c_str());
         if (!exchangeInfoJson.HasMember("symbols"))
         {
-            LogError("func", "initBinanceSymbolCallback", "msg", WrapErr(define::ErrorInvalidResp));
+            spdlog::error("func: {}, err: {}", "initBinanceSymbolCallback", WrapErr(define::ErrorInvalidResp));
             return;
         }
 
@@ -92,7 +92,7 @@ namespace HttpWrapper
             baseCoins.insert(quoteAsset);
         }
 
-        LogInfo("func", "InitBinanceSymbol", "msg", "load symbol data success");
+        spdlog::info("func: {}, msg: {}", "InitBinanceSymbol", "load symbol data success");
         for (auto func : this->symbolReadySubscriber)
         {
             func(symbolMap);
@@ -104,7 +104,7 @@ namespace HttpWrapper
         auto symbol = toUpper(token0 + token1);
         if (symbolMap.count(symbol) != 1)
         {
-            LogError("func", "GetSymbolData", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
+            spdlog::error("func: {}, msg: {}, err: {}", "GetSymbolData", "not found symbol", define::ErrorDefault);
             BinanceSymbolData data;
             return data;
         }
@@ -116,7 +116,7 @@ namespace HttpWrapper
     {
         if (symbolMap.count(toUpper(symbol)) != 1)
         {
-            LogError("func", "GetSymbolData", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
+            spdlog::error("func: {}, msg: {}, err: {}", "GetSymbolData", "not found symbol", define::ErrorDefault);
             BinanceSymbolData data;
             return data;
         }
@@ -129,7 +129,7 @@ namespace HttpWrapper
         auto symbol = toUpper(token0 + token1);
         if (symbolMap.count(symbol) != 1)
         {
-            LogError("func", "GetSymbol", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
+            spdlog::error("func: {}, msg: {}, err: {}", "GetSymbolData", "not found symbol", define::ErrorDefault);
             return "";
         }
 
@@ -142,7 +142,7 @@ namespace HttpWrapper
         auto symbol = toUpper(token0 + token1);
         if (symbolMap.count(symbol) != 1)
         {
-            LogError("func", "GetSide", "msg", "not found symbol", "err", WrapErr(define::ErrorDefault));
+            spdlog::error("func: {}, msg: {}, err: {}", "GetSymbolData", "not found symbol", define::ErrorDefault);
             return define::INVALID_SIDE;
         }
 
@@ -177,7 +177,7 @@ namespace HttpWrapper
             data.Free = 2000;
             data.Locked = 0;
             info.Balances.push_back(data);
-            LogDebug("func", "GetAccountInfo", "msg", "mock account_info");
+            spdlog::debug("func: {}, msg: {}", "GetAccountInfo", "mock account_info");
             return callback(info, 0);
         }
 
@@ -190,7 +190,7 @@ namespace HttpWrapper
         accountInfoDocument.Parse(res->payload().c_str());
         if (not accountInfoDocument.HasMember("balances"))
         {
-            LogError("func", "accountInfoHandler", "msg", "no balance data", "err", WrapErr(define::ErrorInvalidResp));
+            spdlog::error("func: {}, msg: {}, err: {}", "accountInfoHandler", "no balance data", define::ErrorInvalidResp);
             return callback(info, define::ErrorDefault);
         }
 
@@ -208,7 +208,7 @@ namespace HttpWrapper
             info.Balances.push_back(data);
         }
 
-        LogInfo("func", "GetAccountInfo", "msg", "get account_info success");
+        spdlog::info("func: {}, msg: {}", "GetAccountInfo", "get account_info success");
         return callback(info, 0);
     }
 
@@ -216,7 +216,7 @@ namespace HttpWrapper
     {
         if (req.OrderId == "")
         {
-            LogError("func", "CreateOrder", "msg", "orderId invalid", "err", WrapErr(define::ErrorInvalidParam));
+            spdlog::error("func: {}, msg: {}, err: {}", "CreateOrder", "orderId invalid", define::ErrorInvalidParam);
             return define::ErrorInvalidParam;
         }
 
@@ -228,7 +228,7 @@ namespace HttpWrapper
 
         if (symbol == "" || side == define::INVALID_SIDE)
         {
-            LogError("func", "CreateOrder", "msg", "symbol or side invalid", "err", WrapErr(define::ErrorInvalidParam));
+            spdlog::error("func: {}, msg: {}, err: {}", "CreateOrder", "symbol or side invalid", define::ErrorInvalidParam);
             return define::ErrorDefault;
         }
 
@@ -254,8 +254,7 @@ namespace HttpWrapper
             args["price"] = price;
         }
 
-        LogDebug("func", "CreateOrder", "msg", "start execute", "symbol", symbol);
-        LogDebug("side", to_string(side), "price", to_string(price), "quantity", to_string(quantity));
+        spdlog::debug("func: {}, symbol: {}, side: {}, price: {}, quantity: {}", "CreateOrder", symbol, side, price, quantity);
 
         ApiRequest apiReq;
         apiReq.args = args;
@@ -273,21 +272,28 @@ namespace HttpWrapper
         OrderData data;
         if (conf::EnableMock) {
             data.OrderId = req.OrderId;
-            data.ExecuteTime = GetNowTime();
+            data.UpdateTime = GetNowTime();
             data.OrderStatus = define::FILLED;
             data.FromToken = req.FromToken;
             data.ToToken = req.ToToken;
             data.ExecutePrice = req.FromPrice;
             data.ExecuteQuantity = req.FromQuantity;
             data.OriginQuantity = req.FromQuantity;
-            LogDebug("func", "createOrderCallback", "msg", "mock data");
+
+            // 最大成交500
+            if (req.FromQuantity > 500) {
+                data.ExecuteQuantity = req.FromQuantity - 500;
+                data.OrderStatus = define::PARTIALLY_FILLED;
+            }
+
+            spdlog::debug("func: {}, msg: {}", "createOrderCallback", "modk create_order");
             return callback(data, 0);
         }
 
         if (auto checkResult = this->CheckRespWithCode(res); checkResult.Err > 0)
         {
             if (checkResult.Code == -2010 && checkResult.Msg == "Account has insufficient balance for requested action.") {
-                LogError("func", "CreateOrder", "err", WrapErr(define::ErrorInsufficientBalance));
+                spdlog::error("func: {}, err: {}", "CreateOrder", define::ErrorInsufficientBalance);
                 return callback(data, define::ErrorInsufficientBalance);
             }
 
@@ -307,12 +313,12 @@ namespace HttpWrapper
 
         if (side == define::INVALID_SIDE)
         {
-            LogError("func", "CreateOrder", "msg", "invalid side", "err", WrapErr(define::ErrorInvalidResp));
+            spdlog::error("func: {}, msg: {}, err: {}", "CreateOrder", "invalid side", define::ErrorInvalidResp);
             return;
         }
 
         data.OrderId = this->orderIdMap[order["c"].GetString()];
-        data.ExecuteTime = order["E"].GetUint64();
+        data.UpdateTime = order["E"].GetUint64();
         data.OrderStatus = stringToOrderStatus(order["X"].GetString());
         data.FromToken = parseToken(symbol, side).first; 
         data.ToToken = parseToken(symbol, side).second; 

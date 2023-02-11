@@ -8,6 +8,13 @@ namespace define
     bool IsStableCoin(string coinName);
     bool NotStableCoin(string coinName);
 
+    enum SocketStatus
+    {
+        SocketStatusInit = 0,
+        SocketStatusConnected = 1,
+        SocketStatusFailConnect = 2
+    };
+
     enum OrderSide
     {
         INVALID_SIDE = 0,
@@ -35,13 +42,14 @@ namespace define
 
     enum OrderStatus
     {
-        INVALID_ORDER_STATUS = 1, // 非法订单状态
-        NEW = 1,                  // 订单被交易引擎接受
-        PARTIALLY_FILLED = 2,     // 部分订单被成交
-        FILLED = 3,               // 订单完全成交
-        CANCELED = 4,             // 用户撤销了订单
-        PENDING_CANCEL = 5,       // 撤销中(目前并未使用)
-        REJECTED = 6,             // 订单没有被交易引擎接受，也没被处理
-        EXPIRED = 7,              // 订单被交易引擎取消, 比如
+        INVALID_ORDER_STATUS = 0, // 非法订单状态
+        INIT = 1,                 // 本地系统初始化，未提交
+        NEW = 2,                  // 订单被交易引擎接受
+        PARTIALLY_FILLED = 3,     // 部分订单被成交
+        FILLED = 4,               // 订单完全成交
+        CANCELED = 5,             // 用户撤销了订单
+        PENDING_CANCEL = 6,       // 撤销中(目前并未使用)
+        REJECTED = 7,             // 订单没有被交易引擎接受，也没被处理
+        EXPIRED = 8,              // 订单被交易引擎取消, 比如
     };
 }
