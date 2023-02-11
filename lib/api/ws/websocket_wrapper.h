@@ -2,6 +2,7 @@
 #include <functional>
 #include "websocketpp/client.hpp"
 #include "websocketpp/config/asio_client.hpp"
+#include "define/define.h"
 
 using namespace std;
 
@@ -12,12 +13,14 @@ namespace WebsocketWrapper
     {
     public:
         int Connect(string uri, string msg, function<void(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)> msgHandler);
+        define::SocketStatus Status;
 
     private:
         // 连接配置
+        string hostname;
+        string hostport;
         string sendMsg;
-        string hostname = "";
-        string hostport = "";
+        string uri;
 
         websocketpp::connection_hdl hdl;
         websocketpp::client<websocketpp::config::asio_tls_client> client;
@@ -34,5 +37,4 @@ namespace WebsocketWrapper
         WebsocketWrapper(string hostname, string hostport, websocketpp::lib::asio::io_service &ioService);
         ~WebsocketWrapper();
     };
-
 }

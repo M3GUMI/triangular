@@ -8,6 +8,13 @@ namespace define
     bool IsStableCoin(string coinName);
     bool NotStableCoin(string coinName);
 
+    enum SocketStatus
+    {
+        SocketStatusInit = 0,
+        SocketStatusConnected = 1,
+        SocketStatusFailConnect = 2
+    };
+
     enum OrderSide
     {
         INVALID_SIDE = 0,

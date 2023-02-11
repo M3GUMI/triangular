@@ -57,6 +57,7 @@ namespace CapitalPool
             }
         }
 
+        // 获取需补充的token
         for (const auto &item : basePool)
         {
             auto token = item.first;
@@ -66,11 +67,26 @@ namespace CapitalPool
                 freeAmount = balancePool[token];
             }
 
-            // 获取偏差比例最大的两种token
             if (freeAmount < basePool[token] && freeAmount / basePool[token] < minPercent)
             {
                 addToken = token;
                 minPercent = freeAmount / basePool[token];
+            }
+        }
+
+        // 获取需减少的token
+        for (const auto &item : basePool)
+        {
+            auto token = item.first;
+            double freeAmount = 0;
+            if (balancePool.count(token))
+            {
+                freeAmount = balancePool[token];
+            }
+
+            if (addToken.empty() && token == "USDT")  {
+                // 无需补充时，不清仓USDT
+                continue;
             }
 
             if (freeAmount > basePool[token] && freeAmount / basePool[token] > maxPercent)
@@ -92,7 +108,7 @@ namespace CapitalPool
         }
 
         // 多余token换为USDT
-        if (addToken.empty() && not delToken.empty() && delToken != "USDT")
+        if (addToken.empty() && not delToken.empty())
         {
             auto err = tryRebalance(delToken, "USDT", balancePool[delToken] - basePool[delToken]);
             if (err > 0)
@@ -141,42 +157,31 @@ namespace CapitalPool
         return apiWrapper.CreateOrder(req, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
     }
 
-    void CapitalPool::rebalanceHandler(HttpWrapper::OrderData &data)
-    {
-        if (locked)
-        {
+    void CapitalPool::rebalanceHandler(HttpWrapper::OrderData &data) {
+        if (locked) {
             // 刷新期间不执行
             spdlog::debug("func: {}, msg: {}", "rebalanceHandler", "refresh execute, ignore");
             return;
         }
 
-        if (not balancePool.count(data.FromToken))
-        {
+        if (not balancePool.count(data.FromToken)) {
             spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.FromToken] = 0;
-        }
-        else if (balancePool[data.FromToken] < data.ExecuteQuantity)
-        {
+        } else if (balancePool[data.FromToken] < data.ExecuteQuantity) {
             spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.FromToken] = 0;
-        }
-        else
-        {
+        } else {
             balancePool[data.FromToken] = balancePool[data.FromToken] - data.ExecuteQuantity;
         }
 
-        if (not balancePool.count(data.ToToken))
-        {
+        if (not balancePool.count(data.ToToken)) {
             balancePool[data.ToToken] = data.ExecuteQuantity * data.ExecutePrice;
-        }
-        else
-        {
+        } else {
             balancePool[data.ToToken] = balancePool[data.ToToken] + data.ExecuteQuantity * data.ExecutePrice;
         }
 
         vector<string> info;
-        for (const auto& item : balancePool)
-        {
+        for (const auto &item: balancePool) {
             info.push_back(item.first);
             info.push_back(to_string(item.second));
         }

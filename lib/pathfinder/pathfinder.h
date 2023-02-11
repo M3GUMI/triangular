@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <map>
 #include <time.h>
 #include <functional>
 #include "lib/api/ws/binance_depth_wrapper.h"
@@ -46,13 +47,16 @@ namespace Pathfinder
     {
     private:
 		TransactionPath mockPath;
+        map<string, WebsocketWrapper::BinanceDepthWrapper*> depthSocketMap; // depth连接管理
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> scanDepthTimer; // depth检查计时器
 
-		function<void(TransactionPath &path)> subscriber = NULL;
+		function<void(TransactionPath &path)> subscriber = nullptr;
 		HttpWrapper::BinanceApiWrapper &apiWrapper;
 		websocketpp::lib::asio::io_service &ioService;
 
 		void symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data); // symbol数据就绪
 		void depthDataHandler(WebsocketWrapper::DepthData &data);					// 接收depth数据处理
+        void scanDepthSocket();                                                     // 检查socket连接有效性
 		void loadMockPath();														// mock执行
 	public:
 		Pathfinder(websocketpp::lib::asio::io_service &ioService, HttpWrapper::BinanceApiWrapper &apiWrapper);

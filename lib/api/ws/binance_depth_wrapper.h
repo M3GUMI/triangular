@@ -28,13 +28,13 @@ namespace WebsocketWrapper
         vector<function<void(DepthData &data)>> depthSubscriber;
         HttpWrapper::BinanceApiWrapper &apiWrapper;
 
-        void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string token0, string token1);
+        void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string symbol);
 
     public:
         BinanceDepthWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper &apiWrapper, string hostname, string hostport);
         ~BinanceDepthWrapper();
 
-        int Connect(string token0, string token1);
+        int Connect(string symbol);
         void SubscribeDepth(function<void(DepthData &data)> handler);
     };
 }

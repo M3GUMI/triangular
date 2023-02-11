@@ -19,14 +19,13 @@ namespace WebsocketWrapper
         this->depthSubscriber.push_back(handler);
     }
 
-    int BinanceDepthWrapper::Connect(string token0, string token1)
+    int BinanceDepthWrapper::Connect(string symbol)
     {
-        auto symbol = this->apiWrapper.GetSymbol(token0, token1);
         string msg = R"({"method":"SUBSCRIBE","params":[")" + toLower(symbol) + R"(@depth5@100ms"],"id":)" + to_string(time(NULL) % 1000) + R"(})";
-        return WebsocketWrapper::Connect("", msg, bind(&BinanceDepthWrapper::msgHandler, this, placeholders::_1, placeholders::_2, token0, token1));
+        return WebsocketWrapper::Connect("", msg, bind(&BinanceDepthWrapper::msgHandler, this, placeholders::_1, placeholders::_2, symbol));
     }
 
-    void BinanceDepthWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string token0, string token1)
+    void BinanceDepthWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string symbol)
     {
         rapidjson::Document depthInfoJson;
         depthInfoJson.Parse(msg->get_payload().c_str());
@@ -54,7 +53,7 @@ namespace WebsocketWrapper
         }
 
         DepthData data;
-        auto symbolData = this->apiWrapper.GetSymbolData(token0, token1);
+        auto symbolData = this->apiWrapper.GetSymbolData(symbol);
         data.FromToken = symbolData.BaseToken;
         data.ToToken = symbolData.QuoteToken;
         data.UpdateTime = GetNowTime();

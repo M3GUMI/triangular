@@ -17,35 +17,61 @@ namespace Pathfinder
 	{
 	}
 
-	void Pathfinder::symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data)
-	{
-		auto succNum = 0, failNum = 0;
-		for (const auto& item : data)
-		{
-			auto symbol = item.first;
-			auto symbolData = item.second;
+	void Pathfinder::symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data) {
+        // 每秒检测连接情况 todo 需要增加depth有效性检测，有可能连接存在但数据为空
+        scanDepthTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1000));
+        scanDepthTimer->async_wait(bind(&Pathfinder::scanDepthSocket, this));
 
-			if (symbol == symbolData.BaseToken + symbolData.QuoteToken)
-			{
+        for (const auto &item: data) {
+            auto symbol = item.first;
+            auto symbolData = item.second;
 
-				// todo 补一个连接管理，内存释放+断连重试
-				auto *depthWrapper = new WebsocketWrapper::BinanceDepthWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
-				if (auto err = (*depthWrapper).Connect(symbolData.BaseToken, symbolData.QuoteToken); err > 0)
-				{
-					failNum++;
-				}
-				else
-				{
-					(*depthWrapper).SubscribeDepth(bind(&Pathfinder::depthDataHandler, this, placeholders::_1));
-					succNum++;
-				}
-			}
-		}
+            if (symbol != symbolData.BaseToken + symbolData.QuoteToken) {
+                continue;
+            }
 
-        spdlog::info("func: {}, init_num: {}, fail_num: {}", "symbolReadyHandler", succNum - failNum, failNum);
+            depthSocketMap[symbol] = new WebsocketWrapper::BinanceDepthWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
+            if (auto err = (*depthSocketMap[symbol]).Connect(symbol); err > 0) {
+                spdlog::error("func: {}, symbol: {}, err: {}", "symbolReadyHandler", symbol, WrapErr((err)));
+            } else {
+                (*depthSocketMap[symbol]).SubscribeDepth(bind(&Pathfinder::depthDataHandler, this, placeholders::_1));
+            }
+        }
 	}
 
-	void Pathfinder::loadMockPath()
+    void Pathfinder::scanDepthSocket() {
+        auto initNum = 0, succNum = 0, failNum = 0;
+        for (const auto& item:this->depthSocketMap) {
+            auto symbol = item.first;
+            auto socket = item.second;
+
+            if (socket->Status == define::SocketStatusInit) {
+                initNum++;
+                continue;
+            }
+
+            if (socket->Status == define::SocketStatusConnected) {
+                succNum++;
+                continue;
+            }
+
+            failNum++;
+            delete socket;
+
+            depthSocketMap[symbol] = new WebsocketWrapper::BinanceDepthWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
+            if (auto err = (*depthSocketMap[symbol]).Connect(symbol); err > 0) {
+                spdlog::error("func: {}, symbol: {}, err: {}", "scanDepthSocket", symbol, WrapErr((err)));
+            } else {
+                (*depthSocketMap[symbol]).SubscribeDepth(bind(&Pathfinder::depthDataHandler, this, placeholders::_1));
+            }
+        }
+
+        scanDepthTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1000));
+        scanDepthTimer->async_wait(bind(&Pathfinder::scanDepthSocket, this));
+        spdlog::info("func: {}, init: {}, connected: {}, reconnect: {}", "scanDepthSocket", initNum, succNum, failNum);
+    }
+
+    void Pathfinder::loadMockPath()
 	{
 		TransactionPathItem pathItem1;
 		pathItem1.FromToken = "USDT";
