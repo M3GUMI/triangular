@@ -28,6 +28,7 @@ namespace WebsocketWrapper
         // 事件触发函数
         websocketpp::lib::shared_ptr<websocketpp::lib::asio::ssl::context> on_tls_init(websocketpp::connection_hdl); // ssl安全 http转https
         void on_open(websocketpp::connection_hdl hdl);
+        void on_fail(websocketpp::connection_hdl hdl);
         void send(const string &data);
 
     protected:

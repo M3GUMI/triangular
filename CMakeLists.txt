@@ -70,7 +70,7 @@ set(ALL_FILES
         lib/triangular/triangularbalance.cpp
         lib/triangular/triangularinit.cpp
         lib/triangular/triangularlistenkey.cpp
-        src/src.cpp
+        main.cpp
         utils/utils.cpp
         utils/utils.h
         )

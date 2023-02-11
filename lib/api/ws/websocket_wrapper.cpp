@@ -29,6 +29,7 @@ namespace WebsocketWrapper
             client.set_message_handler(msgHandler);
             client.set_tls_init_handler(websocketpp::lib::bind(&WebsocketWrapper::on_tls_init, this, websocketpp::lib::placeholders::_1));
             client.set_open_handler(websocketpp::lib::bind(&WebsocketWrapper::on_open, this, websocketpp::lib::placeholders::_1));
+            client.set_fail_handler(websocketpp::lib::bind(&WebsocketWrapper::on_fail, this, websocketpp::lib::placeholders::_1));
             websocketpp::lib::error_code ec;
 
             std::string clientUri = "wss://" + hostname + ":" + hostport + "/ws" + uri;
@@ -63,6 +64,11 @@ namespace WebsocketWrapper
         // ping_timer->async_wait(websocketpp::lib::bind(&BaseExchange::on_ping_timer, this, websocketpp::lib::placeholders::_1));
         this->hdl = hdl;
         send(sendMsg);
+    }
+
+    void WebsocketWrapper::on_fail(websocketpp::connection_hdl hdl)
+    {
+        this->Status = define::SocketStatusFailConnect;
     }
 
     void WebsocketWrapper::send(const std::string &data)

@@ -32,7 +32,7 @@ namespace WebsocketWrapper
 
         if (depthInfoJson.FindMember("bids") == depthInfoJson.MemberEnd())
         {
-            cout << __func__ << " " << __LINE__ << " no depth data, return" << endl;
+            spdlog::debug("func: {}, msg: {}", "msgHandler", "no depth data, return");
             return;
         }
 
@@ -48,7 +48,7 @@ namespace WebsocketWrapper
 
         if (bids.Size() < 0 || asks.Size() < 0 || bids[0].Size() < 2 || asks[0].Size() < 0)
         {
-            cout << __func__ << " " << __LINE__ << "error ! depth data error!" << msg->get_payload().c_str() << endl;
+            spdlog::error("func: {}, err: {}, data: {}", "msgHandler", "depth data error!", msg->get_payload().c_str());
             return;
         }
 
