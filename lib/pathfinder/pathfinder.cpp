@@ -7,9 +7,6 @@ namespace Pathfinder
 {
 	Pathfinder::Pathfinder(websocketpp::lib::asio::io_service &ioService, HttpWrapper::BinanceApiWrapper &apiWrapper) : ioService(ioService), apiWrapper(apiWrapper)
 	{
-		if (conf::EnableMockRun) {
-			this->loadMockPath();
-		}
 		apiWrapper.SubscribeSymbolReady(bind(&Pathfinder::symbolReadyHandler, this, placeholders::_1));
 	}
 
@@ -68,7 +65,7 @@ namespace Pathfinder
 
         scanDepthTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1000));
         scanDepthTimer->async_wait(bind(&Pathfinder::scanDepthSocket, this));
-        spdlog::info("func: {}, init: {}, connected: {}, reconnect: {}", "scanDepthSocket", initNum, succNum, failNum);
+        spdlog::debug("func: {}, init: {}, connected: {}, reconnect: {}", "scanDepthSocket", initNum, succNum, failNum);
     }
 
     void Pathfinder::loadMockPath()
@@ -104,10 +101,6 @@ namespace Pathfinder
 
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data)
 	{
-		if (conf::EnableMockRun)
-		{
-			return this->subscriber(this->mockPath);
-		}
 		// 1. 更新负权图
 		// 2. 触发套利路径计算（如果在执行中，则不触发）
 		//     a. 拷贝临时负权图
@@ -126,15 +119,6 @@ namespace Pathfinder
 	{
 		// 1. 在负权图中计算路径
 		// 2. 返回下一步交易路径
-		if (conf::EnableMockRun)
-		{
-			mockPath.Path.erase(mockPath.Path.begin());
-			for (int i = 0; i < mockPath.Path.size(); i++)
-			{
-				resp.Path.push_back(mockPath.Path[i]);
-			}
-			return 0;
-		}
 	}
 
 	int Pathfinder::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
