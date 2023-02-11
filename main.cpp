@@ -4,8 +4,7 @@
 #include "spdlog/spdlog.h"
 
 using namespace std;
-int main()
-{
+int main() {
     spdlog::set_level(spdlog::level::debug);
     websocketpp::lib::asio::io_service ioService;
     HttpWrapper::BinanceApiWrapper apiWrapper(ioService);
