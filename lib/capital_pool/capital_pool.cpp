@@ -110,13 +110,13 @@ namespace CapitalPool
         }
     }
 
-    int CapitalPool::tryRebalance(string fromToken, string toToken, double amount)
+    int CapitalPool::tryRebalance(const string& fromToken, const string& toToken, double amount)
     {
-        Pathfinder::GetExchangePriceReq priceReq;
+        Pathfinder::GetExchangePriceReq priceReq{};
         priceReq.FromToken = fromToken;
         priceReq.ToToken = toToken;
 
-        Pathfinder::GetExchangePriceResp priceResp;
+        Pathfinder::GetExchangePriceResp priceResp{};
         if (auto err = pathfinder.GetExchangePrice(priceReq, priceResp); err > 0) {
             return err;
         }
@@ -174,17 +174,16 @@ namespace CapitalPool
             balancePool[data.ToToken] = balancePool[data.ToToken] + data.ExecuteQuantity * data.ExecutePrice;
         }
 
-        // todo 临时这样打日志
-        string info;
+        vector<string> info;
         for (const auto& item : balancePool)
         {
-            info += item.first + "=";
-            info += to_string(item.second) + ", ";
+            info.push_back(item.first);
+            info.push_back(to_string(item.second));
         }
-        spdlog::debug("func: {}, balancePool: {}", "rebalanceHandler", info);
+        spdlog::debug("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
     }
 
-    int CapitalPool::LockAsset(string token, double amount)
+    int CapitalPool::LockAsset(const string& token, double amount)
     {
         if (locked) {
             spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorCapitalRefresh));
@@ -207,7 +206,7 @@ namespace CapitalPool
         return 0;
     }
 
-    int CapitalPool::FreeAsset(string token, double amount)
+    int CapitalPool::FreeAsset(const string& token, double amount)
     {
         if (locked)
         {
@@ -243,7 +242,7 @@ namespace CapitalPool
             return;
         }
 
-        for (auto asset : info.Balances)
+        for (const auto& asset : info.Balances)
         {
             this->balancePool = {};
             this->balancePool[asset.Token] = asset.Free;
@@ -251,6 +250,5 @@ namespace CapitalPool
 
         locked = false;
         spdlog::info("func: {}, msg: {}", "refreshAccountHandler", "refresh account success");
-        return;
     }
 }

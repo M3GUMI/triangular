@@ -4,6 +4,7 @@
 #include "define/define.h"
 #include "conf/conf.h"
 #include "spdlog/spdlog.h"
+#include "spdlog/formatter.h"
 
 using namespace std;
 using namespace define;

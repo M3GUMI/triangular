@@ -20,7 +20,7 @@ namespace Pathfinder
 	void Pathfinder::symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data)
 	{
 		auto succNum = 0, failNum = 0;
-		for (auto item : data)
+		for (const auto& item : data)
 		{
 			auto symbol = item.first;
 			auto symbolData = item.second;
