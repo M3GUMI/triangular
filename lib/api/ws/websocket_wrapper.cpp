@@ -40,7 +40,6 @@ namespace WebsocketWrapper
             }
 
             client.connect(con);
-            this->Status = define::SocketStatusConnected;
         }
         catch (websocketpp::exception const &e)
         {
@@ -63,6 +62,7 @@ namespace WebsocketWrapper
         // ping_timer = std::make_shared<websocketpp::lib::asio::steady_timer>(*_ios, websocketpp::lib::asio::milliseconds(10000));
         // ping_timer->async_wait(websocketpp::lib::bind(&BaseExchange::on_ping_timer, this, websocketpp::lib::placeholders::_1));
         this->hdl = hdl;
+        this->Status = define::SocketStatusConnected;
         send(sendMsg);
     }
 
