@@ -105,8 +105,7 @@ namespace HttpWrapper
         if (symbolMap.count(symbol) != 1)
         {
             spdlog::error("func: {}, msg: {}, err: {}", "GetSymbolData", "not found symbol", define::ErrorDefault);
-            BinanceSymbolData data;
-            return data;
+            exit(EXIT_FAILURE);
         }
 
         return symbolMap[symbol];
@@ -117,8 +116,7 @@ namespace HttpWrapper
         if (symbolMap.count(toUpper(symbol)) != 1)
         {
             spdlog::error("func: {}, msg: {}, err: {}", "GetSymbolData", "not found symbol", define::ErrorDefault);
-            BinanceSymbolData data;
-            return data;
+            exit(EXIT_FAILURE);
         }
 
         return symbolMap[symbol];
@@ -130,7 +128,7 @@ namespace HttpWrapper
         if (symbolMap.count(symbol) != 1)
         {
             spdlog::error("func: {}, msg: {}, err: {}", "GetSymbolData", "not found symbol", define::ErrorDefault);
-            return "";
+            exit(EXIT_FAILURE);
         }
 
         BinanceSymbolData data = symbolMap[symbol];
@@ -143,7 +141,7 @@ namespace HttpWrapper
         if (symbolMap.count(symbol) != 1)
         {
             spdlog::error("func: {}, msg: {}, err: {}", "GetSymbolData", "not found symbol", define::ErrorDefault);
-            return define::INVALID_SIDE;
+            exit(EXIT_FAILURE);
         }
 
         define::OrderSide side;
@@ -223,21 +221,15 @@ namespace HttpWrapper
         map<string, string> args;
         string uri = "https://api.binance.com/api/v3/order";
         pair<std::string, define::OrderSide> symbolSide;
-        auto symbol = GetSymbol(req.FromToken, req.ToToken);
+        auto symbolData = GetSymbolData(req.FromToken, req.ToToken);
         auto side = GetSide(req.FromToken, req.ToToken);
-
-        if (symbol == "" || side == define::INVALID_SIDE)
-        {
-            spdlog::error("func: {}, msg: {}, err: {}", "CreateOrder", "symbol or side invalid", define::ErrorInvalidParam);
-            return define::ErrorDefault;
-        }
 
         pair<double, double> priceQuantity;
         priceQuantity = SelectPriceQuantity(req, side);
         auto price = priceQuantity.first;
         auto quantity = priceQuantity.second;
 
-        args["symbol"] = symbol;
+        args["symbol"] = symbolData.Symbol;
         args["side"] = this->sideToString(side);
         args["type"] = this->orderTypeToString(req.OrderType);
         args["timestamp"] = std::to_string(time(NULL) * 1000);
@@ -254,7 +246,7 @@ namespace HttpWrapper
             args["price"] = price;
         }
 
-        spdlog::debug("func: {}, symbol: {}, side: {}, price: {}, quantity: {}", "CreateOrder", symbol, side, price, quantity);
+        spdlog::debug("func: {}, symbol: {}, side: {}, price: {}, quantity: {}", "CreateOrder", symbolData.Symbol, side, price, quantity);
 
         ApiRequest apiReq;
         apiReq.args = args;
@@ -286,7 +278,7 @@ namespace HttpWrapper
                 data.OrderStatus = define::PARTIALLY_FILLED;
             }
 
-            spdlog::debug("func: {}, msg: {}", "createOrderCallback", "modk create_order");
+            spdlog::debug("func: {}, msg: {}", "createOrderCallback", "mock create_order");
             return callback(data, 0);
         }
 

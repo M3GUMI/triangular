@@ -1,14 +1,32 @@
 #include "triangular.h"
 #include "utils/utils.h"
 
-namespace Arbitrage {
-    TriangularArbitrage::TriangularArbitrage(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool &pool,
-                                             HttpWrapper::BinanceApiWrapper &apiWrapper) : pathfinder(pathfinder),
-                                                                                           capitalPool(pool),
-                                                                                           apiWrapper(apiWrapper) {
+namespace Arbitrage{
+    TriangularArbitrage::TriangularArbitrage(
+            Pathfinder::Pathfinder &pathfinder,
+            CapitalPool::CapitalPool &pool,
+            HttpWrapper::BinanceApiWrapper &apiWrapper
+    ) : pathfinder(pathfinder), capitalPool(pool), apiWrapper(apiWrapper) {
     }
 
     TriangularArbitrage::~TriangularArbitrage() {
+    }
+
+    bool TriangularArbitrage::CheckFinish() {
+        // 非目标币以外清空，套利完成
+        for (const auto& item: balance) {
+            auto token = item.first;
+            auto quantity = item.second;
+
+            if (token == this->TargetToken) {
+                continue;
+            }
+            if (quantity > 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     int TriangularArbitrage::Finish(double finalQuantity) {
@@ -23,7 +41,6 @@ namespace Arbitrage {
     }
 
     int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path) {
-        // todo 需要新增套利任务结束时释放
         auto order = new HttpWrapper::OrderData();
         order->OrderId = GenerateId();
         order->FromToken = path.FromToken;
@@ -46,9 +63,22 @@ namespace Arbitrage {
         req.OrderType = define::LIMIT;
         req.TimeInForce = define::IOC;
 
-        spdlog::info("func: {}, from: {}, to: {}, price: {}, quantity: {}", "ExecuteTrans", path.FromToken, path.ToToken, path.FromPrice, path.FromQuantity);
-        return apiWrapper.CreateOrder(req, bind(&TriangularArbitrage::baseOrderHandler, this, placeholders::_1,
-                                                placeholders::_2));
+        spdlog::info(
+                "func: {}, from: {}, to: {}, price: {}, quantity: {}",
+                "ExecuteTrans",
+                path.FromToken,
+                path.ToToken,
+                path.FromPrice,
+                path.FromQuantity
+        );
+        return apiWrapper.CreateOrder(
+                req,
+                bind(
+                        &TriangularArbitrage::baseOrderHandler,
+                        this,
+                        placeholders::_1,
+                        placeholders::_2
+                ));
     }
 
     int TriangularArbitrage::ReviseTrans(string origin, string end, double quantity) {
@@ -71,6 +101,7 @@ namespace Arbitrage {
         }
     }
 
+
     void TriangularArbitrage::baseOrderHandler(HttpWrapper::OrderData &data, int err) {
         if (err > 0) {
             spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(err));
@@ -87,6 +118,28 @@ namespace Arbitrage {
         order.ExecuteQuantity = data.ExecuteQuantity;
         order.UpdateTime = data.UpdateTime;
 
+        AddBalance(order.ToToken, order.ExecuteQuantity * order.ExecutePrice);
+        DelBalance(order.FromToken, order.ExecuteQuantity);
+
         this->transHandler(order);
+    }
+
+    void TriangularArbitrage::AddBalance(string token, double amount) {
+        balance[token] = balance[token] + amount;
+    }
+
+    void TriangularArbitrage::DelBalance(string token, double amount) {
+        if (balance[token] < amount) {
+            spdlog::critical(
+                    "func: {}, err: {}, balanceQuantity: {}, executeQuantity: {}",
+                    "baseOrderHandler",
+                    "invalid quantity",
+                    balance[token],
+                   amount
+            );
+            exit(EXIT_FAILURE);
+        }
+
+        balance[token] = balance[token] - amount;
     }
 }

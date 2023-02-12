@@ -4,9 +4,8 @@
 #include "spdlog/spdlog.h"
 
 using namespace std;
-int main()
-{
-    spdlog::set_level(spdlog::level::debug);
+int main() {
+    spdlog::set_level(spdlog::level::info);
     websocketpp::lib::asio::io_service ioService;
     HttpWrapper::BinanceApiWrapper apiWrapper(ioService);
     WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
