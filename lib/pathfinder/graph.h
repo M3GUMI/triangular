@@ -22,8 +22,9 @@ namespace Pathfinder{
         double ToQuantity;	   // 买入数量
     };
 
-    struct TransactionPath
+    struct ArbitrageChance
     {
+        double Profit;
         vector<TransactionPathItem> Path;
     };
 

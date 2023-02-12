@@ -84,7 +84,7 @@ namespace Arbitrage{
     int TriangularArbitrage::ReviseTrans(string origin, string end, double quantity) {
         // 寻找新路径重试
         Pathfinder::RevisePathReq req;
-        Pathfinder::TransactionPath resp;
+        Pathfinder::ArbitrageChance resp;
 
         req.Origin = origin;
         req.End = end;

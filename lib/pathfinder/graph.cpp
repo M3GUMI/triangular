@@ -48,7 +48,7 @@ namespace Pathfinder{
         resp.FromPrice = 0;
         resp.ToPrice = 0;
 
-        if (not tokenToIndex.count(req.FromToken) || not tokenToIndex[req.ToToken]) {
+        if (not tokenToIndex.count(req.FromToken) || not tokenToIndex.count(req.ToToken)) {
             return define::ErrorGraphNotReady;
         }
 
@@ -76,6 +76,8 @@ namespace Pathfinder{
         item.FromPrice = price;
         item.ToToken = indexToToken[to];
         item.ToPrice = 1 / price; // todo 临时
+
+        return item;
     };
 
     vector<TransactionPathItem> Graph::CalculateArbitrage() {
@@ -108,9 +110,10 @@ namespace Pathfinder{
                         if (firstToken == endToken) {
                             // 对数。乘法处理为加法
                             // 负数。最长路径处理为最短路径
-                            double rate = -exp(firstWeight) - exp(secondWeight) - exp(thirdWeight) - 3 * exp(1 - fee);
+                            double rate = -log(firstWeight) - log(secondWeight) - log(thirdWeight) - 3 * log(1 - fee);
                             if (rate < 0 && rate < minRate) {
                                 minRate = rate;
+                                path.clear();
                                 path.push_back(formatTransactionPathItem(firstToken,secondToken,firstWeight));
                                 path.push_back(formatTransactionPathItem(secondToken,thirdToken,secondWeight));
                                 path.push_back(formatTransactionPathItem(thirdToken,firstToken,thirdWeight));

@@ -15,9 +15,19 @@ namespace Arbitrage{
     IocTriangularArbitrage::~IocTriangularArbitrage() {
     }
 
-    int IocTriangularArbitrage::Run(Pathfinder::TransactionPath &path) {
-        spdlog::info("func: {}, msg: {}", "Run", "IocTriangularArbitrage start");
-        Pathfinder::TransactionPathItem firstPath = path.Path.front();
+    int IocTriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
+        vector<string> info;
+        info.push_back(chance.Path.front().FromToken);
+        for (const auto &item: chance.Path) {
+            info.push_back(to_string(item.FromPrice));
+            info.push_back(item.ToToken);
+        }
+
+        spdlog::info(
+                "func: IocTriangularArbitrage::Run, profit: {}, path: {}",
+                chance.Profit, spdlog::fmt_lib::join(info, ",")
+        );
+        Pathfinder::TransactionPathItem firstPath = chance.Path.front();
         if (auto err = capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity); err > 0) {
             return err;
         }

@@ -15,7 +15,7 @@ namespace Executor
     HttpWrapper::BinanceApiWrapper &apiWrapper;
 
     bool lock; // 同时只执行一个套利任务
-    void arbitragePathHandler(Pathfinder::TransactionPath &path);
+    void arbitragePathHandler(Pathfinder::ArbitrageChance &chance);
     void arbitrageFinishHandler();
 
   public:

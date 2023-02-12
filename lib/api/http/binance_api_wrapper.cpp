@@ -171,8 +171,8 @@ namespace HttpWrapper
         AccountInfo info;
         if (conf::EnableMock) {
             BalanceData data;
-            data.Token = "OP";
-            data.Free = 2000;
+            data.Token = "USDT";
+            data.Free = 1000;
             data.Locked = 0;
             info.Balances.push_back(data);
             spdlog::debug("func: {}, msg: {}", "GetAccountInfo", "mock account_info");

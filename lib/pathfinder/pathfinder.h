@@ -18,7 +18,7 @@ namespace Pathfinder
 
     class Pathfinder: public Graph {
     private:
-        function<void(TransactionPath &path)> subscriber = nullptr;
+        function<void(ArbitrageChance &chance)> subscriber = nullptr;
         HttpWrapper::BinanceApiWrapper &apiWrapper;
         websocketpp::lib::asio::io_service &ioService;
 
@@ -34,7 +34,7 @@ namespace Pathfinder
         ~Pathfinder();
 
         void HuntingKing();
-        void SubscribeArbitrage(function<void(TransactionPath &path)> handler);        // 订阅套利机会推送
-        int RevisePath(RevisePathReq req, TransactionPath &resp);                    // 路径修正
+        void SubscribeArbitrage(function<void(ArbitrageChance &chance)> handler);      // 订阅套利机会推送
+        int RevisePath(RevisePathReq req, ArbitrageChance &chance);                    // 路径修正
     };
 }

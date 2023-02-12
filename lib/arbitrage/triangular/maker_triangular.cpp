@@ -3,20 +3,21 @@
 #include "maker_triangular.h"
 #include "utils/utils.h"
 
-namespace Arbitrage {
-    MakerTriangularArbitrage::MakerTriangularArbitrage(Pathfinder::Pathfinder &pathfinder,
-                                                       CapitalPool::CapitalPool &pool,
-                                                       HttpWrapper::BinanceApiWrapper &apiWrapper)
-            : TriangularArbitrage(pathfinder, pool, apiWrapper) {
+namespace Arbitrage{
+    MakerTriangularArbitrage::MakerTriangularArbitrage(
+            Pathfinder::Pathfinder &pathfinder,
+            CapitalPool::CapitalPool &pool,
+            HttpWrapper::BinanceApiWrapper &apiWrapper
+    ) : TriangularArbitrage(pathfinder, pool, apiWrapper) {
         this->transHandler = bind(&MakerTriangularArbitrage::TransHandler, this, placeholders::_1);
     }
 
     MakerTriangularArbitrage::~MakerTriangularArbitrage() {
     }
 
-    int MakerTriangularArbitrage::Run(Pathfinder::TransactionPath &path) {
+    int MakerTriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
         spdlog::info("func: {}, msg: {}", "Run", "MakerTriangularArbitrage start");
-        Pathfinder::TransactionPathItem firstPath = path.Path[0];
+        Pathfinder::TransactionPathItem firstPath = chance.Path[0];
         if (auto err = capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity); err > 0) {
             return err;
         }

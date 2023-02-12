@@ -7,8 +7,7 @@ namespace Pathfinder
 {
 	Pathfinder::Pathfinder(websocketpp::lib::asio::io_service &ioService, HttpWrapper::BinanceApiWrapper &apiWrapper) : ioService(ioService), apiWrapper(apiWrapper)
 	{
-        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(100));
-        huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
+
         apiWrapper.SubscribeSymbolReady(bind(&Pathfinder::symbolReadyHandler, this, placeholders::_1));
 	}
 
@@ -21,7 +20,19 @@ namespace Pathfinder
         scanDepthTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1000));
         scanDepthTimer->async_wait(bind(&Pathfinder::scanDepthSocket, this));
 
+        // 5秒后开始每100ms跑算法
+        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5000));
+        huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
+
         for (const auto &item: data) {
+            if (conf::EnableMock &&
+                (item.first != "BTCUSDT" && item.first != "ETHUSDT" && item.first != "ETHBTC" &&
+                 item.first != "XRPBTC" && item.first != "XRPUSDT" && item.first != "XRPETH" &&
+                 item.first != "LTCBTC" && item.first != "LTCUSDT" && item.first != "LTCETH" &&
+                 item.first != "MATICBTC" && item.first != "MATICUSDT" && item.first != "MATICETH")) {
+                continue;
+            }
+
             auto symbol = item.first;
             auto symbolData = item.second;
 
@@ -73,7 +84,7 @@ namespace Pathfinder
     }
 
     void Pathfinder::HuntingKing() {
-        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(100));
+        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(200));
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
         auto path = Graph::CalculateArbitrage();
@@ -81,16 +92,21 @@ namespace Pathfinder
             return;
         }
 
+        double base = 10000; // 验算
         vector<string> info;
-        info.push_back(path[0].FromToken);
-        for (auto item:path) {
-            info.push_back(item.ToToken);
+        for (const auto& item:path) {
+            base = base*item.FromPrice*(1-0.0003);
         }
-        spdlog::info("func: {}, path: {}", "HuntingKing", spdlog::fmt_lib::join(info, ","));
 
-        TransactionPath Path{};
-        Path.Path = path;
-        this->subscriber(Path);
+        if (base <= 10000) {
+            spdlog::error("func: HuntingKing, err: path can not get money");
+            return;
+        }
+
+        ArbitrageChance chance{};
+        chance.Profit = base/10000;
+        chance.Path = path;
+        this->subscriber(chance);
     }
 
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data)
@@ -98,17 +114,17 @@ namespace Pathfinder
         if (data.Asks.size() > 0) {
             Graph::AddEdge(data.FromToken, data.ToToken, data.Asks[0].Price);
         }
-        if (data.Asks.size() > 0) {
-            Graph::AddEdge(data.ToToken, data.FromToken, data.Bids[0].Price);
+        if (data.Bids.size() > 0) {
+            Graph::AddEdge(data.ToToken, data.FromToken, 1/data.Bids[0].Price);
         }
 	}
 
-	void Pathfinder::SubscribeArbitrage(function<void(TransactionPath &path)> handler)
+	void Pathfinder::SubscribeArbitrage(function<void(ArbitrageChance &path)> handler)
 	{
 		this->subscriber = handler;
 	}
 
-	int Pathfinder::RevisePath(RevisePathReq req, TransactionPath &resp)
+	int Pathfinder::RevisePath(RevisePathReq req, ArbitrageChance &resp)
 	{
 		// 1. 在负权图中计算路径
 		// 2. 返回下一步交易路径

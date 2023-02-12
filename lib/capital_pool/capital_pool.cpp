@@ -185,7 +185,7 @@ namespace CapitalPool
             info.push_back(item.first);
             info.push_back(to_string(item.second));
         }
-        spdlog::debug("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
+        spdlog::info("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
     }
 
     int CapitalPool::LockAsset(const string& token, double amount)
