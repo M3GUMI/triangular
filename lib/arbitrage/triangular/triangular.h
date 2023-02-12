@@ -35,14 +35,11 @@ namespace Arbitrage{
 
         int ExecuteTrans(Pathfinder::TransactionPathItem &path);
         int ReviseTrans(string origin, string end, double quantity);
-        void AddBalance(string token, double amount);
-        void DelBalance(string token, double amount);
         bool CheckFinish();
         int Finish(double finalQuantity);
 
     private:
         function<void()> subscriber = nullptr;
-        map<string, double> balance; // 持有资金。todo 暂不考虑挂单锁定
 
         void baseOrderHandler(HttpWrapper::OrderData &data, int err);
     };

@@ -13,19 +13,15 @@ namespace Arbitrage{
     }
 
     bool TriangularArbitrage::CheckFinish() {
-        // 非目标币以外清空，套利完成
-        for (const auto& item: balance) {
-            auto token = item.first;
-            auto quantity = item.second;
-
-            if (token == this->TargetToken) {
-                continue;
-            }
-            if (quantity > 0) {
+        for(auto order:orderMap) {
+            auto orderStatus = order.second.OrderStatus;
+            if (orderStatus != define::FILLED && orderStatus != define::PARTIALLY_FILLED) {
+                cout << order.second.FromToken << endl;
+                cout << order.second.ToToken << endl;
+                cout << orderStatus << endl;
                 return false;
             }
         }
-
         return true;
     }
 
@@ -41,19 +37,19 @@ namespace Arbitrage{
     }
 
     int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path) {
-        auto order = new HttpWrapper::OrderData();
-        order->OrderId = GenerateId();
-        order->FromToken = path.FromToken;
-        order->ToToken = path.ToToken;
-        order->OriginPrice = path.FromPrice;
-        order->OriginQuantity = path.FromQuantity;
-        order->OrderType = define::LIMIT;
-        order->TimeInForce = define::IOC;
-        order->OrderStatus = define::INIT;
-        order->UpdateTime = GetNowTime();
+        auto orderId = GenerateId();
+        orderMap[orderId].OrderId = orderId;
+        orderMap[orderId].FromToken = path.FromToken;
+        orderMap[orderId].ToToken = path.ToToken;
+        orderMap[orderId].OriginPrice = path.FromPrice;
+        orderMap[orderId].OriginQuantity = path.FromQuantity;
+        orderMap[orderId].OrderType = define::LIMIT;
+        orderMap[orderId].TimeInForce = define::IOC;
+        orderMap[orderId].OrderStatus = define::INIT;
+        orderMap[orderId].UpdateTime = GetNowTime();
 
         HttpWrapper::CreateOrderReq req;
-        req.OrderId = order->OrderId;
+        req.OrderId = orderId;
         req.FromToken = path.FromToken;
         req.FromPrice = path.FromPrice;
         req.FromQuantity = path.FromQuantity;
@@ -82,6 +78,7 @@ namespace Arbitrage{
     }
 
     int TriangularArbitrage::ReviseTrans(string origin, string end, double quantity) {
+        // todo 此处有bug，depth不足的话，有一部分金额卡单了
         // 寻找新路径重试
         Pathfinder::RevisePathReq req;
         Pathfinder::ArbitrageChance resp;
@@ -95,12 +92,24 @@ namespace Arbitrage{
             return err;
         }
 
+        vector<string> info;
+        info.push_back(resp.Path[0].FromToken);
+        for (const auto &item: resp.Path) {
+            info.push_back(to_string(item.FromPrice));
+            info.push_back(item.ToToken);
+        }
+        spdlog::info("func: RevisePath, Profit: {}, BestPath: {}", resp.Profit, spdlog::fmt_lib::join(info, ","));
+
+        // todo 这里深度不够需要重新找别的路径
+        if (resp.Path.front().FromQuantity > quantity) {
+            resp.Path.front().FromQuantity = quantity;
+        }
+
         err = ExecuteTrans(resp.Path.front());
         if (err > 0) {
             return err;
         }
     }
-
 
     void TriangularArbitrage::baseOrderHandler(HttpWrapper::OrderData &data, int err) {
         if (err > 0) {
@@ -109,8 +118,14 @@ namespace Arbitrage{
         }
 
         auto order = orderMap[data.OrderId];
-        if (order.UpdateTime > data.UpdateTime) {
-            return;
+        if (conf::EnableMock) {
+            if (order.UpdateTime > data.UpdateTime) {
+                return;
+            }
+        } else {
+            if (order.UpdateTime >= data.UpdateTime) {
+                return;
+            }
         }
 
         order.OrderStatus = data.OrderStatus;
@@ -118,28 +133,6 @@ namespace Arbitrage{
         order.ExecuteQuantity = data.ExecuteQuantity;
         order.UpdateTime = data.UpdateTime;
 
-        AddBalance(order.ToToken, order.ExecuteQuantity * order.ExecutePrice);
-        DelBalance(order.FromToken, order.ExecuteQuantity);
-
         this->transHandler(order);
-    }
-
-    void TriangularArbitrage::AddBalance(string token, double amount) {
-        balance[token] = balance[token] + amount;
-    }
-
-    void TriangularArbitrage::DelBalance(string token, double amount) {
-        if (balance[token] < amount) {
-            spdlog::critical(
-                    "func: {}, err: {}, balanceQuantity: {}, executeQuantity: {}",
-                    "baseOrderHandler",
-                    "invalid quantity",
-                    balance[token],
-                   amount
-            );
-            exit(EXIT_FAILURE);
-        }
-
-        balance[token] = balance[token] - amount;
     }
 }

@@ -143,6 +143,10 @@ namespace CapitalPool
         uint32_t tmp = amount / ticketSize;
         amount = tmp * ticketSize;
 
+        if (amount == 0) {
+            return 0;
+        }
+
         HttpWrapper::CreateOrderReq req;
         req.OrderId = GenerateId();
         req.FromToken = fromToken;
@@ -188,25 +192,27 @@ namespace CapitalPool
         spdlog::info("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
     }
 
-    int CapitalPool::LockAsset(const string& token, double amount)
+    int CapitalPool::LockAsset(const string& token, double amount, double& lockAmount)
     {
         if (locked) {
-            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorCapitalRefresh));
+            spdlog::error("func: LockAsset, token: {}, amount: {}, err: {}", token, amount, WrapErr(define::ErrorCapitalRefresh));
             return define::ErrorCapitalRefresh;
         }
 
-        if (not balancePool.count(token))
+        if (not balancePool.count(token) || balancePool[token] == 0)
         {
-            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorInsufficientBalance));
+            spdlog::error("func: LockAsset, token: {}, amount: {}, err: {}", token, amount, WrapErr(define::ErrorInsufficientBalance));
             return define::ErrorInsufficientBalance;
         }
 
         if (balancePool[token] < amount)
         {
-            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorInsufficientBalance));
-            return define::ErrorInsufficientBalance;
+            lockAmount = balancePool[token];
+            balancePool[token] = 0;
+            return 0;
         }
 
+        lockAmount = amount;
         balancePool[token] = balancePool[token] - amount; 
         return 0;
     }

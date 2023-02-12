@@ -15,23 +15,21 @@ namespace Executor
 	{
 	}
 
-	void Executor::arbitragePathHandler(Pathfinder::ArbitrageChance &chance)
-	{
-		if (lock)
-		{
+	void Executor::arbitragePathHandler(Pathfinder::ArbitrageChance &chance) {
+        if (lock) {
             spdlog::debug("func: {}, msg: {}", "arbitragePathHandler", "arbitrage executing, ignore path");
-			return;
-		}
+            return;
+        }
 
         // todo 此处需要内存管理。需要增加套利任务结束，清除subscribe
+        lock = true;
         auto iocTriangular = new Arbitrage::IocTriangularArbitrage(pathfinder, capitalPool, apiWrapper);
         iocTriangular->SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
         if (auto err = iocTriangular->Run(chance); err > 0) {
-			return;
-		}
-
-		lock = true;
-	}
+            lock = false;
+            return;
+        }
+    }
 
 	void Executor::arbitrageFinishHandler()
 	{

@@ -29,6 +29,7 @@ namespace Pathfinder
                 (item.first != "BTCUSDT" && item.first != "ETHUSDT" && item.first != "ETHBTC" &&
                  item.first != "XRPBTC" && item.first != "XRPUSDT" && item.first != "XRPETH" &&
                  item.first != "LTCBTC" && item.first != "LTCUSDT" && item.first != "LTCETH" &&
+                 item.first != "DGBUSDT" && item.first != "DGBBTC" && item.first != "AMPUSDT" && item.first != "AMPBTC" &&
                  item.first != "MATICBTC" && item.first != "MATICUSDT" && item.first != "MATICETH")) {
                 continue;
             }
@@ -112,10 +113,10 @@ namespace Pathfinder
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data)
 	{
         if (data.Asks.size() > 0) {
-            Graph::AddEdge(data.FromToken, data.ToToken, data.Asks[0].Price);
+            Graph::AddEdge(data.FromToken, data.ToToken, data.Asks[0].Price, data.Asks[0].Quantity);
         }
         if (data.Bids.size() > 0) {
-            Graph::AddEdge(data.ToToken, data.FromToken, 1/data.Bids[0].Price);
+            Graph::AddEdge(data.ToToken, data.FromToken, 1/data.Bids[0].Price, data.Bids[0].Quantity);
         }
 	}
 
@@ -128,20 +129,9 @@ namespace Pathfinder
 	{
 		// 1. 在负权图中计算路径
 		// 2. 返回下一步交易路径
-        auto nextStep = Graph::FindBestPath(req.Origin, req.End);
-
-        GetExchangePriceReq priceReq{};
-        GetExchangePriceResp priceResp{};
-        priceReq.FromToken = req.Origin;
-        priceReq.ToToken = nextStep;
-        Graph::GetExchangePrice(priceReq, priceResp);
-
-        TransactionPathItem item;
-        item.FromToken = req.Origin;
-        item.FromPrice = priceResp.FromPrice;
-        item.ToToken = nextStep;
-        item.ToPrice = priceResp.ToPrice;
-
+        auto result = Graph::FindBestPath(req.Origin, req.End);
+        resp.Profit = result.first;
+        resp.Path = result.second;
         return 0;
     }
 }

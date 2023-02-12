@@ -273,10 +273,10 @@ namespace HttpWrapper
             data.OriginQuantity = req.FromQuantity;
 
             // 最大成交500
-            if (req.FromQuantity > 500) {
+            /*if (req.FromQuantity > 500) {
                 data.ExecuteQuantity = req.FromQuantity - 500;
                 data.OrderStatus = define::PARTIALLY_FILLED;
-            }
+            }*/
 
             spdlog::debug("func: {}, msg: {}", "createOrderCallback", "mock create_order");
             return callback(data, 0);

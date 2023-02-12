@@ -8,8 +8,7 @@ namespace conf
     string SecretKey = "lDOZfpTNBIG8ICteeNfoOIoOHBONvBsiAP88GJ5rgDMF6bGGPETkM1Ri14mrbkfJ";
 
     map<string, double> BaseAssets = {
-        {"USDT", 200},
-        {"BUSD", 0.2},
-        {"BUSD", 100},
+        {"USDT", 500},
+        {"ETH", 0.2},
     };
 }

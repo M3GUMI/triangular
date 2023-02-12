@@ -6,7 +6,7 @@ namespace Pathfinder{
     Graph::Graph() = default;
     Graph::~Graph() = default;
 
-    void Graph::AddEdge(string from, string to, double weight) {
+    void Graph::AddEdge(string from, string to, double weight, double quantity) {
         // 将边加入相应的节点的邻接表中
         if (not tokenToIndex.count(to)) {
             int index = nodes.size();
@@ -33,12 +33,13 @@ namespace Pathfinder{
         for (auto edge: nodes[fromIndex]) {
             if (edge.from == fromIndex && edge.to == toIndex) {
                 edge.weight = weight;
+                edge.quantity = quantity;
                 return;
             }
         }
 
         // 边不存在, 添加
-        auto edge = new Edge(fromIndex, toIndex, weight);
+        auto edge = new Edge(fromIndex, toIndex, weight, quantity);
         nodes[fromIndex].push_back(*edge);
     }
 
@@ -70,12 +71,14 @@ namespace Pathfinder{
         return 0;
     }
 
-    TransactionPathItem Graph::formatTransactionPathItem(int from, int to, double price) {
+    TransactionPathItem Graph::formatTransactionPathItem(int from, int to, double price, double quantity) {
         TransactionPathItem item{};
         item.FromToken = indexToToken[from];
         item.FromPrice = price;
+        item.FromQuantity = quantity;
         item.ToToken = indexToToken[to];
         item.ToPrice = 1 / price; // todo 临时
+        item.ToQuantity = quantity*price; // todo 临时
 
         return item;
     };
@@ -114,9 +117,9 @@ namespace Pathfinder{
                             if (rate < 0 && rate < minRate) {
                                 minRate = rate;
                                 path.clear();
-                                path.push_back(formatTransactionPathItem(firstToken,secondToken,firstWeight));
-                                path.push_back(formatTransactionPathItem(secondToken,thirdToken,secondWeight));
-                                path.push_back(formatTransactionPathItem(thirdToken,firstToken,thirdWeight));
+                                path.push_back(formatTransactionPathItem(firstToken,secondToken,firstWeight, firstEdge.quantity));
+                                path.push_back(formatTransactionPathItem(secondToken,thirdToken,secondWeight, secondEdge.quantity));
+                                path.push_back(formatTransactionPathItem(thirdToken,firstToken,thirdWeight, thirdEdge.quantity));
                             }
                         }
                     }
@@ -127,7 +130,76 @@ namespace Pathfinder{
         return path;
     }
 
-    string Graph::FindBestPath(string fromToken, string toToken) {
+    pair<double, vector<TransactionPathItem>> Graph::FindBestPath(string start, string end) {
+        auto oneStepResult = bestOneStep(tokenToIndex[start], tokenToIndex[end]);
+        auto twoStepResult = bestTwoStep(tokenToIndex[start], tokenToIndex[end]);
+
+        cout << start << end << endl;
+        cout << "profit one: " << oneStepResult.first << endl;
+        cout << "profit two: " << twoStepResult.first << endl;
+        if (twoStepResult.first > oneStepResult.first) {
+            return twoStepResult;
+        } else {
+            return oneStepResult;
+        }
+    }
+
+    // 走一步
+    pair<double, vector<TransactionPathItem>> Graph::bestOneStep(int start, int end) {
+        vector<TransactionPathItem> path;
+        auto edges = nodes[start]; // 起点出发边
+        for (auto &edge: edges) {
+            if (edge.to != end) {
+                continue;
+            }
+            path.push_back(formatTransactionPathItem(edge.from, edge.to, edge.weight, edge.quantity));
+            return make_pair(edge.weight * (1 - fee), path);
+        }
+
+        return make_pair(0, path);
+    }
+
+    // 走两步
+    pair<double, vector<TransactionPathItem>> Graph::bestTwoStep(int start, int end) {
+        vector<TransactionPathItem> path;
+        double maxRate = 0;
+
+        for (auto &firstEdge: nodes[start]) {
+            double firstWeight = firstEdge.weight; // 第一条边权重
+            int secondToken = firstEdge.to; // 第二token
+            auto secondEdges = nodes[secondToken]; // 第二token出发边
+
+            for (auto &secondEdge: secondEdges) {
+                double secondWeight = secondEdge.weight; // 第二条边权重
+
+                if (secondEdge.to == end) {
+                    double rate = firstWeight * secondWeight * (1 - fee) * (1 - fee);
+                    if (rate > 0 && rate > maxRate) {
+                        maxRate = rate;
+                        path.clear();
+                        path.push_back(
+                                formatTransactionPathItem(
+                                        firstEdge.from,
+                                        firstEdge.to,
+                                        firstWeight,
+                                        firstEdge.quantity
+                                ));
+                        path.push_back(
+                                formatTransactionPathItem(
+                                        secondEdge.from,
+                                        secondEdge.to,
+                                        secondWeight,
+                                        secondEdge.quantity
+                                ));
+                    }
+                }
+            }
+        }
+
+        return make_pair(maxRate, path);
+    }
+
+    /*string Graph::FindBestPath(string fromToken, string toToken) {
         int start = tokenToIndex[fromToken];
         int end = tokenToIndex[toToken];
 
@@ -161,7 +233,10 @@ namespace Pathfinder{
                     maxProduct[edge.to] = newMaxProduct;
                     parent[edge.to] = curNode;
 
-                    // 如果下一个节点不在队列中，就将其加入队列
+                    // 如果下一个节点不在队列中&&没有入过队列，就将其加入队列
+                    if (count[edge.to] > 0) {
+                        continue;
+                    }
                     if (!inQueue[edge.to]) {
                         q.push(edge.to);
                         inQueue[edge.to] = true;
@@ -180,13 +255,16 @@ namespace Pathfinder{
         // 构造最大乘积路径
         vector<int> path;
         int curNode = end;
+        cout << "bestPath: ";
         while (curNode != start) {
+            cout << indexToToken[curNode];
             path.push_back(curNode);
             curNode = parent[curNode];
         }
         path.push_back(start);
+        cout << indexToToken[start] << endl; // 倒过来看
 
         int nextStep = path.size() - 2;
         return indexToToken[path[nextStep]];
-    }
+    }*/
 }
