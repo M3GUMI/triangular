@@ -41,11 +41,6 @@ set(ALL_FILES
         lib/arbitrage/triangular/ioc_triangular.cpp
         lib/arbitrage/triangular/maker_triangular.cpp
         lib/arbitrage/triangular/maker_triangular.h
-        lib/binance/binancecommondef.h
-        lib/binance/binancerestapiwrapper.cpp
-        lib/binance/binancerestapiwrapper.h
-        lib/binance/binancewebsocketwrapper.cpp
-        lib/binance/binancewebsocketwrapper.h
         lib/capital_pool/capital_pool.cpp
         lib/capital_pool/capital_pool.h
         lib/executor/executor.cpp
@@ -65,15 +60,11 @@ set(ALL_FILES
         lib/libmix/Tree.hpp
         lib/pathfinder/pathfinder.cpp
         lib/pathfinder/pathfinder.h
-        lib/triangular/triangular.cpp
-        lib/triangular/triangular.h
-        lib/triangular/triangularbalance.cpp
-        lib/triangular/triangularinit.cpp
-        lib/triangular/triangularlistenkey.cpp
+        lib/pathfinder/graph.cpp
+        lib/pathfinder/graph.h
         main.cpp
         utils/utils.cpp
-        utils/utils.h
-        )
+        utils/utils.h)
 
 add_executable(MoneyTriangular ${ALL_FILES})
 

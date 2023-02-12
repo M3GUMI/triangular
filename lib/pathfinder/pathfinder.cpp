@@ -7,7 +7,9 @@ namespace Pathfinder
 {
 	Pathfinder::Pathfinder(websocketpp::lib::asio::io_service &ioService, HttpWrapper::BinanceApiWrapper &apiWrapper) : ioService(ioService), apiWrapper(apiWrapper)
 	{
-		apiWrapper.SubscribeSymbolReady(bind(&Pathfinder::symbolReadyHandler, this, placeholders::_1));
+        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(100));
+        huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
+        apiWrapper.SubscribeSymbolReady(bind(&Pathfinder::symbolReadyHandler, this, placeholders::_1));
 	}
 
 	Pathfinder::~Pathfinder()
@@ -65,18 +67,40 @@ namespace Pathfinder
 
         scanDepthTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1000));
         scanDepthTimer->async_wait(bind(&Pathfinder::scanDepthSocket, this));
-        spdlog::debug("func: {}, init: {}, connected: {}, reconnect: {}", "scanDepthSocket", initNum, succNum, failNum);
+        if (initNum > 0 || failNum > 0) {
+            spdlog::info("func: {}, init: {}, connected: {}, reconnect: {}", "scanDepthSocket", initNum, succNum, failNum);
+        }
+    }
+
+    void Pathfinder::HuntingKing() {
+        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(100));
+        huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
+
+        auto path = Graph::CalculateArbitrage();
+        if (path.size() != 3) {
+            return;
+        }
+
+        vector<string> info;
+        info.push_back(path[0].FromToken);
+        for (auto item:path) {
+            info.push_back(item.ToToken);
+        }
+        spdlog::info("func: {}, path: {}", "HuntingKing", spdlog::fmt_lib::join(info, ","));
+
+        TransactionPath Path{};
+        Path.Path = path;
+        this->subscriber(Path);
     }
 
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data)
 	{
-		// 1. 更新负权图
-		// 2. 触发套利路径计算（如果在执行中，则不触发）
-		//     a. 拷贝临时负权图
-		//     b. 计算路径
-		//     c. 通知交易机会,若存在
-		// if this->subscriber != NULL
-		// this->subscriber(this->getTriangularPath());
+        if (data.Asks.size() > 0) {
+            Graph::AddEdge(data.FromToken, data.ToToken, data.Asks[0].Price);
+        }
+        if (data.Asks.size() > 0) {
+            Graph::AddEdge(data.ToToken, data.FromToken, data.Bids[0].Price);
+        }
 	}
 
 	void Pathfinder::SubscribeArbitrage(function<void(TransactionPath &path)> handler)
@@ -88,13 +112,20 @@ namespace Pathfinder
 	{
 		// 1. 在负权图中计算路径
 		// 2. 返回下一步交易路径
-	}
+        auto nextStep = Graph::FindBestPath(req.Origin, req.End);
 
-	int Pathfinder::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
-	{
-		// 获取负权图中价格
-		resp.FromPrice = 1;
-		resp.ToPrice = 1;
-		return 0;
-	}
+        GetExchangePriceReq priceReq{};
+        GetExchangePriceResp priceResp{};
+        priceReq.FromToken = req.Origin;
+        priceReq.ToToken = nextStep;
+        Graph::GetExchangePrice(priceReq, priceResp);
+
+        TransactionPathItem item;
+        item.FromToken = req.Origin;
+        item.FromPrice = priceResp.FromPrice;
+        item.ToToken = nextStep;
+        item.ToPrice = priceResp.ToPrice;
+
+        return 0;
+    }
 }
