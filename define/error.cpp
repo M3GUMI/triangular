@@ -17,5 +17,6 @@ namespace define
         {ErrorCapitalRefresh, "refreshing capital_pool"},
         {ErrorBalanceNumber, "number error balance_pool"},
         {ErrorGraphNotReady, "graph price not ready"},
+        {ErrorStrategy, "transaction strategy error"},
     };
 }

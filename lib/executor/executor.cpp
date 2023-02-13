@@ -23,7 +23,7 @@ namespace Executor
 
         // todo 此处需要内存管理。需要增加套利任务结束，清除subscribe
         lock = true;
-        auto iocTriangular = new Arbitrage::IocTriangularArbitrage(pathfinder, capitalPool, apiWrapper);
+        Arbitrage::TriangularArbitrage* iocTriangular = new Arbitrage::IocTriangularArbitrage(pathfinder, capitalPool, apiWrapper);
         iocTriangular->SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
         if (auto err = iocTriangular->Run(chance); err > 0) {
             lock = false;
@@ -31,8 +31,8 @@ namespace Executor
         }
     }
 
-	void Executor::arbitrageFinishHandler()
-	{
+    void Executor::arbitrageFinishHandler()
+    {
 		lock = false;
 	}
 }

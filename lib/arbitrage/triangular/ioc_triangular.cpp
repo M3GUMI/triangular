@@ -1,5 +1,4 @@
 #include "iostream"
-#include <sstream>
 #include "ioc_triangular.h"
 #include "utils/utils.h"
 
@@ -9,43 +8,38 @@ namespace Arbitrage{
             CapitalPool::CapitalPool &pool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
     ) : TriangularArbitrage(pathfinder, pool, apiWrapper) {
-        this->transHandler = bind(&IocTriangularArbitrage::TransHandler, this, placeholders::_1);
     }
 
-    IocTriangularArbitrage::~IocTriangularArbitrage() {
-    }
+    IocTriangularArbitrage::~IocTriangularArbitrage() = default;
 
     int IocTriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
-        Pathfinder::TransactionPathItem firstPath = chance.Path.front();
-        double lockAmount = 0;
-        if (auto err = capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity, lockAmount); err > 0) {
+        double lockedAmount = 0;
+        auto firstStep = chance.FirstStep();
+        if (auto err = capitalPool.LockAsset(firstStep.FromToken, firstStep.FromQuantity, lockedAmount); err > 0) {
             return err;
-        }
-        firstPath.FromQuantity = lockAmount;
-
-        vector<string> info;
-        info.push_back(chance.Path.front().FromToken);
-        for (const auto &item: chance.Path) {
-            info.push_back(to_string(item.FromPrice));
-            info.push_back(item.ToToken);
         }
 
         spdlog::info(
                 "func: IocTriangularArbitrage::Run, profit: {}, path: {}",
-                chance.Profit, spdlog::fmt_lib::join(info, ",")
-        );
+                chance.Profit,
+                spdlog::fmt_lib::join(chance.Format(), ","));
 
-        this->TargetToken = firstPath.FromToken;
-        this->OriginQuantity = firstPath.FromQuantity;
-        this->OriginToken = firstPath.FromToken;
-        TriangularArbitrage::ExecuteTrans(firstPath);
+        firstStep.FromQuantity = lockedAmount;
+        this->TargetToken = firstStep.FromToken;
+        this->OriginQuantity = firstStep.FromQuantity;
+        this->OriginToken = firstStep.FromToken;
+        TriangularArbitrage::ExecuteTrans(firstStep);
         return 0;
     }
 
     void IocTriangularArbitrage::TransHandler(HttpWrapper::OrderData &data) {
         spdlog::info(
-                "func: TransHandler, From: {}, To: {}, OrderStatus: {}, ExecutePrice: {}, ExecuteQuantity: {}, OriginQuantity: {}",
-                data.FromToken, data.ToToken, data.OrderStatus, data.ExecutePrice, data.ExecuteQuantity, data.OriginQuantity
+                "func: TransHandler, from: {}, to: {}, orderStatus: {}, executeQuantity: {}, newQuantity: {}",
+                data.FromToken,
+                data.ToToken,
+                data.OrderStatus,
+                data.ExecuteQuantity,
+                data.ExecuteQuantity * data.ExecutePrice
         );
 
         int err;
@@ -73,13 +67,14 @@ namespace Arbitrage{
         if (CheckFinish()) {
             return Finish(data.ExecuteQuantity * data.ExecutePrice);
         }
+        return define::ErrorStrategy;
     }
 
     int IocTriangularArbitrage::partiallyFilledHandler(HttpWrapper::OrderData &data) {
         // 处理未成交部分
         if (define::IsStableCoin(data.FromToken)) {
             // 稳定币持仓，等待重平衡
-            TriangularArbitrage::capitalPool.FreeAsset(data.FromToken, data.ExecuteQuantity);
+            TriangularArbitrage::capitalPool.FreeAsset(data.FromToken, data.OriginQuantity - data.ExecuteQuantity);
         } else if (define::NotStableCoin(data.FromToken)) {
             // 未成交部分重执行
             auto err = this->ReviseTrans(data.FromToken, this->TargetToken, data.OriginQuantity - data.ExecuteQuantity);

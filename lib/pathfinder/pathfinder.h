@@ -13,7 +13,7 @@ namespace Pathfinder
 	{
 		string Origin;
 		string End;
-		double PositionQuantity;
+		double PositionQuantity = 0;
 	};
 
     class Pathfinder: public Graph {

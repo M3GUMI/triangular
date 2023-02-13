@@ -1,5 +1,4 @@
 #include "triangular.h"
-#include "utils/utils.h"
 
 namespace Arbitrage{
     TriangularArbitrage::TriangularArbitrage(
@@ -9,16 +8,17 @@ namespace Arbitrage{
     ) : pathfinder(pathfinder), capitalPool(pool), apiWrapper(apiWrapper) {
     }
 
-    TriangularArbitrage::~TriangularArbitrage() {
+    TriangularArbitrage::~TriangularArbitrage() = default;
+
+
+    int TriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
+        exit(EXIT_FAILURE);
     }
 
     bool TriangularArbitrage::CheckFinish() {
-        for(auto order:orderMap) {
-            auto orderStatus = order.second.OrderStatus;
-            if (orderStatus != define::FILLED && orderStatus != define::PARTIALLY_FILLED) {
-                cout << order.second.FromToken << endl;
-                cout << order.second.ToToken << endl;
-                cout << orderStatus << endl;
+        for (const auto &item: orderMap) {
+            auto order = item.second;
+            if (order.OrderStatus != define::FILLED && order.OrderStatus != define::PARTIALLY_FILLED) {
                 return false;
             }
         }
@@ -26,7 +26,7 @@ namespace Arbitrage{
     }
 
     int TriangularArbitrage::Finish(double finalQuantity) {
-        spdlog::info("func: {}, finalQuantity: {}, originQuantity: {}", "Finish", finalQuantity, this->OriginQuantity);
+        spdlog::info("func: Finish, finalQuantity: {}, originQuantity: {}", finalQuantity, this->OriginQuantity);
         capitalPool.Refresh();
         this->subscriber();
         return 0;
@@ -92,20 +92,18 @@ namespace Arbitrage{
             return err;
         }
 
-        vector<string> info;
-        info.push_back(resp.Path[0].FromToken);
-        for (const auto &item: resp.Path) {
-            info.push_back(to_string(item.FromPrice));
-            info.push_back(item.ToToken);
-        }
-        spdlog::info("func: RevisePath, Profit: {}, BestPath: {}", resp.Profit, spdlog::fmt_lib::join(info, ","));
+        spdlog::info(
+                "func: RevisePath, profit: {}, bestPath: {}",
+                resp.Profit,
+                spdlog::fmt_lib::join(resp.Format(), ","));
 
         // todo 这里深度不够需要重新找别的路径
+        // todo 深度处理有bug
         if (resp.Path.front().FromQuantity > quantity) {
             resp.Path.front().FromQuantity = quantity;
         }
 
-        err = ExecuteTrans(resp.Path.front());
+        err = ExecuteTrans(resp.FirstStep());
         if (err > 0) {
             return err;
         }
@@ -113,26 +111,30 @@ namespace Arbitrage{
 
     void TriangularArbitrage::baseOrderHandler(HttpWrapper::OrderData &data, int err) {
         if (err > 0) {
-            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(err));
+            spdlog::error("func: LockAsset, err: {}", WrapErr(err));
             return;
         }
 
-        auto order = orderMap[data.OrderId];
-        if (conf::EnableMock) {
-            if (order.UpdateTime > data.UpdateTime) {
+        HttpWrapper::OrderData *order = &orderMap[data.OrderId];
+        if (conf::EnableMock) { // mock情况下可相同毫秒更新
+            if (order->UpdateTime > data.UpdateTime) {
                 return;
             }
         } else {
-            if (order.UpdateTime >= data.UpdateTime) {
+            if (order->UpdateTime >= data.UpdateTime) {
                 return;
             }
         }
 
-        order.OrderStatus = data.OrderStatus;
-        order.ExecutePrice = data.ExecutePrice;
-        order.ExecuteQuantity = data.ExecuteQuantity;
-        order.UpdateTime = data.UpdateTime;
+        order->OrderStatus = data.OrderStatus;
+        order->ExecutePrice = data.ExecutePrice;
+        order->ExecuteQuantity = data.ExecuteQuantity;
+        order->UpdateTime = data.UpdateTime;
 
-        this->transHandler(order);
+        TransHandler(orderMap[data.OrderId]);
+    }
+
+    void TriangularArbitrage::TransHandler(HttpWrapper::OrderData &orderData) {
+        exit(EXIT_FAILURE);
     }
 }

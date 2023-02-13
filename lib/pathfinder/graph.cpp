@@ -1,12 +1,10 @@
 #include "graph.h"
-#include "utils/utils.h"
-#include "conf/conf.h"
 
 namespace Pathfinder{
     Graph::Graph() = default;
     Graph::~Graph() = default;
 
-    void Graph::AddEdge(string from, string to, double weight, double quantity) {
+    void Graph::AddEdge(const string& from, const string& to, double weight, double quantity) {
         // 将边加入相应的节点的邻接表中
         if (not tokenToIndex.count(to)) {
             int index = nodes.size();
@@ -134,9 +132,6 @@ namespace Pathfinder{
         auto oneStepResult = bestOneStep(tokenToIndex[start], tokenToIndex[end]);
         auto twoStepResult = bestTwoStep(tokenToIndex[start], tokenToIndex[end]);
 
-        cout << start << end << endl;
-        cout << "profit one: " << oneStepResult.first << endl;
-        cout << "profit two: " << twoStepResult.first << endl;
         if (twoStepResult.first > oneStepResult.first) {
             return twoStepResult;
         } else {

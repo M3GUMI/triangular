@@ -7,13 +7,10 @@ namespace Pathfinder
 {
 	Pathfinder::Pathfinder(websocketpp::lib::asio::io_service &ioService, HttpWrapper::BinanceApiWrapper &apiWrapper) : ioService(ioService), apiWrapper(apiWrapper)
 	{
-
         apiWrapper.SubscribeSymbolReady(bind(&Pathfinder::symbolReadyHandler, this, placeholders::_1));
 	}
 
-	Pathfinder::~Pathfinder()
-	{
-	}
+	Pathfinder::~Pathfinder() = default;
 
 	void Pathfinder::symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data) {
         // 每秒检测连接情况 todo 需要增加depth有效性检测，有可能连接存在但数据为空
@@ -29,7 +26,7 @@ namespace Pathfinder
                 (item.first != "BTCUSDT" && item.first != "ETHUSDT" && item.first != "ETHBTC" &&
                  item.first != "XRPBTC" && item.first != "XRPUSDT" && item.first != "XRPETH" &&
                  item.first != "LTCBTC" && item.first != "LTCUSDT" && item.first != "LTCETH" &&
-                 item.first != "DGBUSDT" && item.first != "DGBBTC" && item.first != "AMPUSDT" && item.first != "AMPBTC" &&
+                 item.first != "DGBUSDT" && item.first != "DGBBTC" && item.first != "RUNEGBP" && item.first != "RUNEUSDT" &&
                  item.first != "MATICBTC" && item.first != "MATICUSDT" && item.first != "MATICETH")) {
                 continue;
             }
@@ -71,7 +68,7 @@ namespace Pathfinder
 
             depthSocketMap[symbol] = new WebsocketWrapper::BinanceDepthWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
             if (auto err = (*depthSocketMap[symbol]).Connect(symbol); err > 0) {
-                spdlog::error("func: {}, symbol: {}, err: {}", "scanDepthSocket", symbol, WrapErr((err)));
+                spdlog::error("func: scanDepthSocket, symbol: {}, err: {}", symbol, WrapErr((err)));
             } else {
                 (*depthSocketMap[symbol]).SubscribeDepth(bind(&Pathfinder::depthDataHandler, this, placeholders::_1));
             }
@@ -93,30 +90,41 @@ namespace Pathfinder
             return;
         }
 
-        double base = 10000; // 验算
+        double profit = 1; // 验算利润率
         vector<string> info;
         for (const auto& item:path) {
-            base = base*item.FromPrice*(1-0.0003);
+            profit = profit*item.FromPrice*(1-0.0003);
         }
 
-        if (base <= 10000) {
+        if (profit <= 1) {
             spdlog::error("func: HuntingKing, err: path can not get money");
             return;
         }
 
         ArbitrageChance chance{};
-        chance.Profit = base/10000;
+        chance.Profit = profit;
         chance.Path = path;
         this->subscriber(chance);
     }
 
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data)
 	{
-        if (data.Asks.size() > 0) {
-            Graph::AddEdge(data.FromToken, data.ToToken, data.Asks[0].Price, data.Asks[0].Quantity);
+        /*Graph::AddEdge("USDT", "BTC", 4.928536, 100);
+        Graph::AddEdge("BTC", "USDT", 1/4.928536, 100);
+
+        Graph::AddEdge("BTC", "ETH", 3.92, 100);
+        Graph::AddEdge("ETH", "BTC", 1/3.92, 100);
+
+        Graph::AddEdge("ETH", "USDT", 0.051813, 100);
+        Graph::AddEdge("USDT", "ETH", 1/0.051813, 100);*/
+
+        if (!data.Bids.empty()) { // 买单挂出价，我方卖出价
+            auto depth = data.Bids[0];
+            Graph::AddEdge(data.FromToken, data.ToToken, depth.Price, depth.Quantity);
         }
-        if (data.Bids.size() > 0) {
-            Graph::AddEdge(data.ToToken, data.FromToken, 1/data.Bids[0].Price, data.Bids[0].Quantity);
+        if (!data.Asks.empty()) { // 卖单挂出价，我方买入价
+            auto depth = data.Asks[0];
+            Graph::AddEdge(data.ToToken, data.FromToken, 1/depth.Price, depth.Quantity);
         }
 	}
 

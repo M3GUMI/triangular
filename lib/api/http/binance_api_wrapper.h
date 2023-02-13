@@ -14,14 +14,14 @@ namespace HttpWrapper
         string Symbol;
         string BaseToken;
         string QuoteToken;
-        double TicketSize;
+        double TicketSize = 0;
     };
 
     struct BalanceData
     {
         string Token;
-        double Free;
-        double Locked;
+        double Free = 0;
+        double Locked = 0;
     };
 
     struct AccountInfo
@@ -30,18 +30,18 @@ namespace HttpWrapper
     };
 
     struct OrderData {
-        uint64_t OrderId;
+        uint64_t OrderId = 0;
         string FromToken;
         string ToToken;
-        double OriginPrice;
-        double OriginQuantity;
+        double OriginPrice = 0;
+        double OriginQuantity = 0;
         define::OrderType OrderType;
         define::TimeInForce TimeInForce;
 
         define::OrderStatus OrderStatus; // 订单状态
-        double ExecutePrice; // 成交价格
-        double ExecuteQuantity; // 已成交数量
-        uint64_t UpdateTime; // 最后一次更新实际
+        double ExecutePrice = 0; // 成交价格
+        double ExecuteQuantity = 0 ; // 已成交数量
+        uint64_t UpdateTime = 0; // 最后一次更新实际
     };
 
     class BinanceApiWrapper: public BaseApiWrapper

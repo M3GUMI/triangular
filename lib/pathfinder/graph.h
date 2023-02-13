@@ -5,6 +5,7 @@
 #include <map>
 #include <cmath>
 #include <limits>
+#include "utils/utils.h"
 
 using namespace std;
 namespace Pathfinder{
@@ -12,40 +13,54 @@ namespace Pathfinder{
     const double INF = numeric_limits<double>::max();
 
     // 套利路径项
-    struct TransactionPathItem
-    {
-        std::string FromToken; // 卖出的token
-        double FromPrice;	   // 卖出价格
-        double FromQuantity;   // 卖出数量 todo 此边depth最大数量，需调整
-        std::string ToToken;   // 买入的token
-        double ToPrice;		   // 买入价格
-        double ToQuantity;	   // 买入数量 todo 此边depth最大数量，需调整
+    struct TransactionPathItem {
+        string FromToken; // 卖出的token
+        double FromPrice = 0;       // 卖出价格
+        double FromQuantity = 0;    // 卖出数量 todo 此边depth最大数量，需调整
+        string ToToken;   // 买入的token
+        double ToPrice = 0;         // 买入价格
+        double ToQuantity = 0;      // 买入数量 todo 此边depth最大数量，需调整
     };
 
     struct ArbitrageChance
     {
-        double Profit;
+        double Profit = 0;
         vector<TransactionPathItem> Path;
+
+        TransactionPathItem& FirstStep() {
+            return Path.front();
+        }
+
+        vector<string> Format() {
+            vector<string> info;
+            info.push_back(this->Path.front().FromToken);
+            for (const auto &item: this->Path) {
+                info.push_back(to_string(item.FromPrice));
+                info.push_back(item.ToToken);
+            }
+
+            return info;
+        };
     };
 
     struct GetExchangePriceReq
     {
-        string FromToken;
-        string ToToken;
+        string FromToken = "";
+        string ToToken = "";
     };
 
     struct GetExchangePriceResp
     {
-        double FromPrice;
-        double ToPrice;
+        double FromPrice = 0;
+        double ToPrice = 0;
     };
 
     // 定义一个边的结构体，用于表示两个节点之间的边
     struct Edge {
-        int from;   // 起点
-        int to;     // 终点
-        double weight;  // 权重
-        double quantity;  // 数量 todo 现在只存了第一档
+        int from = 0;   // 起点
+        int to = 0;     // 终点
+        double weight = 0;  // 权重
+        double quantity = 0;  // 数量 todo 现在只存了第一档
         Edge(int f, int t, double w, double q) : from(f), to(t), weight(w), quantity(q) {}
     };
 
@@ -55,7 +70,7 @@ namespace Pathfinder{
         Graph();
         ~Graph();
 
-        void AddEdge(string from, string to, double weight, double quantity);
+        void AddEdge(const string& from, const string& to, double weight, double quantity);
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
 
         pair<double, vector<TransactionPathItem>> FindBestPath(string start, string end);

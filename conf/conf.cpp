@@ -9,6 +9,5 @@ namespace conf
 
     map<string, double> BaseAssets = {
         {"USDT", 500},
-        {"ETH", 0.2},
     };
 }

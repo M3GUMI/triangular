@@ -10,8 +10,8 @@ namespace HttpWrapper
 {
     struct CheckRespWithCodeResp
     {
-        int Err;
-        int Code;
+        int Err = 0;
+        int Code = 0;
         string Msg;
     };
 
@@ -21,25 +21,25 @@ namespace HttpWrapper
         string method;
         string uri;
         string data;
-        bool sign;
+        bool sign = false;
     };
 
     struct CreateOrderReq
     {
-        uint64_t OrderId;
+        uint64_t OrderId = 0;
         string FromToken;
-        double FromPrice;
-        double FromQuantity;
+        double FromPrice = 0;
+        double FromQuantity = 0;
         string ToToken;
-        double ToPrice;
-        double ToQuantity;
+        double ToPrice = 0;
+        double ToQuantity = 0;
         define::OrderType OrderType;
         define::TimeInForce TimeInForce;
     };
 
     struct CancelOrderReq
     {
-        uint64_t OrderId;
+        uint64_t OrderId = 0;
     };
 
     struct CancelOrderSymbolReq

@@ -9,7 +9,6 @@ namespace Arbitrage{
             CapitalPool::CapitalPool &pool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
     ) : TriangularArbitrage(pathfinder, pool, apiWrapper) {
-        this->transHandler = bind(&MakerTriangularArbitrage::TransHandler, this, placeholders::_1);
     }
 
     MakerTriangularArbitrage::~MakerTriangularArbitrage() {
