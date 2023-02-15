@@ -73,15 +73,13 @@ namespace Pathfinder{
         TransactionPathItem item{};
         item.FromToken = indexToToken[from];
         item.FromPrice = price;
-        item.FromQuantity = quantity;
         item.ToToken = indexToToken[to];
         item.ToPrice = 1 / price; // todo 临时
-        item.ToQuantity = quantity*price; // todo 临时
 
         return item;
     };
 
-    vector<TransactionPathItem> Graph::CalculateArbitrage() {
+    ArbitrageChance Graph::CalculateArbitrage() {
         vector<TransactionPathItem> path;
         double minRate = 0;
 
@@ -125,18 +123,44 @@ namespace Pathfinder{
             }
         }
 
-        return path;
+        ArbitrageChance chance{};
+        if (path.size() != 3) {
+            return chance;
+        }
+
+        double profit = 1; // 验算利润率
+        vector<string> info;
+        for (const auto& item:path) {
+            profit = profit*item.FromPrice*(1-0.0003);
+        }
+
+        if (profit <= 1) {
+            spdlog::error("func: CalculateArbitrage, err: path can not get money");
+            return chance;
+        }
+
+        chance.Profit = profit;
+        chance.Path = path;
+        // todo 需要补上数量
+        return chance;
     }
 
-    pair<double, vector<TransactionPathItem>> Graph::FindBestPath(string start, string end) {
+    ArbitrageChance Graph::FindBestPath(string start, string end) {
         auto oneStepResult = bestOneStep(tokenToIndex[start], tokenToIndex[end]);
         auto twoStepResult = bestTwoStep(tokenToIndex[start], tokenToIndex[end]);
 
+        ArbitrageChance chance{};
+        pair<double, vector<TransactionPathItem>> *data;
         if (twoStepResult.first > oneStepResult.first) {
-            return twoStepResult;
+            data = &twoStepResult;
         } else {
-            return oneStepResult;
+            data = &oneStepResult;
         }
+
+        chance.Profit = data->first;
+        chance.Path = data->second;
+        // todo 需要补上数量
+        return chance;
     }
 
     // 走一步
@@ -195,6 +219,7 @@ namespace Pathfinder{
     }
 
     /*string Graph::FindBestPath(string fromToken, string toToken) {
+        const double INF = numeric_limits<double>::max();
         int start = tokenToIndex[fromToken];
         int end = tokenToIndex[toToken];
 

@@ -273,7 +273,7 @@ namespace HttpWrapper
             data.OriginQuantity = req.FromQuantity;
 
             // 最大成交50
-            if (req.FromQuantity > 50000) {
+            if (req.FromQuantity > 5000) {
                 data.ExecuteQuantity = req.FromQuantity - 50;
                 data.OrderStatus = define::PARTIALLY_FILLED;
             }

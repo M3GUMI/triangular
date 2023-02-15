@@ -9,9 +9,6 @@
 
 using namespace std;
 namespace Pathfinder{
-    // 定义一个无穷大常量
-    const double INF = numeric_limits<double>::max();
-
     // 套利路径项
     struct TransactionPathItem {
         string FromToken; // 卖出的token
@@ -24,7 +21,8 @@ namespace Pathfinder{
 
     struct ArbitrageChance
     {
-        double Profit = 0;
+        double Profit = 0; // 利润率
+        double Quantity = 0; // 起点可执行token数量
         vector<TransactionPathItem> Path;
 
         TransactionPathItem& FirstStep() {
@@ -73,8 +71,8 @@ namespace Pathfinder{
         void AddEdge(const string& from, const string& to, double weight, double quantity);
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
 
-        pair<double, vector<TransactionPathItem>> FindBestPath(string start, string end);
-        vector<TransactionPathItem> CalculateArbitrage();
+        ArbitrageChance FindBestPath(string start, string end);
+        ArbitrageChance CalculateArbitrage();
 
     private:
         map<string, int> tokenToIndex;

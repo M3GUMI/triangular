@@ -85,47 +85,33 @@ namespace Pathfinder
         huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(200));
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
-        auto path = Graph::CalculateArbitrage();
-        if (path.size() != 3) {
+        auto chance = Graph::CalculateArbitrage();
+        if (chance.Profit <= 1) {
             return;
         }
 
-        double profit = 1; // 验算利润率
-        vector<string> info;
-        for (const auto& item:path) {
-            profit = profit*item.FromPrice*(1-0.0003);
-        }
-
-        if (profit <= 1) {
-            spdlog::error("func: HuntingKing, err: path can not get money");
-            return;
-        }
-
-        ArbitrageChance chance{};
-        chance.Profit = profit;
-        chance.Path = path;
-        this->subscriber(chance);
+        return this->subscriber(chance);
     }
 
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data)
 	{
-        /*Graph::AddEdge("USDT", "BTC", 4.928536, 100);
+        Graph::AddEdge("USDT", "BTC", 4.928536, 100);
         Graph::AddEdge("BTC", "USDT", 1/4.928536, 100);
 
-        Graph::AddEdge("BTC", "ETH", 3.92, 100);
-        Graph::AddEdge("ETH", "BTC", 1/3.92, 100);
+        Graph::AddEdge("BTC", "ETH", 3.92, 50);
+        Graph::AddEdge("ETH", "BTC", 1/3.92, 50);
 
-        Graph::AddEdge("ETH", "USDT", 0.051813, 100);
-        Graph::AddEdge("USDT", "ETH", 1/0.051813, 100);*/
+        Graph::AddEdge("ETH", "USDT", 0.051813, 10);
+        Graph::AddEdge("USDT", "ETH", 1/0.051813, 10);
 
-        if (!data.Bids.empty()) { // 买单挂出价，我方卖出价
+        /*if (!data.Bids.empty()) { // 买单挂出价，我方卖出价
             auto depth = data.Bids[0];
             Graph::AddEdge(data.FromToken, data.ToToken, depth.Price, depth.Quantity);
         }
         if (!data.Asks.empty()) { // 卖单挂出价，我方买入价
             auto depth = data.Asks[0];
             Graph::AddEdge(data.ToToken, data.FromToken, 1/depth.Price, depth.Quantity);
-        }
+        }*/
 	}
 
 	void Pathfinder::SubscribeArbitrage(function<void(ArbitrageChance &path)> handler)
@@ -137,9 +123,10 @@ namespace Pathfinder
 	{
 		// 1. 在负权图中计算路径
 		// 2. 返回下一步交易路径
-        auto result = Graph::FindBestPath(req.Origin, req.End);
-        resp.Profit = result.first;
-        resp.Path = result.second;
+        auto chance = Graph::FindBestPath(req.Origin, req.End);
+        resp.Profit = chance.Profit;
+        resp.Quantity = chance.Quantity;
+        resp.Path = chance.Path;
         return 0;
     }
 }
