@@ -14,34 +14,19 @@ namespace HttpWrapper
         string Symbol;
         string BaseToken;
         string QuoteToken;
-        double TicketSize;
+        double TicketSize = 0;
     };
 
     struct BalanceData
     {
         string Token;
-        double Free;
-        double Locked;
+        double Free = 0;
+        double Locked = 0;
     };
 
     struct AccountInfo
     {
         vector<BalanceData> Balances;
-    };
-
-    struct OrderData {
-        uint64_t OrderId;
-        string FromToken;
-        string ToToken;
-        double OriginPrice;
-        double OriginQuantity;
-        define::OrderType OrderType;
-        define::TimeInForce TimeInForce;
-
-        define::OrderStatus OrderStatus; // 订单状态
-        double ExecutePrice; // 成交价格
-        double ExecuteQuantity; // 已成交数量
-        uint64_t UpdateTime; // 最后一次更新实际
     };
 
     class BinanceApiWrapper: public BaseApiWrapper
@@ -59,7 +44,7 @@ namespace HttpWrapper
 
         void initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec);
         void accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo &info, int err)> callback);
-        void createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, CreateOrderReq &req, function<void(OrderData& data, int err)> callback);
+        void createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, OrderData &req, function<void(OrderData& data, int err)> callback);
 
         void cancelOrder(uint64_t orderId, string symbol);
         void cancelOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, std::string ori_symbol);
@@ -82,7 +67,7 @@ namespace HttpWrapper
         int GetAccountInfo(function<void(AccountInfo &info, int err)> callback);
 
         // 创建订单
-        int CreateOrder(CreateOrderReq &req, function<void(OrderData& data, int err)> callback);
+        int CreateOrder(OrderData& req, function<void(OrderData& data, int err)> callback);
 
         // 取消订单
         void CancelOrder(uint64_t orderId);

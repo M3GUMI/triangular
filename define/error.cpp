@@ -16,5 +16,8 @@ namespace define
         {ErrorInsufficientBalance, "account balance insufficient"},
         {ErrorCapitalRefresh, "refreshing capital_pool"},
         {ErrorBalanceNumber, "number error balance_pool"},
+        {ErrorGraphNotReady, "graph price not ready"},
+        {ErrorStrategy, "transaction strategy error"},
+        {ErrorOrderAmountZero, "order amount is zero"},
     };
 }

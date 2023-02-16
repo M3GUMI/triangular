@@ -12,6 +12,7 @@ namespace Arbitrage{
     // 三角套利
     class TriangularArbitrage {
     public:
+        virtual int Run(Pathfinder::ArbitrageChance &chance);
         void SubscribeFinish(function<void()> callback);
 
     protected:
@@ -22,12 +23,11 @@ namespace Arbitrage{
         );
         ~TriangularArbitrage();
 
-        map <uint64_t, HttpWrapper::OrderData> orderMap; // 订单map
-        function<void(HttpWrapper::OrderData &data)> transHandler; // 交易策略
+        map<uint64_t, HttpWrapper::OrderData*> orderMap; // 订单map
 
         string OriginToken;       // 原始起点token
-        double OriginQuantity; // 原始起点token数量
         string TargetToken;       // 目标token
+        double OriginQuantity = 0; // 原始起点token数量
 
         Pathfinder::Pathfinder &pathfinder;
         CapitalPool::CapitalPool &capitalPool;
@@ -35,15 +35,13 @@ namespace Arbitrage{
 
         int ExecuteTrans(Pathfinder::TransactionPathItem &path);
         int ReviseTrans(string origin, string end, double quantity);
-        void AddBalance(string token, double amount);
-        void DelBalance(string token, double amount);
         bool CheckFinish();
         int Finish(double finalQuantity);
 
     private:
         function<void()> subscriber = nullptr;
-        map<string, double> balance; // 持有资金。todo 暂不考虑挂单锁定
 
+        virtual void TransHandler(HttpWrapper::OrderData &orderData);
         void baseOrderHandler(HttpWrapper::OrderData &data, int err);
     };
 }

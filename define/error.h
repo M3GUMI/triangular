@@ -20,4 +20,7 @@ namespace define
     const int ErrorCapitalRefresh = 201; // 资金池锁定
     const int ErrorCreateWebsocketFail = 202; // 建立websocket连接失败
     const int ErrorBalanceNumber = 203; // 资金池金额计算错误
+    const int ErrorGraphNotReady = 204; // token价格图未就绪
+    const int ErrorStrategy = 205; // 策略错误
+    const int ErrorOrderAmountZero = 206; // 订单金额为0
 }

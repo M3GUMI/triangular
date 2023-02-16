@@ -137,13 +137,7 @@ namespace CapitalPool
             return err;
         }
 
-        // ticketSize校验
-        auto data = this->apiWrapper.GetSymbolData(fromToken, toToken);
-        double ticketSize = (data.TicketSize == 0 ? 1 : data.TicketSize);
-        uint32_t tmp = amount / ticketSize;
-        amount = tmp * ticketSize;
-
-        HttpWrapper::CreateOrderReq req;
+        HttpWrapper::OrderData req;
         req.OrderId = GenerateId();
         req.FromToken = fromToken;
         req.FromPrice = priceResp.FromPrice;
@@ -185,28 +179,30 @@ namespace CapitalPool
             info.push_back(item.first);
             info.push_back(to_string(item.second));
         }
-        spdlog::debug("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
+        spdlog::info("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
     }
 
-    int CapitalPool::LockAsset(const string& token, double amount)
+    int CapitalPool::LockAsset(const string& token, double amount, double& lockAmount)
     {
         if (locked) {
-            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorCapitalRefresh));
+            spdlog::error("func: LockAsset, token: {}, amount: {}, err: {}", token, amount, WrapErr(define::ErrorCapitalRefresh));
             return define::ErrorCapitalRefresh;
         }
 
-        if (not balancePool.count(token))
+        if (not balancePool.count(token) || balancePool[token] == 0)
         {
-            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorInsufficientBalance));
+            spdlog::error("func: LockAsset, token: {}, amount: {}, err: {}", token, amount, WrapErr(define::ErrorInsufficientBalance));
             return define::ErrorInsufficientBalance;
         }
 
         if (balancePool[token] < amount)
         {
-            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorInsufficientBalance));
-            return define::ErrorInsufficientBalance;
+            lockAmount = balancePool[token];
+            balancePool[token] = 0;
+            return 0;
         }
 
+        lockAmount = amount;
         balancePool[token] = balancePool[token] - amount; 
         return 0;
     }

@@ -1,5 +1,4 @@
 #include "triangular.h"
-#include "utils/utils.h"
 
 namespace Arbitrage{
     TriangularArbitrage::TriangularArbitrage(
@@ -9,28 +8,25 @@ namespace Arbitrage{
     ) : pathfinder(pathfinder), capitalPool(pool), apiWrapper(apiWrapper) {
     }
 
-    TriangularArbitrage::~TriangularArbitrage() {
+    TriangularArbitrage::~TriangularArbitrage() = default;
+
+
+    int TriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
+        exit(EXIT_FAILURE);
     }
 
     bool TriangularArbitrage::CheckFinish() {
-        // 非目标币以外清空，套利完成
-        for (const auto& item: balance) {
-            auto token = item.first;
-            auto quantity = item.second;
-
-            if (token == this->TargetToken) {
-                continue;
-            }
-            if (quantity > 0) {
+        for (const auto &item: orderMap) {
+            auto order = item.second;
+            if (order->OrderStatus != define::FILLED && order->OrderStatus != define::PARTIALLY_FILLED) {
                 return false;
             }
         }
-
         return true;
     }
 
     int TriangularArbitrage::Finish(double finalQuantity) {
-        spdlog::info("func: {}, finalQuantity: {}, originQuantity: {}", "Finish", finalQuantity, this->OriginQuantity);
+        spdlog::info("func: Finish, finalQuantity: {}, originQuantity: {}", finalQuantity, this->OriginQuantity);
         capitalPool.Refresh();
         this->subscriber();
         return 0;
@@ -44,24 +40,16 @@ namespace Arbitrage{
         auto order = new HttpWrapper::OrderData();
         order->OrderId = GenerateId();
         order->FromToken = path.FromToken;
+        order->FromPrice = path.FromPrice;
+        order->FromQuantity = path.FromQuantity;
         order->ToToken = path.ToToken;
-        order->OriginPrice = path.FromPrice;
-        order->OriginQuantity = path.FromQuantity;
+        order->ToPrice = path.ToPrice;
+        order->ToQuantity = path.ToQuantity;
         order->OrderType = define::LIMIT;
         order->TimeInForce = define::IOC;
         order->OrderStatus = define::INIT;
         order->UpdateTime = GetNowTime();
-
-        HttpWrapper::CreateOrderReq req;
-        req.OrderId = order->OrderId;
-        req.FromToken = path.FromToken;
-        req.FromPrice = path.FromPrice;
-        req.FromQuantity = path.FromQuantity;
-        req.ToToken = path.ToToken;
-        req.ToPrice = path.ToPrice;
-        req.ToQuantity = path.ToQuantity;
-        req.OrderType = define::LIMIT;
-        req.TimeInForce = define::IOC;
+        orderMap[order->OrderId] = order;
 
         spdlog::info(
                 "func: {}, from: {}, to: {}, price: {}, quantity: {}",
@@ -72,7 +60,7 @@ namespace Arbitrage{
                 path.FromQuantity
         );
         return apiWrapper.CreateOrder(
-                req,
+                *order,
                 bind(
                         &TriangularArbitrage::baseOrderHandler,
                         this,
@@ -82,9 +70,10 @@ namespace Arbitrage{
     }
 
     int TriangularArbitrage::ReviseTrans(string origin, string end, double quantity) {
+        // todo 此处有bug，depth不足的话，有一部分金额卡单了
         // 寻找新路径重试
         Pathfinder::RevisePathReq req;
-        Pathfinder::TransactionPath resp;
+        Pathfinder::ArbitrageChance resp;
 
         req.Origin = origin;
         req.End = end;
@@ -95,51 +84,57 @@ namespace Arbitrage{
             return err;
         }
 
-        err = ExecuteTrans(resp.Path.front());
+        spdlog::info(
+                "func: RevisePath, profit: {}, bestPath: {}",
+                resp.Profit,
+                spdlog::fmt_lib::join(resp.Format(), ","));
+
+        if (resp.Path.front().FromQuantity > quantity) {
+            resp.Path.front().FromQuantity = quantity;
+        }
+
+        err = ExecuteTrans(resp.FirstStep());
         if (err > 0) {
             return err;
         }
     }
 
-
     void TriangularArbitrage::baseOrderHandler(HttpWrapper::OrderData &data, int err) {
         if (err > 0) {
-            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(err));
+            spdlog::error("func: baseOrderHandler, err: {}", WrapErr(err));
             return;
         }
 
-        auto order = orderMap[data.OrderId];
-        if (order.UpdateTime > data.UpdateTime) {
+        if (not orderMap.count(data.OrderId)) {
+            spdlog::error("func: baseOrderHandler, err: {}", "order not exist");
             return;
         }
 
-        order.OrderStatus = data.OrderStatus;
-        order.ExecutePrice = data.ExecutePrice;
-        order.ExecuteQuantity = data.ExecuteQuantity;
-        order.UpdateTime = data.UpdateTime;
-
-        AddBalance(order.ToToken, order.ExecuteQuantity * order.ExecutePrice);
-        DelBalance(order.FromToken, order.ExecuteQuantity);
-
-        this->transHandler(order);
-    }
-
-    void TriangularArbitrage::AddBalance(string token, double amount) {
-        balance[token] = balance[token] + amount;
-    }
-
-    void TriangularArbitrage::DelBalance(string token, double amount) {
-        if (balance[token] < amount) {
-            spdlog::critical(
-                    "func: {}, err: {}, balanceQuantity: {}, executeQuantity: {}",
-                    "baseOrderHandler",
-                    "invalid quantity",
-                    balance[token],
-                   amount
-            );
-            exit(EXIT_FAILURE);
+        if (orderMap[data.OrderId] == nullptr) {
+            spdlog::error("func: baseOrderHandler, err: {}", "order not exist");
+            return;
         }
 
-        balance[token] = balance[token] - amount;
+        HttpWrapper::OrderData* order = orderMap[data.OrderId];
+        if (conf::EnableMock) { // mock情况下可相同毫秒更新
+            if (order->UpdateTime > data.UpdateTime) {
+                return;
+            }
+        } else {
+            if (order->UpdateTime >= data.UpdateTime) {
+                return;
+            }
+        }
+
+        order->OrderStatus = data.OrderStatus;
+        order->ExecutePrice = data.ExecutePrice;
+        order->ExecuteQuantity = data.ExecuteQuantity;
+        order->UpdateTime = data.UpdateTime;
+
+        TransHandler(*order);
+    }
+
+    void TriangularArbitrage::TransHandler(HttpWrapper::OrderData &orderData) {
+        exit(EXIT_FAILURE);
     }
 }

@@ -11,7 +11,7 @@ namespace Arbitrage {
 
         ~MakerTriangularArbitrage();
 
-        int Run(Pathfinder::TransactionPath &path);
+        int Run(Pathfinder::ArbitrageChance &chance);
 
     private:
         void TransHandler(HttpWrapper::OrderData &orderData);
