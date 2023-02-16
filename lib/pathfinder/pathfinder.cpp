@@ -95,23 +95,23 @@ namespace Pathfinder
 
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data)
 	{
-        Graph::AddEdge("USDT", "BTC", 4.928536, 100);
+        /*Graph::AddEdge("USDT", "BTC", 4.928536, 100);
         Graph::AddEdge("BTC", "USDT", 1/4.928536, 100);
 
         Graph::AddEdge("BTC", "ETH", 3.92, 50);
         Graph::AddEdge("ETH", "BTC", 1/3.92, 50);
 
         Graph::AddEdge("ETH", "USDT", 0.051813, 10);
-        Graph::AddEdge("USDT", "ETH", 1/0.051813, 10);
+        Graph::AddEdge("USDT", "ETH", 1/0.051813, 10);*/
 
-        /*if (!data.Bids.empty()) { // 买单挂出价，我方卖出价
+        if (!data.Bids.empty()) { // 买单挂出价，我方卖出价
             auto depth = data.Bids[0];
             Graph::AddEdge(data.FromToken, data.ToToken, depth.Price, depth.Quantity);
         }
         if (!data.Asks.empty()) { // 卖单挂出价，我方买入价
             auto depth = data.Asks[0];
-            Graph::AddEdge(data.ToToken, data.FromToken, 1/depth.Price, depth.Quantity);
-        }*/
+            Graph::AddEdge(data.ToToken, data.FromToken, 1/depth.Price, depth.Price*depth.Quantity);
+        }
 	}
 
 	void Pathfinder::SubscribeArbitrage(function<void(ArbitrageChance &path)> handler)

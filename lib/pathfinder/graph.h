@@ -13,10 +13,10 @@ namespace Pathfinder{
     struct TransactionPathItem {
         string FromToken; // 卖出的token
         double FromPrice = 0;       // 卖出价格
-        double FromQuantity = 0;    // 卖出数量 todo 此边depth最大数量，需调整
+        double FromQuantity = 0;    // 卖出数量
         string ToToken;   // 买入的token
         double ToPrice = 0;         // 买入价格
-        double ToQuantity = 0;      // 买入数量 todo 此边depth最大数量，需调整
+        double ToQuantity = 0;      // 买入数量
     };
 
     struct ArbitrageChance
@@ -57,9 +57,9 @@ namespace Pathfinder{
     struct Edge {
         int from = 0;   // 起点
         int to = 0;     // 终点
-        double weight = 0;  // 权重
+        double price = 0;  // 价格
         double quantity = 0;  // 数量 todo 现在只存了第一档
-        Edge(int f, int t, double w, double q) : from(f), to(t), weight(w), quantity(q) {}
+        Edge(int f, int t, double p, double q) : from(f), to(t), price(p), quantity(q) {}
     };
 
     // 定义一个图的类
@@ -68,7 +68,7 @@ namespace Pathfinder{
         Graph();
         ~Graph();
 
-        void AddEdge(const string& from, const string& to, double weight, double quantity);
+        void AddEdge(const string& from, const string& to, double price, double quantity);
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
 
         ArbitrageChance FindBestPath(string start, string end);
@@ -80,7 +80,8 @@ namespace Pathfinder{
 
         double fee = 0.0003; // 手续费
         vector<vector<Edge>> nodes; // 存储图中所有的节点及其邻接表
-        TransactionPathItem formatTransactionPathItem(int from, int to, double price, double quantity);
+        TransactionPathItem formatTransactionPathItem(Edge& edge);
+        void adjustQuantities(vector<TransactionPathItem>& items);
         pair<double, vector<TransactionPathItem>> bestOneStep(int start, int end);
         pair<double, vector<TransactionPathItem>> bestTwoStep(int start, int end);
     };

@@ -18,7 +18,7 @@ namespace Arbitrage{
     bool TriangularArbitrage::CheckFinish() {
         for (const auto &item: orderMap) {
             auto order = item.second;
-            if (order.OrderStatus != define::FILLED && order.OrderStatus != define::PARTIALLY_FILLED) {
+            if (order->OrderStatus != define::FILLED && order->OrderStatus != define::PARTIALLY_FILLED) {
                 return false;
             }
         }
@@ -37,27 +37,19 @@ namespace Arbitrage{
     }
 
     int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path) {
-        auto orderId = GenerateId();
-        orderMap[orderId].OrderId = orderId;
-        orderMap[orderId].FromToken = path.FromToken;
-        orderMap[orderId].ToToken = path.ToToken;
-        orderMap[orderId].OriginPrice = path.FromPrice;
-        orderMap[orderId].OriginQuantity = path.FromQuantity;
-        orderMap[orderId].OrderType = define::LIMIT;
-        orderMap[orderId].TimeInForce = define::IOC;
-        orderMap[orderId].OrderStatus = define::INIT;
-        orderMap[orderId].UpdateTime = GetNowTime();
-
-        HttpWrapper::CreateOrderReq req;
-        req.OrderId = orderId;
-        req.FromToken = path.FromToken;
-        req.FromPrice = path.FromPrice;
-        req.FromQuantity = path.FromQuantity;
-        req.ToToken = path.ToToken;
-        req.ToPrice = path.ToPrice;
-        req.ToQuantity = path.ToQuantity;
-        req.OrderType = define::LIMIT;
-        req.TimeInForce = define::IOC;
+        auto order = new HttpWrapper::OrderData();
+        order->OrderId = GenerateId();
+        order->FromToken = path.FromToken;
+        order->FromPrice = path.FromPrice;
+        order->FromQuantity = path.FromQuantity;
+        order->ToToken = path.ToToken;
+        order->ToPrice = path.ToPrice;
+        order->ToQuantity = path.ToQuantity;
+        order->OrderType = define::LIMIT;
+        order->TimeInForce = define::IOC;
+        order->OrderStatus = define::INIT;
+        order->UpdateTime = GetNowTime();
+        orderMap[order->OrderId] = order;
 
         spdlog::info(
                 "func: {}, from: {}, to: {}, price: {}, quantity: {}",
@@ -68,7 +60,7 @@ namespace Arbitrage{
                 path.FromQuantity
         );
         return apiWrapper.CreateOrder(
-                req,
+                *order,
                 bind(
                         &TriangularArbitrage::baseOrderHandler,
                         this,
@@ -97,8 +89,6 @@ namespace Arbitrage{
                 resp.Profit,
                 spdlog::fmt_lib::join(resp.Format(), ","));
 
-        // todo 这里深度不够需要重新找别的路径
-        // todo 深度处理有bug
         if (resp.Path.front().FromQuantity > quantity) {
             resp.Path.front().FromQuantity = quantity;
         }
@@ -111,11 +101,21 @@ namespace Arbitrage{
 
     void TriangularArbitrage::baseOrderHandler(HttpWrapper::OrderData &data, int err) {
         if (err > 0) {
-            spdlog::error("func: LockAsset, err: {}", WrapErr(err));
+            spdlog::error("func: baseOrderHandler, err: {}", WrapErr(err));
             return;
         }
 
-        HttpWrapper::OrderData *order = &orderMap[data.OrderId];
+        if (not orderMap.count(data.OrderId)) {
+            spdlog::error("func: baseOrderHandler, err: {}", "order not exist");
+            return;
+        }
+
+        if (orderMap[data.OrderId] == nullptr) {
+            spdlog::error("func: baseOrderHandler, err: {}", "order not exist");
+            return;
+        }
+
+        HttpWrapper::OrderData* order = orderMap[data.OrderId];
         if (conf::EnableMock) { // mock情况下可相同毫秒更新
             if (order->UpdateTime > data.UpdateTime) {
                 return;
@@ -131,7 +131,7 @@ namespace Arbitrage{
         order->ExecuteQuantity = data.ExecuteQuantity;
         order->UpdateTime = data.UpdateTime;
 
-        TransHandler(orderMap[data.OrderId]);
+        TransHandler(*order);
     }
 
     void TriangularArbitrage::TransHandler(HttpWrapper::OrderData &orderData) {

@@ -24,8 +24,7 @@ namespace HttpWrapper
         bool sign = false;
     };
 
-    struct CreateOrderReq
-    {
+    struct OrderData {
         uint64_t OrderId = 0;
         string FromToken;
         double FromPrice = 0;
@@ -35,6 +34,13 @@ namespace HttpWrapper
         double ToQuantity = 0;
         define::OrderType OrderType;
         define::TimeInForce TimeInForce;
+
+        double OriginQuantity; // 实际选择的fromQuantity或toQuantity
+        double OriginPrice; // 实际选择的fromPrice或toPrice
+        define::OrderStatus OrderStatus; // 订单状态
+        double ExecutePrice = 0; // 成交价格，经过一层sell、buy转换
+        double ExecuteQuantity = 0; // 已成交数量，经过一层sell、buy转换
+        uint64_t UpdateTime = 0; // 最后一次更新实际
     };
 
     struct CancelOrderReq
@@ -73,7 +79,7 @@ namespace HttpWrapper
 
         uint64_t GetOrderId(const string& outOrderId);
         string GetOutOrderId(uint64_t orderId);
-        pair<double, double> SelectPriceQuantity(CreateOrderReq req, define::OrderSide side);
+        pair<double, double> SelectPriceQuantity(OrderData& req, define::OrderSide side);
 
         int CheckResp(shared_ptr<HttpRespone> &res);
         CheckRespWithCodeResp &CheckRespWithCode(shared_ptr<HttpRespone> &res);

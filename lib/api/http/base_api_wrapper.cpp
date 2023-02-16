@@ -84,7 +84,7 @@ namespace HttpWrapper
         return resp;
     }
 
-    pair<double, double> BaseApiWrapper::SelectPriceQuantity(CreateOrderReq req, define::OrderSide side)
+    pair<double, double> BaseApiWrapper::SelectPriceQuantity(OrderData& req, define::OrderSide side)
     {
         double price, quantity;
         if (side == define::SELL)

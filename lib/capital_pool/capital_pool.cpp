@@ -137,17 +137,7 @@ namespace CapitalPool
             return err;
         }
 
-        // ticketSize校验
-        auto data = this->apiWrapper.GetSymbolData(fromToken, toToken);
-        double ticketSize = (data.TicketSize == 0 ? 1 : data.TicketSize);
-        uint32_t tmp = amount / ticketSize;
-        amount = tmp * ticketSize;
-
-        if (amount == 0) {
-            return 0;
-        }
-
-        HttpWrapper::CreateOrderReq req;
+        HttpWrapper::OrderData req;
         req.OrderId = GenerateId();
         req.FromToken = fromToken;
         req.FromPrice = priceResp.FromPrice;

@@ -210,7 +210,7 @@ namespace HttpWrapper
         return callback(info, 0);
     }
 
-    int BinanceApiWrapper::CreateOrder(CreateOrderReq &req, function<void(OrderData& data, int err)> callback)
+    int BinanceApiWrapper::CreateOrder(OrderData &req, function<void(OrderData& data, int err)> callback)
     {
         if (req.OrderId == 0)
         {
@@ -229,11 +229,21 @@ namespace HttpWrapper
         auto price = priceQuantity.first;
         auto quantity = priceQuantity.second;
 
+        // ticketSize校验
+        auto data = this->GetSymbolData(req.FromToken, req.ToToken);
+        double ticketSize = (data.TicketSize == 0 ? 1 : data.TicketSize);
+        uint32_t tmp = quantity / ticketSize;
+        quantity = tmp * ticketSize;
+
+        if (quantity == 0) {
+            return define::ErrorInvalidParam;
+        }
+
         args["symbol"] = symbolData.Symbol;
         args["side"] = this->sideToString(side);
         args["type"] = this->orderTypeToString(req.OrderType);
         args["timestamp"] = std::to_string(time(NULL) * 1000);
-        args["quantity"] = quantity;
+        args["quantity"] = to_string(quantity);
 
         // 市价单 不能有下面这些参数
         if (req.OrderType != define::MARKET && req.OrderType != define::LIMIT_MAKER)
@@ -259,8 +269,7 @@ namespace HttpWrapper
         return 0;
     }
 
-    void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, CreateOrderReq &req, function<void(OrderData& data, int err)> callback)
-    {
+    void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, OrderData &req, function<void(OrderData& data, int err)> callback) {
         OrderData data;
         if (conf::EnableMock) {
             data.OrderId = req.OrderId;
@@ -268,12 +277,23 @@ namespace HttpWrapper
             data.OrderStatus = define::FILLED;
             data.FromToken = req.FromToken;
             data.ToToken = req.ToToken;
-            data.ExecutePrice = req.FromPrice;
-            data.ExecuteQuantity = req.FromQuantity;
-            data.OriginQuantity = req.FromQuantity;
+
+
+            auto side = GetSide(req.FromToken, req.ToToken);
+            if (side == define::SELL) {
+                data.OriginPrice = req.FromPrice;
+                data.OriginQuantity = req.FromQuantity;
+                data.ExecutePrice = req.FromPrice;
+                data.ExecuteQuantity = req.FromQuantity;
+            } else {
+                data.OriginPrice = 1 / req.FromPrice;
+                data.OriginQuantity = req.FromPrice * req.FromQuantity;
+                data.ExecutePrice = 1 / req.FromPrice;
+                data.ExecuteQuantity = req.FromPrice * req.FromQuantity;
+            }
 
             // 最大成交50
-            if (req.FromQuantity > 5000) {
+            if (req.FromQuantity > 100) {
                 data.ExecuteQuantity = req.FromQuantity - 50;
                 data.OrderStatus = define::PARTIALLY_FILLED;
             }
@@ -282,9 +302,9 @@ namespace HttpWrapper
             return callback(data, 0);
         }
 
-        if (auto checkResult = this->CheckRespWithCode(res); checkResult.Err > 0)
-        {
-            if (checkResult.Code == -2010 && checkResult.Msg == "Account has insufficient balance for requested action.") {
+        if (auto checkResult = this->CheckRespWithCode(res); checkResult.Err > 0) {
+            if (checkResult.Code == -2010 &&
+                checkResult.Msg == "Account has insufficient balance for requested action.") {
                 spdlog::error("func: {}, err: {}", "CreateOrder", define::ErrorInsufficientBalance);
                 return callback(data, define::ErrorInsufficientBalance);
             }
@@ -303,8 +323,7 @@ namespace HttpWrapper
         auto symbol = order["s"].GetString();
         auto side = stringToSide(order["S"].GetString());
 
-        if (side == define::INVALID_SIDE)
-        {
+        if (side == define::INVALID_SIDE) {
             spdlog::error("func: {}, msg: {}, err: {}", "CreateOrder", "invalid side", define::ErrorInvalidResp);
             return;
         }
@@ -312,11 +331,25 @@ namespace HttpWrapper
         data.OrderId = this->outOrderIdMap[order["c"].GetString()];
         data.UpdateTime = order["E"].GetUint64();
         data.OrderStatus = stringToOrderStatus(order["X"].GetString());
-        data.FromToken = parseToken(symbol, side).first; 
-        data.ToToken = parseToken(symbol, side).second; 
-        data.ExecutePrice = order["L"].GetDouble();
-        data.ExecuteQuantity = order["l"].GetDouble();
-        data.OriginQuantity = order["q"].GetDouble();
+        data.FromToken = parseToken(symbol, side).first;
+        data.ToToken = parseToken(symbol, side).second;
+
+        if (side == define::SELL) {
+            data.OriginPrice = order["p"].GetDouble();
+            data.OriginQuantity = order["q"].GetDouble();
+            data.ExecutePrice = order["L"].GetDouble();
+            data.ExecuteQuantity = order["l"].GetDouble();
+        } else {
+            auto originPrice = order["p"].GetDouble();
+            auto originQuantity = order["q"].GetDouble();
+            auto executePrice = order["L"].GetDouble();
+            auto executeQuantity = order["l"].GetDouble();
+
+            data.OriginPrice = 1 / originPrice;
+            data.OriginQuantity = originPrice * originQuantity;
+            data.ExecutePrice = 1 / executePrice;
+            data.ExecuteQuantity = originQuantity * executeQuantity;
+        }
 
         return callback(data, 0);
     }
