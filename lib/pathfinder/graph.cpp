@@ -148,7 +148,7 @@ namespace Pathfinder{
         return chance;
     }
 
-    ArbitrageChance Graph::FindBestPath(string start, string end) {
+    ArbitrageChance Graph::FindBestPath(string start, string end, double quantity) {
         auto oneStepResult = bestOneStep(tokenToIndex[start], tokenToIndex[end]);
         auto twoStepResult = bestTwoStep(tokenToIndex[start], tokenToIndex[end]);
 
@@ -158,6 +158,11 @@ namespace Pathfinder{
             data = &twoStepResult;
         } else {
             data = &oneStepResult;
+        }
+
+        if (data->second.front().FromQuantity > quantity) {
+            data->second.front().FromQuantity = quantity;
+            data->second.front().ToQuantity = data->second.front().FromPrice * quantity;
         }
 
         adjustQuantities(data->second);

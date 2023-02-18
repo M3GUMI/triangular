@@ -122,7 +122,7 @@ namespace Pathfinder
 	{
 		// 1. 在负权图中计算路径
 		// 2. 返回下一步交易路径
-        auto chance = Graph::FindBestPath(req.Origin, req.End);
+        auto chance = Graph::FindBestPath(req.Origin, req.End, req.Quantity);
         resp.Profit = chance.Profit;
         resp.Quantity = chance.Quantity;
         resp.Path = chance.Path;

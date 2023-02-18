@@ -74,7 +74,7 @@ namespace Pathfinder{
         void AddEdge(const string& from, const string& to, double price, double quantity);
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
 
-        ArbitrageChance FindBestPath(string start, string end);
+        ArbitrageChance FindBestPath(string start, string end, double quantity);
         ArbitrageChance CalculateArbitrage();
 
     private:

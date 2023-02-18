@@ -82,11 +82,6 @@ namespace Arbitrage{
                 resp.FirstStep().FromQuantity,
                 spdlog::fmt_lib::join(resp.Format(), ","));
 
-        if (resp.FirstStep().FromQuantity > quantity) {
-            resp.FirstStep().FromQuantity = quantity;
-            resp.FirstStep().ToQuantity = resp.FirstStep().FromPrice * quantity;
-        }
-
         err = ExecuteTrans(resp.FirstStep());
         if (err > 0) {
             return err;
