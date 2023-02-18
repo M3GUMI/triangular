@@ -86,7 +86,6 @@ namespace Pathfinder
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
         auto chance = Graph::CalculateArbitrage();
-        spdlog::info("profit: {}, path: {}", chance.Profit, spdlog::fmt_lib::join(chance.Format(), ","));
         if (chance.Profit <= 1) {
             return;
         }
