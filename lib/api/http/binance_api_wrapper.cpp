@@ -309,8 +309,6 @@ namespace HttpWrapper
 
             // 最大成交50
             if (data.ExecuteQuantity == 1) {
-                cout << "token:" << data.FromToken+data.ToToken << ", from" << data.FromPrice << "," << data.FromQuantity <<  " to:" << data.ToPrice << "," << data.ToQuantity << endl;
-                cout << "eq:" << to_string(data.ExecuteQuantity) << " from:" << to_string(data.FromQuantity) << endl;
                 data.ExecuteQuantity = 0.5;
                 data.OrderStatus = define::PARTIALLY_FILLED;
             }
