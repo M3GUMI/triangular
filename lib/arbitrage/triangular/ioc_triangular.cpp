@@ -20,8 +20,9 @@ namespace Arbitrage{
         }
 
         spdlog::info(
-                "func: IocTriangularArbitrage::Run, profit: {}, path: {}",
+                "func: IocTriangularArbitrage::Run, profit: {}, quantity: {}, path: {}",
                 chance.Profit,
+                chance.Quantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
 
         firstStep.FromQuantity = lockedAmount;
@@ -34,10 +35,12 @@ namespace Arbitrage{
 
     void IocTriangularArbitrage::TransHandler(HttpWrapper::OrderData &data) {
         spdlog::info(
-                "func: TransHandler, from: {}, to: {}, orderStatus: {}, executeQuantity: {}, newQuantity: {}",
+                "func: TransHandler, from: {}, to: {}, orderStatus: {}, originQuantity: {}, executePrice: {}, executeQuantity: {}, newQuantity: {}",
                 data.FromToken,
                 data.ToToken,
                 data.OrderStatus,
+                data.OriginQuantity,
+                data.ExecutePrice,
                 data.ExecuteQuantity,
                 data.ExecuteQuantity * data.ExecutePrice
         );

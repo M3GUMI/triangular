@@ -86,6 +86,7 @@ namespace Pathfinder
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
         auto chance = Graph::CalculateArbitrage();
+        spdlog::info("profit: {}, path: {}", chance.Profit, spdlog::fmt_lib::join(chance.Format(), ","));
         if (chance.Profit <= 1) {
             return;
         }
@@ -93,16 +94,15 @@ namespace Pathfinder
         return this->subscriber(chance);
     }
 
-	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data)
-	{
-        /*Graph::AddEdge("USDT", "BTC", 4.928536, 100);
-        Graph::AddEdge("BTC", "USDT", 1/4.928536, 100);
+	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data) {
+        // Graph::AddEdge("USDT", "BTC", 5, 100);
+        // Graph::AddEdge("BTC", "USDT", double(1) / double(5), 100);
 
-        Graph::AddEdge("BTC", "ETH", 3.92, 50);
-        Graph::AddEdge("ETH", "BTC", 1/3.92, 50);
+        // Graph::AddEdge("BTC", "ETH", 10, 50);
+        // Graph::AddEdge("ETH", "BTC", double(1) / double(10), 50);
 
-        Graph::AddEdge("ETH", "USDT", 0.051813, 10);
-        Graph::AddEdge("USDT", "ETH", 1/0.051813, 10);*/
+        // Graph::AddEdge("ETH", "USDT", double(1) / double(40), 10);
+        // Graph::AddEdge("USDT", "ETH", 40, 10);
 
         if (!data.Bids.empty()) { // 买单挂出价，我方卖出价
             auto depth = data.Bids[0];
@@ -112,7 +112,7 @@ namespace Pathfinder
             auto depth = data.Asks[0];
             Graph::AddEdge(data.ToToken, data.FromToken, 1/depth.Price, depth.Price*depth.Quantity);
         }
-	}
+    }
 
 	void Pathfinder::SubscribeArbitrage(function<void(ArbitrageChance &path)> handler)
 	{

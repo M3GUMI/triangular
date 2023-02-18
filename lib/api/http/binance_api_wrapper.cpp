@@ -278,7 +278,6 @@ namespace HttpWrapper
             data.FromToken = req.FromToken;
             data.ToToken = req.ToToken;
 
-
             auto side = GetSide(req.FromToken, req.ToToken);
             if (side == define::SELL) {
                 data.OriginPrice = req.FromPrice;
@@ -286,15 +285,15 @@ namespace HttpWrapper
                 data.ExecutePrice = req.FromPrice;
                 data.ExecuteQuantity = req.FromQuantity;
             } else {
-                data.OriginPrice = 1 / req.FromPrice;
-                data.OriginQuantity = req.FromPrice * req.FromQuantity;
-                data.ExecutePrice = 1 / req.FromPrice;
-                data.ExecuteQuantity = req.FromPrice * req.FromQuantity;
+                data.OriginPrice = double(1) / req.ToPrice;
+                data.OriginQuantity = req.ToPrice * req.ToQuantity;
+                data.ExecutePrice = double(1) / req.ToPrice;
+                data.ExecuteQuantity = req.ToPrice * req.ToQuantity;
             }
 
             // 最大成交50
             if (req.FromQuantity > 100) {
-                data.ExecuteQuantity = req.FromQuantity - 50;
+                data.ExecuteQuantity = data.ExecuteQuantity - 50;
                 data.OrderStatus = define::PARTIALLY_FILLED;
             }
 
@@ -334,6 +333,7 @@ namespace HttpWrapper
         data.FromToken = parseToken(symbol, side).first;
         data.ToToken = parseToken(symbol, side).second;
 
+        // todo api层收from和to数据需要更完整
         if (side == define::SELL) {
             data.OriginPrice = order["p"].GetDouble();
             data.OriginQuantity = order["q"].GetDouble();
@@ -345,9 +345,9 @@ namespace HttpWrapper
             auto executePrice = order["L"].GetDouble();
             auto executeQuantity = order["l"].GetDouble();
 
-            data.OriginPrice = 1 / originPrice;
+            data.OriginPrice = double(1) / originPrice;
             data.OriginQuantity = originPrice * originQuantity;
-            data.ExecutePrice = 1 / executePrice;
+            data.ExecutePrice = double(1) / executePrice;
             data.ExecuteQuantity = originQuantity * executeQuantity;
         }
 

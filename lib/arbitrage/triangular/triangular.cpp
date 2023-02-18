@@ -26,7 +26,7 @@ namespace Arbitrage{
     }
 
     int TriangularArbitrage::Finish(double finalQuantity) {
-        spdlog::info("func: Finish, finalQuantity: {}, originQuantity: {}", finalQuantity, this->OriginQuantity);
+        spdlog::info("func: Finish, profit: {}, finalQuantity: {}, originQuantity: {}", finalQuantity / this->OriginQuantity, finalQuantity, this->OriginQuantity);
         capitalPool.Refresh();
         this->subscriber();
         return 0;
@@ -127,6 +127,9 @@ namespace Arbitrage{
         }
 
         order->OrderStatus = data.OrderStatus;
+        // todo 这里的origin改成校验逻辑
+        order->OriginPrice = data.OriginPrice;
+        order->OriginQuantity = data.OriginQuantity;
         order->ExecutePrice = data.ExecutePrice;
         order->ExecuteQuantity = data.ExecuteQuantity;
         order->UpdateTime = data.UpdateTime;

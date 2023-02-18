@@ -211,25 +211,30 @@ namespace Pathfinder{
     }
 
     void Graph::adjustQuantities(vector<TransactionPathItem>& items) {
-        for (int i = 1; i < items.size(); i++) {
+        double cumQuantity = items[0].FromQuantity;
+        // spdlog::info("token: {}, quantity: {}", items[0].FromToken, cumQuantity);
+        for (int i = 0; i < items.size(); i++) {
             // 获取第i项以前的累加数量
             auto &curItem = items[i];
-            double cumQuantity = items[i - 1].FromQuantity;
             // 判断第i项容量
-            if (cumQuantity * curItem.FromPrice <= curItem.FromPrice) {
-                // 容量超出，直接赋值
-                curItem.FromQuantity = cumQuantity * curItem.FromPrice;
+            if (cumQuantity <= curItem.FromQuantity) {
+                // 容量足够，直接赋值
+                curItem.FromQuantity = cumQuantity;
+                curItem.ToQuantity = curItem.FromPrice * curItem.FromQuantity;
+                cumQuantity = cumQuantity*curItem.FromPrice;
+                // spdlog::info("i: {}, token: {}, over, newQuantity: {}", i, curItem.FromToken+curItem.ToToken, curItem.FromQuantity);
             } else {
                 // 容量不足，逆推数量
+                // spdlog::info("i: {}, token: {}, less, need: {}, have: {}", i, curItem.FromToken+curItem.ToToken, cumQuantity, curItem.FromQuantity);
                 cumQuantity = curItem.FromQuantity;
+                double reverseCumQuantity = curItem.FromQuantity;
                 for (int k = i - 1; k >= 0; k--) {
-                    cumQuantity /= items[k + 1].FromPrice;
-                    items[k].FromQuantity = cumQuantity;
+                    reverseCumQuantity /= items[k].FromPrice;
+                    items[k].FromQuantity = reverseCumQuantity;
+                    items[k].ToQuantity = items[k].FromPrice * items[k].FromQuantity;
+                    // spdlog::info("k: {}, token: {}, newQuantity: {}", k, items[k].FromToken+items[k].ToToken, items[k].FromQuantity);
                 }
             }
-
-            // 赋值toQuantity
-            curItem.ToQuantity = curItem.FromPrice * curItem.FromQuantity;
         }
     }
 }

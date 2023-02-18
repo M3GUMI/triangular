@@ -31,6 +31,9 @@ namespace Pathfinder{
 
         vector<string> Format() {
             vector<string> info;
+            if (empty(this->Path)) {
+                return info;
+            }
             info.push_back(this->Path.front().FromToken);
             for (const auto &item: this->Path) {
                 info.push_back(to_string(item.FromPrice));
@@ -81,7 +84,7 @@ namespace Pathfinder{
         double fee = 0.0003; // 手续费
         vector<vector<Edge>> nodes; // 存储图中所有的节点及其邻接表
         TransactionPathItem formatTransactionPathItem(Edge& edge);
-        void adjustQuantities(vector<TransactionPathItem>& items);
+        static void adjustQuantities(vector<TransactionPathItem>& items);
         pair<double, vector<TransactionPathItem>> bestOneStep(int start, int end);
         pair<double, vector<TransactionPathItem>> bestTwoStep(int start, int end);
     };

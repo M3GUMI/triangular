@@ -35,9 +35,9 @@ namespace HttpWrapper
         define::OrderType OrderType;
         define::TimeInForce TimeInForce;
 
-        double OriginQuantity; // 实际选择的fromQuantity或toQuantity
-        double OriginPrice; // 实际选择的fromPrice或toPrice
         define::OrderStatus OrderStatus; // 订单状态
+        double OriginPrice = 0; // 实际选择的fromPrice或toPrice
+        double OriginQuantity = 0; // 实际选择的fromQuantity或toQuantity
         double ExecutePrice = 0; // 成交价格，经过一层sell、buy转换
         double ExecuteQuantity = 0; // 已成交数量，经过一层sell、buy转换
         uint64_t UpdateTime = 0; // 最后一次更新实际
