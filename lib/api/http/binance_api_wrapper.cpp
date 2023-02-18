@@ -210,11 +210,11 @@ namespace HttpWrapper
         return callback(info, 0);
     }
 
-    int BinanceApiWrapper::CreateOrder(OrderData &req, function<void(OrderData& data, int err)> callback)
-    {
-        if (req.OrderId == 0)
-        {
-            spdlog::error("func: {}, msg: {}, err: {}", "CreateOrder", "orderId invalid", define::ErrorInvalidParam);
+    int BinanceApiWrapper::CreateOrder(OrderData &req, function<void(OrderData& data, int err)> callback) {
+        if (req.OrderId == 0 ||
+            req.FromToken.empty() || req.FromQuantity == 0 || req.FromPrice == 0 ||
+            req.ToToken.empty() || req.ToQuantity == 0 || req.ToPrice == 0) {
+            spdlog::error("func: CreateOrder, msg: orderId invalid, err: {}", define::ErrorInvalidParam);
             return define::ErrorInvalidParam;
         }
 
@@ -246,17 +246,22 @@ namespace HttpWrapper
         args["quantity"] = to_string(quantity);
 
         // 市价单 不能有下面这些参数
-        if (req.OrderType != define::MARKET && req.OrderType != define::LIMIT_MAKER)
-        {
+        if (req.OrderType != define::MARKET && req.OrderType != define::LIMIT_MAKER) {
             args["timeInForce"] = this->timeInForceToString(req.TimeInForce);
         }
 
-        if (req.OrderType != define::MARKET)
-        {
+        if (req.OrderType != define::MARKET) {
             args["price"] = price;
         }
 
-        spdlog::debug("func: {}, symbol: {}, side: {}, price: {}, quantity: {}", "CreateOrder", symbolData.Symbol, side, price, quantity);
+        spdlog::debug(
+                "func: {}, symbol: {}, side: {}, price: {}, quantity: {}",
+                "CreateOrder",
+                symbolData.Symbol,
+                side,
+                price,
+                quantity
+        );
 
         ApiRequest apiReq;
         apiReq.args = args;
@@ -264,7 +269,14 @@ namespace HttpWrapper
         apiReq.uri = uri;
         apiReq.data = "";
         apiReq.sign = true;
-        auto apiCallback = bind(&BinanceApiWrapper::createOrderCallback, this, placeholders::_1, placeholders::_2, req, callback);
+        auto apiCallback = bind(
+                &BinanceApiWrapper::createOrderCallback,
+                this,
+                placeholders::_1,
+                placeholders::_2,
+                req,
+                callback
+        );
         this->MakeRequest(apiReq, apiCallback);
         return 0;
     }
@@ -276,7 +288,11 @@ namespace HttpWrapper
             data.UpdateTime = GetNowTime();
             data.OrderStatus = define::FILLED;
             data.FromToken = req.FromToken;
+            data.FromPrice = req.FromPrice;
+            data.FromQuantity = req.FromQuantity;
             data.ToToken = req.ToToken;
+            data.ToPrice = req.ToPrice;
+            data.ToQuantity = req.ToQuantity;
 
             auto side = GetSide(req.FromToken, req.ToToken);
             if (side == define::SELL) {
@@ -292,8 +308,10 @@ namespace HttpWrapper
             }
 
             // 最大成交50
-            if (req.FromQuantity > 100) {
-                data.ExecuteQuantity = data.ExecuteQuantity - 50;
+            if (data.ExecuteQuantity == 1) {
+                cout << "token:" << data.FromToken+data.ToToken << ", from" << data.FromPrice << "," << data.FromQuantity <<  " to:" << data.ToPrice << "," << data.ToQuantity << endl;
+                cout << "eq:" << to_string(data.ExecuteQuantity) << " from:" << to_string(data.FromQuantity) << endl;
+                data.ExecuteQuantity = 0.5;
                 data.OrderStatus = define::PARTIALLY_FILLED;
             }
 
@@ -340,6 +358,7 @@ namespace HttpWrapper
             data.ExecutePrice = order["L"].GetDouble();
             data.ExecuteQuantity = order["l"].GetDouble();
         } else {
+            // 等于toPrice、toQuantity
             auto originPrice = order["p"].GetDouble();
             auto originQuantity = order["q"].GetDouble();
             auto executePrice = order["L"].GetDouble();
@@ -348,7 +367,7 @@ namespace HttpWrapper
             data.OriginPrice = double(1) / originPrice;
             data.OriginQuantity = originPrice * originQuantity;
             data.ExecutePrice = double(1) / executePrice;
-            data.ExecuteQuantity = originQuantity * executeQuantity;
+            data.ExecuteQuantity = executePrice * executeQuantity;
         }
 
         return callback(data, 0);

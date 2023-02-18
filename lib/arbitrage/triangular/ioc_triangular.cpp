@@ -55,29 +55,35 @@ namespace Arbitrage{
         }
 
         if (err > 0) {
-            spdlog::error("func: TransHandler, err: {}", WrapErr(err));
+            spdlog::error("func: TransHandler, err: {}", err);
+            return;
+        }
+
+        if (CheckFinish()) {
+            Finish(data.ExecuteQuantity * data.ExecutePrice);
+            return;
         }
     }
 
     int IocTriangularArbitrage::filledHandler(HttpWrapper::OrderData &data) {
         // 抵达目标
-        if (data.ToToken != this->TargetToken) {
-            return TriangularArbitrage::ReviseTrans(
-                    data.ToToken, this->TargetToken, data.ExecuteQuantity * data.ExecutePrice
-            );
+        if (data.ToToken == this->TargetToken) {
+            return 0;
         }
 
-        if (CheckFinish()) {
-            return Finish(data.ExecuteQuantity * data.ExecutePrice);
-        }
-        return define::ErrorStrategy;
+        return TriangularArbitrage::ReviseTrans(
+                data.ToToken, this->TargetToken, data.ExecuteQuantity * data.ExecutePrice
+        );
     }
 
     int IocTriangularArbitrage::partiallyFilledHandler(HttpWrapper::OrderData &data) {
         // 处理未成交部分
         if (define::IsStableCoin(data.FromToken)) {
             // 稳定币持仓，等待重平衡
-            TriangularArbitrage::capitalPool.FreeAsset(data.FromToken, data.OriginQuantity - data.ExecuteQuantity);
+            auto err = TriangularArbitrage::capitalPool.FreeAsset(data.FromToken, data.OriginQuantity - data.ExecuteQuantity);
+            if (err > 0) {
+                return err;
+            }
         } else if (define::NotStableCoin(data.FromToken)) {
             // 未成交部分重执行
             auto err = this->ReviseTrans(data.FromToken, this->TargetToken, data.OriginQuantity - data.ExecuteQuantity);

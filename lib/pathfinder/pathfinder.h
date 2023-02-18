@@ -13,7 +13,8 @@ namespace Pathfinder
 	{
 		string Origin;
 		string End;
-		double PositionQuantity = 0;
+		double Quantity = 0;
+        RevisePathReq(string o, string e, double q): Origin(o), End(e), Quantity(q) {}
 	};
 
     class Pathfinder: public Graph {

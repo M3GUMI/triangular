@@ -6,10 +6,9 @@
 #include <chrono>
 #include "utils.h"
 
-void String2Double(const string &str, double &d)
-{
-	istringstream s(str);
-	s >> d;
+void String2Double(const string &str, double &d) {
+    istringstream s(str);
+    s >> d;
 }
 
 uint64_t GetNowTime() {
@@ -22,8 +21,7 @@ uint64_t GetNowTime() {
 
 uint32_t autoIncr = 0; // 自增id
 
-uint64_t GenerateId()
-{
+uint64_t GenerateId() {
     if (autoIncr == UINT32_MAX) {
         autoIncr = 0;
     }
@@ -32,26 +30,23 @@ uint64_t GenerateId()
     return GetNowTime() << 32 | (autoIncr & 0xFFFFFFFF);
 }
 
-string toLower(const string &str)
-{
-	string s = str;
-	transform(s.begin(), s.end(), s.begin(), ::tolower);
-	return s;
+string toLower(const string &str) {
+    string s = str;
+    transform(s.begin(), s.end(), s.begin(), ::tolower);
+    return s;
 }
 
-string toUpper(const string &str)
-{
-	string s = str;
-	transform(s.begin(), s.end(), s.begin(), ::toupper);
-	return s;
+string toUpper(const string &str) {
+    string s = str;
+    transform(s.begin(), s.end(), s.begin(), ::toupper);
+    return s;
 }
 
-string WrapErr(int err)
-{
-	if (!define::ErrorMsgMap.count(err))
-	{
-		return "未定义错误";
-	}
+string WrapErr(int err) {
+    if (!define::ErrorMsgMap.count(err)) {
+        spdlog::error("func: WrapErr, msg: 未定义错误, err: {}", err);
+        return "未定义错误";
+    }
 
-	return define::ErrorMsgMap[err];
+    return define::ErrorMsgMap[err];
 }

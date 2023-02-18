@@ -70,27 +70,21 @@ namespace Arbitrage{
     }
 
     int TriangularArbitrage::ReviseTrans(string origin, string end, double quantity) {
-        // todo 此处有bug，depth不足的话，有一部分金额卡单了
         // 寻找新路径重试
-        Pathfinder::RevisePathReq req;
         Pathfinder::ArbitrageChance resp;
-
-        req.Origin = origin;
-        req.End = end;
-        req.PositionQuantity = quantity;
-
-        auto err = pathfinder.RevisePath(req, resp);
+        auto err = pathfinder.RevisePath(Pathfinder::RevisePathReq(origin, end, quantity), resp);
         if (err > 0) {
             return err;
         }
 
         spdlog::info(
-                "func: RevisePath, profit: {}, bestPath: {}",
-                resp.Profit,
+                "func: RevisePath, maxQuantity: {}, bestPath: {}",
+                resp.FirstStep().FromQuantity,
                 spdlog::fmt_lib::join(resp.Format(), ","));
 
-        if (resp.Path.front().FromQuantity > quantity) {
-            resp.Path.front().FromQuantity = quantity;
+        if (resp.FirstStep().FromQuantity > quantity) {
+            resp.FirstStep().FromQuantity = quantity;
+            resp.FirstStep().ToQuantity = resp.FirstStep().FromPrice * quantity;
         }
 
         err = ExecuteTrans(resp.FirstStep());

@@ -182,45 +182,45 @@ namespace CapitalPool
         spdlog::info("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
     }
 
-    int CapitalPool::LockAsset(const string& token, double amount, double& lockAmount)
-    {
+    int CapitalPool::LockAsset(const string& token, double amount, double& lockAmount) {
         if (locked) {
-            spdlog::error("func: LockAsset, token: {}, amount: {}, err: {}", token, amount, WrapErr(define::ErrorCapitalRefresh));
+            spdlog::error(
+                    "func: LockAsset, token: {}, amount: {}, err: {}",
+                    token,
+                    amount,
+                    WrapErr(define::ErrorCapitalRefresh));
             return define::ErrorCapitalRefresh;
         }
 
-        if (not balancePool.count(token) || balancePool[token] == 0)
-        {
-            spdlog::error("func: LockAsset, token: {}, amount: {}, err: {}", token, amount, WrapErr(define::ErrorInsufficientBalance));
+        if (not balancePool.count(token) || balancePool[token] == 0) {
+            spdlog::error(
+                    "func: LockAsset, token: {}, amount: {}, err: {}",
+                    token,
+                    amount,
+                    WrapErr(define::ErrorInsufficientBalance));
             return define::ErrorInsufficientBalance;
         }
 
-        if (balancePool[token] < amount)
-        {
+        if (balancePool[token] < amount) {
             lockAmount = balancePool[token];
             balancePool[token] = 0;
             return 0;
         }
 
         lockAmount = amount;
-        balancePool[token] = balancePool[token] - amount; 
+        balancePool[token] = balancePool[token] - amount;
         return 0;
     }
 
-    int CapitalPool::FreeAsset(const string& token, double amount)
-    {
-        if (locked)
-        {
-            spdlog::error("func: {}, err: {}", "LockAsset", WrapErr(define::ErrorCapitalRefresh));
+    int CapitalPool::FreeAsset(const string& token, double amount) {
+        if (locked) {
+            spdlog::error("func: FreeAsset, err: {}", WrapErr(define::ErrorCapitalRefresh));
             return define::ErrorCapitalRefresh;
         }
 
-        if (balancePool.count(token))
-        {
+        if (balancePool.count(token)) {
             balancePool[token] = balancePool[token] + amount;
-        }
-        else
-        {
+        } else {
             balancePool[token] = amount;
         }
 
@@ -232,6 +232,7 @@ namespace CapitalPool
         locked = true;
         // todo 取消所有订单
         apiWrapper.GetAccountInfo(bind(&CapitalPool::refreshAccountHandler, this, placeholders::_1, placeholders::_2));
+        return 0;
     }
 
     void CapitalPool::refreshAccountHandler(HttpWrapper::AccountInfo &info, int err)
