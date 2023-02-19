@@ -45,7 +45,7 @@ namespace Arbitrage{
                 data.ExecuteQuantity * data.ExecutePrice
         );
 
-        int err;
+        int err = 0;
         if (data.OrderStatus == define::FILLED) {
             err = filledHandler(data);
         } else if (data.OrderStatus == define::PARTIALLY_FILLED) {
