@@ -81,7 +81,7 @@ namespace Pathfinder{
         map<string, int> tokenToIndex;
         map<int, string> indexToToken;
 
-        double fee = 0.0003; // 手续费
+        double fee = 0.0004; // 手续费
         vector<vector<Edge>> nodes; // 存储图中所有的节点及其邻接表
         TransactionPathItem formatTransactionPathItem(Edge& edge);
         static void adjustQuantities(vector<TransactionPathItem>& items);

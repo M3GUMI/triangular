@@ -133,7 +133,7 @@ namespace Pathfinder{
         double profit = 1; // 验算利润率
         vector<string> info;
         for (const auto& item:path) {
-            profit = profit*item.FromPrice*(1-0.0003);
+            profit = profit*item.FromPrice*(1-this->fee);
         }
 
         if (profit <= 1) {
