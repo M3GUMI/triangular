@@ -124,8 +124,6 @@ namespace HttpWrapper
 
     void BaseApiWrapper::makeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback)
     {
-        
-
         auto args = req.args;
         auto method = req.method;
         auto uri = req.uri;
@@ -148,7 +146,7 @@ namespace HttpWrapper
         auto httpRequest = HttpRequest::make_request(method, whole_uri, data);
         httpRequest->Header = header;
         hclientPtr->Do(httpRequest, callback);
-        spdlog::debug("func: {}, method: {}, url: {}, data: {}", "MakeRequest", method, whole_uri, data);
+        spdlog::debug("func: MakeRequest, method: {}, data: {}, url: {}", method, data, whole_uri);
     }
 
     std::map<std::string, std::string> BaseApiWrapper::sign(std::map<std::string, std::string> &args, std::string &query, bool need_sign)
