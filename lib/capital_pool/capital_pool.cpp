@@ -43,14 +43,22 @@ namespace CapitalPool
         {
             auto token = item.first;
             auto freeAmount = item.second;
+            if (lockedBalance.count(token) && lockedBalance[token]) {
+                spdlog::debug("func: RebalancePool, token: {}, msg: rebalance now", token);
+                continue;
+            }
+
+            if (freeAmount == 0) {
+                continue;
+            }
 
             // 非初始稳定币，清仓
             if (not basePool.count(token))
             {
-                auto err = tryRebalance(token, "USDT", freeAmount);
-                if (err > 0)
+                auto err = tryRebalance(token, conf::BaseAsset, freeAmount);
+                if (err > 0 && err != define::ErrorLessTicketSize)
                 {
-                    spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
+                    spdlog::error("func: RebalancePool, err: {}", WrapErr(err));
                     return;
                 }
                 continue;
@@ -62,6 +70,11 @@ namespace CapitalPool
         {
             auto token = item.first;
             double freeAmount = 0;
+            if (lockedBalance.count(token) && lockedBalance[token]) {
+                spdlog::debug("func: RebalancePool, token: {}, msg: rebalance now", token);
+                continue;
+            }
+
             if (balancePool.count(token))
             {
                 freeAmount = balancePool[token];
@@ -84,7 +97,7 @@ namespace CapitalPool
                 freeAmount = balancePool[token];
             }
 
-            if (addToken.empty() && token == "USDT")  {
+            if (addToken.empty() && token == conf::BaseAsset)  {
                 // 无需补充时，不清仓USDT
                 continue;
             }
@@ -100,7 +113,7 @@ namespace CapitalPool
         if (not addToken.empty() && not delToken.empty())
         {
             auto err = tryRebalance(delToken, addToken, balancePool[delToken] - basePool[delToken]);
-            if (err > 0)
+            if (err > 0 && err != define::ErrorLessTicketSize)
             {
                 spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
                 return;
@@ -110,7 +123,7 @@ namespace CapitalPool
         // 多余token换为USDT
         if (addToken.empty() && not delToken.empty())
         {
-            auto err = tryRebalance(delToken, "USDT", balancePool[delToken] - basePool[delToken]);
+            auto err = tryRebalance(delToken, conf::BaseAsset, balancePool[delToken] - basePool[delToken]);
             if (err > 0)
             {
                 spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
@@ -141,14 +154,21 @@ namespace CapitalPool
         req.OrderId = GenerateId();
         req.FromToken = fromToken;
         req.FromPrice = priceResp.FromPrice;
-        req.FromQuantity = amount;
+        req.FromQuantity = amount <= priceResp.FromQuantity? amount: priceResp.FromQuantity;
         req.ToToken = toToken;
         req.ToPrice = priceResp.ToPrice;
         req.ToQuantity = req.FromPrice * req.FromQuantity;
         req.OrderType = define::LIMIT;
         req.TimeInForce = define::IOC;
 
-        return apiWrapper.CreateOrder(req, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
+
+        auto err = apiWrapper.CreateOrder(req, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
+        if (err > 0) {
+            return err;
+        }
+
+        lockedBalance[fromToken] = true;
+        return 0;
     }
 
     void CapitalPool::rebalanceHandler(HttpWrapper::OrderData &data) {
@@ -174,6 +194,7 @@ namespace CapitalPool
             balancePool[data.ToToken] = balancePool[data.ToToken] + data.ExecuteQuantity * data.ExecutePrice;
         }
 
+        lockedBalance[data.FromToken] = false;
         vector<string> info;
         for (const auto &item: balancePool) {
             info.push_back(item.first);
@@ -244,10 +265,13 @@ namespace CapitalPool
             return;
         }
 
+        this->balancePool = {};
         for (const auto& asset : info.Balances)
         {
-            this->balancePool = {};
-            this->balancePool[asset.Token] = asset.Free;
+            if (asset.Free > 0) {
+                // spdlog::info("token: {}, free: {}", asset.Token, asset.Free);
+                this->balancePool[asset.Token] = asset.Free;
+            }
         }
 
         locked = false;

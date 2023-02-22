@@ -10,5 +10,6 @@ namespace conf
     extern string AccessKey;
     extern string SecretKey;
 
+    extern string BaseAsset; // 最终稳定币
     extern map<string, double> BaseAssets; // 初始仓位
 }

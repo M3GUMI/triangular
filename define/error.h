@@ -23,4 +23,5 @@ namespace define
     const int ErrorGraphNotReady = 204; // token价格图未就绪
     const int ErrorStrategy = 205; // 策略错误
     const int ErrorOrderAmountZero = 206; // 订单金额为0
+    const int ErrorLessTicketSize = 207; // 低于最小成交size
 }

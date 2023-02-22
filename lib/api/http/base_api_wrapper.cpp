@@ -59,13 +59,13 @@ namespace HttpWrapper
         return 0;
     }
 
-    CheckRespWithCodeResp& BaseApiWrapper::CheckRespWithCode(shared_ptr<HttpRespone> &res)
+    CheckRespWithCodeResp BaseApiWrapper::CheckRespWithCode(shared_ptr<HttpRespone> &res)
     {
         CheckRespWithCodeResp resp;
         if (res == nullptr || res->payload().empty())
         {
-            spdlog::error("func: {}, err: {}", "CheckRespWithCode", WrapErr(define::ErrorHttpFail));
-            resp.Err = define::ErrorHttpFail;
+            spdlog::error("func: CheckRespWithCode, err: {}, resp: {}", WrapErr(define::ErrorEmptyResponse), res->payload());
+            resp.Err = define::ErrorEmptyResponse;
             return resp;
         }
 
@@ -73,8 +73,9 @@ namespace HttpWrapper
         json.Parse(res->payload().c_str());
         if (res->http_status() != 200)
         {
-            spdlog::error("func: {}, err: {}", "CheckRespWithCode", WrapErr(define::ErrorEmptyResponse));
-            resp.Err = define::ErrorEmptyResponse;
+
+            spdlog::error("func: CheckRespWithCode, err: {}, resp: {}", WrapErr(define::ErrorHttpFail), res->payload());
+            resp.Err = define::ErrorHttpFail;
             resp.Code = json.FindMember("code")->value.GetInt();
             resp.Msg = json.FindMember("msg")->value.GetString();
             return resp;

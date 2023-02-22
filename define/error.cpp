@@ -19,5 +19,6 @@ namespace define
         {ErrorGraphNotReady, "graph price not ready"},
         {ErrorStrategy, "transaction strategy error"},
         {ErrorOrderAmountZero, "order amount is zero"},
+        {ErrorLessTicketSize, "less than ticket_size"},
     };
 }

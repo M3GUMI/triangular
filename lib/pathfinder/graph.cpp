@@ -28,7 +28,7 @@ namespace Pathfinder{
         int toIndex = tokenToIndex[to];
 
         // 边已存在,更新
-        for (auto edge: nodes[fromIndex]) {
+        for (auto &edge: nodes[fromIndex]) {
             if (edge.from == fromIndex && edge.to == toIndex) {
                 edge.price = price;
                 edge.quantity = quantity;
@@ -57,13 +57,19 @@ namespace Pathfinder{
         for(auto edge:nodes[fromIndex]) {
             if (edge.from==fromIndex && edge.to == toIndex) {
                 resp.FromPrice = edge.price;
+                resp.FromQuantity = edge.quantity;
             }
         }
 
-        for(auto edge:nodes[fromIndex]) {
+        for(auto edge:nodes[toIndex]) {
             if (edge.to==fromIndex && edge.from == toIndex) {
                 resp.ToPrice = edge.price;
+                resp.ToQuantity = edge.quantity;
             }
+        }
+
+        if (resp.FromPrice == 0 || resp.ToPrice == 0) {
+            return define::ErrorGraphNotReady;
         }
 
         return 0;

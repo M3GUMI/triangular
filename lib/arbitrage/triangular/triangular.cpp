@@ -59,7 +59,7 @@ namespace Arbitrage{
                 path.FromPrice,
                 path.FromQuantity
         );
-        return apiWrapper.CreateOrder(
+        auto err = apiWrapper.CreateOrder(
                 *order,
                 bind(
                         &TriangularArbitrage::baseOrderHandler,
@@ -67,6 +67,11 @@ namespace Arbitrage{
                         placeholders::_1,
                         placeholders::_2
                 ));
+        if (err == define::ErrorLessTicketSize) {
+            return 0;
+        }
+
+        return err;
     }
 
     int TriangularArbitrage::ReviseTrans(string origin, string end, double quantity) {

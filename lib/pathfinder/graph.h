@@ -53,7 +53,9 @@ namespace Pathfinder{
     struct GetExchangePriceResp
     {
         double FromPrice = 0;
+        double FromQuantity = 0;
         double ToPrice = 0;
+        double ToQuantity = 0;
     };
 
     // 定义一个边的结构体，用于表示两个节点之间的边

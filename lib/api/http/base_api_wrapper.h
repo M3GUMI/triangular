@@ -82,7 +82,7 @@ namespace HttpWrapper
         pair<double, double> SelectPriceQuantity(OrderData& req, define::OrderSide side);
 
         int CheckResp(shared_ptr<HttpRespone> &res);
-        CheckRespWithCodeResp &CheckRespWithCode(shared_ptr<HttpRespone> &res);
+        CheckRespWithCodeResp CheckRespWithCode(shared_ptr<HttpRespone> &res);
         void MakeRequest(ApiRequest &req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback);
         void MakeRequest(ApiRequest &req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback, bool mock);
     };

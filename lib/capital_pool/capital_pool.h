@@ -16,6 +16,7 @@ namespace CapitalPool
 
         map<string, double> basePool;                                         // 初始资金池，重平衡至该状态
         map<string, double> balancePool;                                      // 实际资金池，<token,amount>
+        map<string, bool> lockedBalance = {};                                      // 执行中token, todo 后续整合为类，暂时简化
         std::shared_ptr<websocketpp::lib::asio::steady_timer> rebalanceTimer; // 重平衡计时器
 
         bool locked; // 刷新中，锁定

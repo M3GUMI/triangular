@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <iostream>
 #include <cctype>
 #include <algorithm>
@@ -49,4 +50,11 @@ string WrapErr(int err) {
     }
 
     return define::ErrorMsgMap[err];
+}
+
+string FormatDouble(double val) {
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(8) << val;
+
+    return stream.str();
 }
