@@ -171,7 +171,7 @@ namespace HttpWrapper
         AccountInfo info;
         if (conf::EnableMock) {
             BalanceData data;
-            data.Token = "USDT";
+            data.Token = conf::BaseAsset;
             data.Free = 1000;
             data.Locked = 0;
             info.Balances.push_back(data);
@@ -211,10 +211,32 @@ namespace HttpWrapper
     }
 
     int BinanceApiWrapper::CreateOrder(OrderData &req, function<void(OrderData& data, int err)> callback) {
-        if (req.OrderId == 0 ||
-            req.FromToken.empty() || req.FromQuantity == 0 || req.FromPrice == 0 ||
-            req.ToToken.empty() || req.ToQuantity == 0 || req.ToPrice == 0) {
-            spdlog::error("func: CreateOrder, msg: orderId invalid, err: {}", define::ErrorInvalidParam);
+        if (req.OrderId == 0) {
+            spdlog::error("func: CreateOrder, orderId: {}, err: {}", req.OrderId, WrapErr(define::ErrorInvalidParam));
+            return define::ErrorInvalidParam;
+        }
+        if (req.FromToken.empty() || req.ToToken.empty()) {
+            spdlog::error(
+                    "func: CreateOrder, fromToken: {}, toToken: {}, err: {}",
+                    req.FromToken,
+                    req.ToToken,
+                    WrapErr(define::ErrorInvalidParam));
+            return define::ErrorInvalidParam;
+        }
+        if (req.FromQuantity == 0 || req.ToQuantity == 0) {
+            spdlog::error(
+                    "func: CreateOrder, fromQuantity: {}, toQuantity: {}, err: {}",
+                    req.FromQuantity,
+                    req.ToQuantity,
+                    WrapErr(define::ErrorInvalidParam));
+            return define::ErrorInvalidParam;
+        }
+        if (req.FromPrice == 0 || req.ToPrice == 0) {
+            spdlog::error(
+                    "func: CreateOrder, fromPrice: {}, toPrice: {}, err: {}",
+                    req.FromPrice,
+                    req.ToPrice,
+                    WrapErr(define::ErrorInvalidParam));
             return define::ErrorInvalidParam;
         }
 
@@ -235,15 +257,15 @@ namespace HttpWrapper
         uint32_t tmp = quantity / ticketSize;
         quantity = tmp * ticketSize;
 
-        if (quantity == 0) {
-            return define::ErrorInvalidParam;
+        if (quantity == ticketSize) {
+            return define::ErrorLessTicketSize;
         }
 
         args["symbol"] = symbolData.Symbol;
         args["side"] = this->sideToString(side);
         args["type"] = this->orderTypeToString(req.OrderType);
         args["timestamp"] = std::to_string(time(NULL) * 1000);
-        args["quantity"] = to_string(quantity);
+        args["quantity"] =  FormatDouble(quantity);
 
         // 市价单 不能有下面这些参数
         if (req.OrderType != define::MARKET && req.OrderType != define::LIMIT_MAKER) {
@@ -251,18 +273,13 @@ namespace HttpWrapper
         }
 
         if (req.OrderType != define::MARKET) {
-            args["price"] = price;
+            args["price"] = FormatDouble(price);
         }
 
         spdlog::debug(
-                "func: {}, symbol: {}, side: {}, price: {}, quantity: {}",
-                "CreateOrder",
-                symbolData.Symbol,
-                side,
-                price,
-                quantity
+                "func: CreateOrder, symbol: {}, price: {}, quantity: {}, side: {}, orderType: {}",
+                args["symbol"], args["price"], args["quantity"], args["side"], args["type"]
         );
-
         ApiRequest apiReq;
         apiReq.args = args;
         apiReq.method = "POST";
