@@ -56,7 +56,7 @@ namespace CapitalPool
             if (not basePool.count(token))
             {
                 auto err = tryRebalance(token, conf::BaseAsset, freeAmount);
-                if (err > 0 && err != define::ErrorLessTicketSize)
+                if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional)
                 {
                     spdlog::error("func: RebalancePool, err: {}", WrapErr(err));
                     return;
@@ -134,14 +134,16 @@ namespace CapitalPool
         // 需补充资金
         if (not addToken.empty() && delToken.empty())
         {
-            spdlog::error("func: {}, err: {}", "RebalancePool", "need more money");
+            spdlog::debug("func: {}, err: {}", "RebalancePool", "need more money");
             return;
         }
     }
 
     int CapitalPool::tryRebalance(const string& fromToken, const string& toToken, double amount)
     {
+        auto symbolData = apiWrapper.GetSymbolData(fromToken, toToken);
         Pathfinder::GetExchangePriceReq priceReq{};
+        priceReq.BaseToken = symbolData.BaseToken;
         priceReq.FromToken = fromToken;
         priceReq.ToToken = toToken;
 
@@ -157,7 +159,8 @@ namespace CapitalPool
         req.FromQuantity = amount <= priceResp.FromQuantity? amount: priceResp.FromQuantity;
         req.ToToken = toToken;
         req.ToPrice = priceResp.ToPrice;
-        req.ToQuantity = req.FromPrice * req.FromQuantity;
+        req.ToQuantity = amount <= priceResp.ToQuantity? amount: priceResp.ToQuantity;
+
         req.OrderType = define::LIMIT;
         req.TimeInForce = define::IOC;
 
@@ -269,7 +272,7 @@ namespace CapitalPool
         for (const auto& asset : info.Balances)
         {
             if (asset.Free > 0) {
-                // spdlog::info("token: {}, free: {}", asset.Token, asset.Free);
+                spdlog::info("token: {}, free: {}", asset.Token, asset.Free);
                 this->balancePool[asset.Token] = asset.Free;
             }
         }

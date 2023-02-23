@@ -15,6 +15,7 @@ namespace HttpWrapper
         string BaseToken;
         string QuoteToken;
         double TicketSize = 0;
+        double MinNotional = 0;
     };
 
     struct BalanceData

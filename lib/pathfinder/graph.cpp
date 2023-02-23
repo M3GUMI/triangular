@@ -4,7 +4,7 @@ namespace Pathfinder{
     Graph::Graph() = default;
     Graph::~Graph() = default;
 
-    void Graph::AddEdge(const string& from, const string& to, double price, double quantity) {
+    void Graph::AddEdge(const string& from, const string& to, double originPrice, double quantity, bool isFrom) {
         // 将边加入相应的节点的邻接表中
         if (not tokenToIndex.count(to)) {
             int index = nodes.size();
@@ -30,14 +30,32 @@ namespace Pathfinder{
         // 边已存在,更新
         for (auto &edge: nodes[fromIndex]) {
             if (edge.from == fromIndex && edge.to == toIndex) {
-                edge.price = price;
+                edge.originPrice = originPrice;
                 edge.quantity = quantity;
+                edge.isFrom = isFrom;
+                if (isFrom) {
+                    edge.weight = -log(originPrice);
+                } else {
+                    edge.weight = log(originPrice);
+                }
+
                 return;
             }
         }
 
         // 边不存在, 添加
-        auto edge = new Edge(fromIndex, toIndex, price, quantity);
+        auto edge = new Edge();
+        edge->from = fromIndex;
+        edge->to = toIndex;
+        edge->originPrice = originPrice;
+        edge->quantity = quantity;
+        edge->isFrom = isFrom;
+        if (isFrom) {
+            edge->weight = -log(originPrice);
+        } else {
+            edge->weight = log(originPrice);
+        }
+
         nodes[fromIndex].push_back(*edge);
     }
 
@@ -54,17 +72,35 @@ namespace Pathfinder{
         int fromIndex = tokenToIndex[req.FromToken];
         int toIndex = tokenToIndex[req.ToToken];
 
+        bool isFrom =  req.FromToken == req.BaseToken;
+        // todo edge存储方式优化一下，以下逻辑需要调整
         for(auto edge:nodes[fromIndex]) {
-            if (edge.from==fromIndex && edge.to == toIndex) {
-                resp.FromPrice = edge.price;
+            /*if (isFrom) {
+                continue;
+            }*/
+
+            if (edge.from==fromIndex && edge.to == toIndex) { // 盘口卖出价格，己方
+                if (indexToToken[edge.to] == "TRY") {
+                    spdlog::info("case1 fromToken: {}, isFrom: {}, op: {}", indexToToken[edge.from], edge.isFrom, edge.originPrice);
+                }
+                resp.FromPrice = edge.originPrice;
                 resp.FromQuantity = edge.quantity;
             }
         }
 
         for(auto edge:nodes[toIndex]) {
+            /*if (!isFrom) {
+                continue;
+            }*/
+
             if (edge.to==fromIndex && edge.from == toIndex) {
-                resp.ToPrice = edge.price;
+                if (indexToToken[edge.to] == "TRY") {
+                    spdlog::info("case2 fromToken: {}, isFrom: {}, op: {}, oq: {}", indexToToken[edge.to], edge.isFrom, edge.originPrice, edge.quantity);
+                }
+                resp.ToPrice = edge.originPrice;
                 resp.ToQuantity = edge.quantity;
+                //resp.FromPrice = 1/edge.originPrice;
+                //resp.FromQuantity = edge.originPrice*edge.quantity;
             }
         }
 
@@ -77,12 +113,21 @@ namespace Pathfinder{
 
     TransactionPathItem Graph::formatTransactionPathItem(Edge& edge) {
         TransactionPathItem item{};
-        item.FromToken = indexToToken[edge.from];
-        item.FromPrice = edge.price;
-        item.FromQuantity = edge.quantity;
-        item.ToToken = indexToToken[edge.to];
-        item.ToPrice = 1/edge.price;
-        item.ToQuantity = edge.price*edge.quantity;
+        if (edge.isFrom) {
+            item.FromToken = indexToToken[edge.from];
+            item.FromPrice = edge.originPrice;
+            item.FromQuantity = edge.quantity;
+            item.ToToken = indexToToken[edge.to];
+            item.ToPrice = 1/edge.originPrice;
+            item.ToQuantity = edge.originPrice*edge.quantity;
+        } else {
+            item.ToToken = indexToToken[edge.to];
+            item.ToPrice = edge.originPrice;
+            item.ToQuantity = edge.quantity;
+            item.FromToken = indexToToken[edge.from];
+            item.FromPrice = 1/edge.originPrice;
+            item.FromQuantity = edge.originPrice*edge.quantity;
+        }
 
         return item;
     };
@@ -102,22 +147,22 @@ namespace Pathfinder{
             auto firstEdges = nodes[firstToken]; // 起点出发边
 
             for (auto &firstEdge: firstEdges) {
-                double firstWeight = firstEdge.price; // 第一条边权重
+                double firstWeight = firstEdge.weight; // 第一条边权重
                 int secondToken = firstEdge.to; // 第二token
                 auto secondEdges = nodes[secondToken]; // 第二token出发边
 
                 for (auto &secondEdge: secondEdges) {
-                    double secondWeight = secondEdge.price; // 第二条边权重
+                    double secondWeight = secondEdge.weight; // 第二条边权重
                     int thirdToken = secondEdge.to; // 第三token
                     auto thirdEdges = nodes[thirdToken]; // 第三token出发边
 
                     for (auto &thirdEdge: thirdEdges) {
-                        double thirdWeight = thirdEdge.price; // 第三条边权重
+                        double thirdWeight = thirdEdge.weight; // 第三条边权重
                         int endToken = thirdEdge.to; // 第三条边目标token
                         if (firstToken == endToken) {
                             // 对数。乘法处理为加法
                             // 负数。最长路径处理为最短路径
-                            double rate = -log(firstWeight) - log(secondWeight) - log(thirdWeight) - 3 * log(1 - fee);
+                            double rate = firstWeight + secondWeight + thirdWeight - 3 * log(1 - fee);
                             if (rate < 0 && rate < minRate) {
                                 minRate = rate;
                                 path.clear();
@@ -160,7 +205,7 @@ namespace Pathfinder{
 
         ArbitrageChance chance{};
         pair<double, vector<TransactionPathItem>> *data;
-        if (twoStepResult.first > oneStepResult.first) {
+        if (twoStepResult.first < oneStepResult.first) {
             data = &twoStepResult;
         } else {
             data = &oneStepResult;
@@ -187,7 +232,7 @@ namespace Pathfinder{
                 continue;
             }
             path.push_back(formatTransactionPathItem(edge));
-            return make_pair(edge.price * (1 - fee), path);
+            return make_pair(edge.weight + log(1 - fee), path);
         }
 
         return make_pair(0, path);
@@ -196,20 +241,20 @@ namespace Pathfinder{
     // 走两步
     pair<double, vector<TransactionPathItem>> Graph::bestTwoStep(int start, int end) {
         vector<TransactionPathItem> path;
-        double maxRate = 0;
+        double minRate = 0;
 
         for (auto &firstEdge: nodes[start]) {
-            double firstWeight = firstEdge.price; // 第一条边权重
+            double firstWeight = firstEdge.weight; // 第一条边权重
             int secondToken = firstEdge.to; // 第二token
             auto secondEdges = nodes[secondToken]; // 第二token出发边
 
             for (auto &secondEdge: secondEdges) {
-                double secondWeight = secondEdge.price; // 第二条边权重
+                double secondWeight = secondEdge.weight; // 第二条边权重
 
                 if (secondEdge.to == end) {
-                    double rate = firstWeight * secondWeight * (1 - fee) * (1 - fee);
-                    if (rate > 0 && rate > maxRate) {
-                        maxRate = rate;
+                    double rate = firstWeight + secondWeight - 2 * log(1 - fee);
+                    if (rate < 0 && rate < minRate) {
+                        minRate = rate;
                         path.clear();
                         path.push_back(formatTransactionPathItem(firstEdge));
                         path.push_back(formatTransactionPathItem(secondEdge));
@@ -218,7 +263,7 @@ namespace Pathfinder{
             }
         }
 
-        return make_pair(maxRate, path);
+        return make_pair(minRate, path);
     }
 
     void Graph::adjustQuantities(vector<TransactionPathItem>& items) {

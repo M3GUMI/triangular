@@ -46,6 +46,7 @@ namespace Pathfinder{
 
     struct GetExchangePriceReq
     {
+        string BaseToken = "";
         string FromToken = "";
         string ToToken = "";
     };
@@ -62,9 +63,10 @@ namespace Pathfinder{
     struct Edge {
         int from = 0;   // 起点
         int to = 0;     // 终点
-        double price = 0;  // 价格
+        double weight = 0;  //  权重
         double quantity = 0;  // 数量 todo 现在只存了第一档
-        Edge(int f, int t, double p, double q) : from(f), to(t), price(p), quantity(q) {}
+        double originPrice = 0;  // 原始价格
+        bool isFrom = true;  // originPrice等于FromPrice，否则等于ToPrice
     };
 
     // 定义一个图的类
@@ -73,7 +75,7 @@ namespace Pathfinder{
         Graph();
         ~Graph();
 
-        void AddEdge(const string& from, const string& to, double price, double quantity);
+        void AddEdge(const string& from, const string& to, double originPrice, double quantity, bool isFrom);
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
 
         ArbitrageChance FindBestPath(string start, string end, double quantity);

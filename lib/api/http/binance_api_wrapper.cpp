@@ -48,7 +48,7 @@ namespace HttpWrapper
         const auto &symbols = exchangeInfoJson["symbols"];
         for (unsigned i = 0; i < symbols.Size(); i++)
         {
-            double doubleTickSize = 0;
+            double doubleTickSize = 0, doubleMinNotional = 0;
             string symbol = symbols[i].FindMember("symbol")->value.GetString();
             string baseAsset = symbols[i].FindMember("baseAsset")->value.GetString();
             string quoteAsset = symbols[i].FindMember("quoteAsset")->value.GetString();
@@ -57,26 +57,21 @@ namespace HttpWrapper
                 continue;
             }
 
-            if (symbols[i].HasMember("filters"))
-            {
+            if (symbols[i].HasMember("filters")) {
                 auto filters = symbols[i].FindMember("filters")->value.GetArray();
-                for (uint32_t j = 0; j < filters.Size(); j++)
-                {
-                    if (not filters[j].HasMember("stepSize") || not filters[j].HasMember("filterType"))
-                    {
+                for (uint32_t j = 0; j < filters.Size(); j++) {
+                    if (not filters[j].HasMember("filterType")) {
                         continue;
                     }
 
                     string filterType = filters[j].FindMember("filterType")->value.GetString();
-
-                    if (filterType != "LOT_SIZE")
-                    {
-                        continue;
+                    if (filterType == "LOT_SIZE" && filters[j].HasMember("stepSize")) {
+                        string ticksize = filters[j].FindMember("stepSize")->value.GetString();
+                        String2Double(ticksize, doubleTickSize);
+                    } else if (filterType == "MIN_NOTIONAL" && filters[j].HasMember("minNotional")) {
+                        string minNotional = filters[j].FindMember("minNotional")->value.GetString();
+                        String2Double(minNotional, doubleMinNotional);
                     }
-
-                    string ticksize = filters[j].FindMember("stepSize")->value.GetString();
-                    String2Double(ticksize, doubleTickSize);
-                    break;
                 }
             }
 
@@ -85,6 +80,7 @@ namespace HttpWrapper
             data.BaseToken = baseAsset;
             data.QuoteToken = quoteAsset;
             data.TicketSize = doubleTickSize;
+            data.MinNotional = doubleMinNotional;
 
             symbolMap[baseAsset + quoteAsset] = data;
             symbolMap[quoteAsset + baseAsset] = data;
@@ -257,7 +253,11 @@ namespace HttpWrapper
         uint32_t tmp = quantity / ticketSize;
         quantity = tmp * ticketSize;
 
-        if (quantity == ticketSize) {
+        if (quantity == 0) {
+            return define::ErrorLessTicketSize;
+        }
+
+        if (quantity*price < data.MinNotional) {
             return define::ErrorLessTicketSize;
         }
 
@@ -352,39 +352,60 @@ namespace HttpWrapper
         outOrderIdMap[clientOrderId] = req.OrderId;
 
         // 当前均为IOC数据推送
-        auto symbol = order["s"].GetString();
-        auto side = stringToSide(order["S"].GetString());
+        auto symbol = order["symbol"].GetString();
+        auto side = stringToSide(order["side"].GetString());
 
         if (side == define::INVALID_SIDE) {
             spdlog::error("func: {}, msg: {}, err: {}", "CreateOrder", "invalid side", define::ErrorInvalidResp);
             return;
         }
 
-        data.OrderId = this->outOrderIdMap[order["c"].GetString()];
-        data.UpdateTime = order["E"].GetUint64();
-        data.OrderStatus = stringToOrderStatus(order["X"].GetString());
+        spdlog::info("info: {}", res->payload());
+
+        data.OrderId = this->outOrderIdMap[order["clientOrderId"].GetString()];
+        data.UpdateTime = GetNowTime(); // todo 这里看看要不要改
+        data.OrderStatus = stringToOrderStatus(order["status"].GetString());
         data.FromToken = parseToken(symbol, side).first;
         data.ToToken = parseToken(symbol, side).second;
 
         // todo api层收from和to数据需要更完整
         if (side == define::SELL) {
-            data.OriginPrice = order["p"].GetDouble();
-            data.OriginQuantity = order["q"].GetDouble();
-            data.ExecutePrice = order["L"].GetDouble();
-            data.ExecuteQuantity = order["l"].GetDouble();
+            double originPrice, originQuantity, executePrice, executeQuantity;
+            String2Double(order["price"].GetString(), originPrice);
+            String2Double(order["origQty"].GetString(), originQuantity);
+            String2Double(order["price"].GetString(), executePrice);
+            String2Double(order["executedQty"].GetString(), executeQuantity);
+
+            data.OriginPrice = originPrice;
+            data.OriginQuantity = originQuantity;
+            data.ExecutePrice = executePrice;
+            data.ExecuteQuantity = executeQuantity;
         } else {
             // 等于toPrice、toQuantity
-            auto originPrice = order["p"].GetDouble();
-            auto originQuantity = order["q"].GetDouble();
-            auto executePrice = order["L"].GetDouble();
-            auto executeQuantity = order["l"].GetDouble();
+            double originPrice, originQuantity, executePrice, executeQuantity, cummulativeQuoteQty;
+            String2Double(order["price"].GetString(), originPrice);
+            String2Double(order["origQty"].GetString(), originQuantity);
+            String2Double(order["price"].GetString(), executePrice);
+            String2Double(order["executedQty"].GetString(), executeQuantity);
+            String2Double(order["cummulativeQuoteQty"].GetString(), cummulativeQuoteQty);
 
             data.OriginPrice = double(1) / originPrice;
             data.OriginQuantity = originPrice * originQuantity;
             data.ExecutePrice = double(1) / executePrice;
-            data.ExecuteQuantity = executePrice * executeQuantity;
+            data.ExecuteQuantity = executePrice*executeQuantity;
+            data.CummulativeQuoteQuantity = cummulativeQuoteQty;
         }
 
+        spdlog::debug(
+                "func: createOrderCallback, orderId: {}, status: {}, from: {}, to: {}, price: {}, originQuantity: {}, executeQuantity: {}",
+                data.OrderId,
+                data.OrderStatus,
+                data.FromToken,
+                data.ToToken,
+                data.OriginPrice,
+                data.OriginQuantity,
+                data.ExecuteQuantity
+        );
         return callback(data, 0);
     }
 
@@ -592,7 +613,7 @@ namespace HttpWrapper
     pair<string, string> BinanceApiWrapper::parseToken(string symbol, define::OrderSide side)
     {
         auto data = GetSymbolData(symbol);
-        if (side == define::SELL) {
+        if (side == define::BUY) {
             return make_pair(data.QuoteToken, data.BaseToken);
         } else {
             return make_pair(data.BaseToken, data.QuoteToken);

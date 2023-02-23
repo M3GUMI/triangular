@@ -14,7 +14,7 @@ namespace Arbitrage{
 
     int IocTriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
         double lockedAmount = 0;
-        auto firstStep = chance.FirstStep();
+        auto &firstStep = chance.FirstStep();
         if (auto err = capitalPool.LockAsset(firstStep.FromToken, firstStep.FromQuantity, lockedAmount); err > 0) {
             return err;
         }
@@ -22,7 +22,7 @@ namespace Arbitrage{
         spdlog::info(
                 "func: IocTriangularArbitrage::Run, profit: {}, quantity: {}, path: {}",
                 chance.Profit,
-                chance.Quantity,
+                lockedAmount,
                 spdlog::fmt_lib::join(chance.Format(), ","));
 
         firstStep.FromQuantity = lockedAmount;
@@ -45,8 +45,14 @@ namespace Arbitrage{
                 data.ExecuteQuantity * data.ExecutePrice
         );
 
+        // 完全失败, 终止
+        if (data.FromToken == OriginToken && data.ExecuteQuantity == 0) {
+            TriangularArbitrage::Finish(0);
+            return;
+        }
+
         int err = 0;
-        if (data.OrderStatus == define::FILLED) {
+        if (data.OrderStatus == define::FILLED || data.OrderStatus == define::EXPIRED) {
             err = filledHandler(data);
         } else if (data.OrderStatus == define::PARTIALLY_FILLED) {
             err = partiallyFilledHandler(data);
@@ -94,7 +100,7 @@ namespace Arbitrage{
 
         if (data.ToToken != this->TargetToken) {
             // 已成交部分继续执行
-            auto err = this->ReviseTrans(data.ToToken, this->TargetToken, data.ExecuteQuantity * data.ExecutePrice);
+            auto err = this->ReviseTrans(data.ToToken, this->TargetToken, data.CummulativeQuoteQuantity);
             if (err > 0) {
                 return err;
             }

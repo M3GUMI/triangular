@@ -20,5 +20,6 @@ namespace define
         {ErrorStrategy, "transaction strategy error"},
         {ErrorOrderAmountZero, "order amount is zero"},
         {ErrorLessTicketSize, "less than ticket_size"},
+        {ErrorLessMinNotional, "less than min_notional"},
     };
 }

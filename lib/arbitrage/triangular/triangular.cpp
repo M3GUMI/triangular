@@ -52,8 +52,7 @@ namespace Arbitrage{
         orderMap[order->OrderId] = order;
 
         spdlog::info(
-                "func: {}, from: {}, to: {}, price: {}, quantity: {}",
-                "ExecuteTrans",
+                "func: ExecuteTrans, from: {}, to: {}, price: {}, quantity: {}",
                 path.FromToken,
                 path.ToToken,
                 path.FromPrice,
@@ -122,10 +121,9 @@ namespace Arbitrage{
 
         order->OrderStatus = data.OrderStatus;
         // todo 这里的origin改成校验逻辑
-        order->OriginPrice = data.OriginPrice;
-        order->OriginQuantity = data.OriginQuantity;
         order->ExecutePrice = data.ExecutePrice;
         order->ExecuteQuantity = data.ExecuteQuantity;
+        order->CummulativeQuoteQuantity = data.CummulativeQuoteQuantity;
         order->UpdateTime = data.UpdateTime;
 
         TransHandler(*order);
