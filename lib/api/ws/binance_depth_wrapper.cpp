@@ -32,7 +32,7 @@ namespace WebsocketWrapper
 
         if (depthInfoJson.FindMember("bids") == depthInfoJson.MemberEnd())
         {
-            spdlog::debug("func: {}, msg: {}", "msgHandler", "no depth data, return");
+            // spdlog::debug("func: {}, msg: {}", "msgHandler", "no depth data, return");
             return;
         }
 

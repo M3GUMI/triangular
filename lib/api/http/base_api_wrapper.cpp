@@ -85,23 +85,6 @@ namespace HttpWrapper
         return resp;
     }
 
-    pair<double, double> BaseApiWrapper::SelectPriceQuantity(OrderData& req, define::OrderSide side)
-    {
-        double price, quantity;
-        if (side == define::SELL)
-        {
-            price = req.FromPrice;
-            quantity = req.FromQuantity;
-        }
-        if (side == define::BUY)
-        {
-            price = req.ToPrice;
-            quantity = req.ToQuantity;
-        }
-
-        return make_pair(price, quantity);
-    }
-
     void BaseApiWrapper::MakeRequest(ApiRequest& req, function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback)
     {
         if (conf::EnableMock)

@@ -167,8 +167,8 @@ namespace HttpWrapper
         AccountInfo info;
         if (conf::EnableMock) {
             BalanceData data;
-            data.Token = conf::BaseAsset;
-            data.Free = 1000;
+            data.Token = "ETH";
+            data.Free = 100;
             data.Locked = 0;
             info.Balances.push_back(data);
             spdlog::debug("func: {}, msg: {}", "GetAccountInfo", "mock account_info");
@@ -211,45 +211,31 @@ namespace HttpWrapper
             spdlog::error("func: CreateOrder, orderId: {}, err: {}", req.OrderId, WrapErr(define::ErrorInvalidParam));
             return define::ErrorInvalidParam;
         }
-        if (req.FromToken.empty() || req.ToToken.empty()) {
+        if (req.BaseToken.empty() || req.QuoteToken.empty()) {
             spdlog::error(
-                    "func: CreateOrder, fromToken: {}, toToken: {}, err: {}",
-                    req.FromToken,
-                    req.ToToken,
+                    "func: CreateOrder, fromToken: {}, toToken: {}, side: {}, err: {}",
+                    req.BaseToken,
+                    req.QuoteToken,
+                    req.Side,
                     WrapErr(define::ErrorInvalidParam));
             return define::ErrorInvalidParam;
         }
-        if (req.FromQuantity == 0 || req.ToQuantity == 0) {
+        if (req.Price == 0 || req.Quantity == 0) {
             spdlog::error(
-                    "func: CreateOrder, fromQuantity: {}, toQuantity: {}, err: {}",
-                    req.FromQuantity,
-                    req.ToQuantity,
-                    WrapErr(define::ErrorInvalidParam));
-            return define::ErrorInvalidParam;
-        }
-        if (req.FromPrice == 0 || req.ToPrice == 0) {
-            spdlog::error(
-                    "func: CreateOrder, fromPrice: {}, toPrice: {}, err: {}",
-                    req.FromPrice,
-                    req.ToPrice,
+                    "func: CreateOrder, price: {}, quantity: {}, err: {}",
+                    req.Price,
+                    req.Quantity,
                     WrapErr(define::ErrorInvalidParam));
             return define::ErrorInvalidParam;
         }
 
         map<string, string> args;
         string uri = "https://api.binance.com/api/v3/order";
-        pair<std::string, define::OrderSide> symbolSide;
-        auto symbolData = GetSymbolData(req.FromToken, req.ToToken);
-        auto side = GetSide(req.FromToken, req.ToToken);
-
-        pair<double, double> priceQuantity;
-        priceQuantity = SelectPriceQuantity(req, side);
-        auto price = priceQuantity.first;
-        auto quantity = priceQuantity.second;
 
         // ticketSize校验
-        auto data = this->GetSymbolData(req.FromToken, req.ToToken);
-        double ticketSize = (data.TicketSize == 0 ? 1 : data.TicketSize);
+        double quantity = req.Quantity;
+        auto symbolData = GetSymbolData(req.BaseToken, req.QuoteToken);
+        double ticketSize = (symbolData.TicketSize == 0 ? 1 : symbolData.TicketSize);
         uint32_t tmp = quantity / ticketSize;
         quantity = tmp * ticketSize;
 
@@ -257,12 +243,12 @@ namespace HttpWrapper
             return define::ErrorLessTicketSize;
         }
 
-        if (quantity*price < data.MinNotional) {
+        if (quantity*req.Price < symbolData.MinNotional) {
             return define::ErrorLessTicketSize;
         }
 
         args["symbol"] = symbolData.Symbol;
-        args["side"] = this->sideToString(side);
+        args["side"] = this->sideToString(req.Side);
         args["type"] = this->orderTypeToString(req.OrderType);
         args["timestamp"] = std::to_string(time(NULL) * 1000);
         args["quantity"] =  FormatDouble(quantity);
@@ -273,7 +259,7 @@ namespace HttpWrapper
         }
 
         if (req.OrderType != define::MARKET) {
-            args["price"] = FormatDouble(price);
+            args["price"] = FormatDouble(req.Price);
         }
 
         spdlog::debug(
@@ -304,24 +290,13 @@ namespace HttpWrapper
             data.OrderId = req.OrderId;
             data.UpdateTime = GetNowTime();
             data.OrderStatus = define::FILLED;
-            data.FromToken = req.FromToken;
-            data.FromPrice = req.FromPrice;
-            data.FromQuantity = req.FromQuantity;
-            data.ToToken = req.ToToken;
-            data.ToPrice = req.ToPrice;
-            data.ToQuantity = req.ToQuantity;
+            data.Price = req.Price;
+            data.Quantity = req.Quantity;
 
-            auto side = GetSide(req.FromToken, req.ToToken);
-            if (side == define::SELL) {
-                data.OriginPrice = req.FromPrice;
-                data.OriginQuantity = req.FromQuantity;
-                data.ExecutePrice = req.FromPrice;
-                data.ExecuteQuantity = req.FromQuantity;
+            if (req.Side == define::SELL) {
+                data.ExecuteQuantity = req.Quantity;
             } else {
-                data.OriginPrice = double(1) / req.ToPrice;
-                data.OriginQuantity = req.ToPrice * req.ToQuantity;
-                data.ExecutePrice = double(1) / req.ToPrice;
-                data.ExecuteQuantity = req.ToPrice * req.ToQuantity;
+                data.ExecuteQuantity = req.Quantity;
             }
 
             // 最大成交50
@@ -365,8 +340,6 @@ namespace HttpWrapper
         data.OrderId = this->outOrderIdMap[order["clientOrderId"].GetString()];
         data.UpdateTime = GetNowTime(); // todo 这里看看要不要改
         data.OrderStatus = stringToOrderStatus(order["status"].GetString());
-        data.FromToken = parseToken(symbol, side).first;
-        data.ToToken = parseToken(symbol, side).second;
 
         // todo api层收from和to数据需要更完整
         if (side == define::SELL) {
@@ -376,9 +349,6 @@ namespace HttpWrapper
             String2Double(order["price"].GetString(), executePrice);
             String2Double(order["executedQty"].GetString(), executeQuantity);
 
-            data.OriginPrice = originPrice;
-            data.OriginQuantity = originQuantity;
-            data.ExecutePrice = executePrice;
             data.ExecuteQuantity = executeQuantity;
         } else {
             // 等于toPrice、toQuantity
@@ -389,21 +359,19 @@ namespace HttpWrapper
             String2Double(order["executedQty"].GetString(), executeQuantity);
             String2Double(order["cummulativeQuoteQty"].GetString(), cummulativeQuoteQty);
 
-            data.OriginPrice = double(1) / originPrice;
-            data.OriginQuantity = originPrice * originQuantity;
-            data.ExecutePrice = double(1) / executePrice;
             data.ExecuteQuantity = executePrice*executeQuantity;
             data.CummulativeQuoteQuantity = cummulativeQuoteQty;
         }
 
         spdlog::debug(
-                "func: createOrderCallback, orderId: {}, status: {}, from: {}, to: {}, price: {}, originQuantity: {}, executeQuantity: {}",
+                "func: createOrderCallback, orderId: {}, status: {}, base: {}, quote: {}, side: {}, price: {}, originQuantity: {}, executeQuantity: {}",
                 data.OrderId,
                 data.OrderStatus,
-                data.FromToken,
-                data.ToToken,
-                data.OriginPrice,
-                data.OriginQuantity,
+                data.BaseToken,
+                data.QuoteToken,
+                data.Side,
+                data.Price,
+                data.Quantity,
                 data.ExecuteQuantity
         );
         return callback(data, 0);

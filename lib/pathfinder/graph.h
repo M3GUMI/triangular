@@ -11,12 +11,27 @@ using namespace std;
 namespace Pathfinder{
     // 套利路径项
     struct TransactionPathItem {
-        string FromToken; // 卖出的token
-        double FromPrice = 0;       // 卖出价格
-        double FromQuantity = 0;    // 卖出数量
-        string ToToken;   // 买入的token
-        double ToPrice = 0;         // 买入价格
-        double ToQuantity = 0;      // 买入数量
+        string BaseToken;
+        string QuoteToken;
+        define::OrderSide Side;
+        double Price = 0;
+        double Quantity = 0;
+
+        string GetFromToken() {
+            if (Side == define::SELL) {
+                return BaseToken;
+            } else {
+                return QuoteToken;
+            }
+        }
+
+        string GetToToken() {
+            if (Side == define::SELL) {
+                return QuoteToken;
+            } else {
+                return BaseToken;
+            }
+        }
     };
 
     struct ArbitrageChance
@@ -34,10 +49,10 @@ namespace Pathfinder{
             if (empty(this->Path)) {
                 return info;
             }
-            info.push_back(this->Path.front().FromToken);
-            for (const auto &item: this->Path) {
-                info.push_back(to_string(item.FromPrice));
-                info.push_back(item.ToToken);
+            info.push_back(this->Path.front().GetFromToken());
+            for (TransactionPathItem item: this->Path) {
+                info.push_back(to_string(item.Price));
+                info.push_back(item.GetToToken());
             }
 
             return info;
@@ -46,17 +61,16 @@ namespace Pathfinder{
 
     struct GetExchangePriceReq
     {
-        string BaseToken = "";
         string FromToken = "";
         string ToToken = "";
     };
 
     struct GetExchangePriceResp
     {
-        double FromPrice = 0;
-        double FromQuantity = 0;
-        double ToPrice = 0;
-        double ToQuantity = 0;
+        double SellPrice = 0; // 可卖出的价格
+        double SellQuantity = 0; // 可卖出的数量
+        double BuyPrice = 0; // 可买入的价格
+        double BuyQuantity = 0; // 可买入的数量
     };
 
     // 定义一个边的结构体，用于表示两个节点之间的边
@@ -64,9 +78,10 @@ namespace Pathfinder{
         int from = 0;   // 起点
         int to = 0;     // 终点
         double weight = 0;  //  权重
-        double quantity = 0;  // 数量 todo 现在只存了第一档
+        double weightQuantity = 0;  // 转换后数量 todo 现在只存了第一档
+        double originQuantity = 0;  // 原始数量
         double originPrice = 0;  // 原始价格
-        bool isFrom = true;  // originPrice等于FromPrice，否则等于ToPrice
+        bool isSell = true;  // 是否为卖出
     };
 
     // 定义一个图的类

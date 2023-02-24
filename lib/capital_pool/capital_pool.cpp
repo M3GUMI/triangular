@@ -141,9 +141,11 @@ namespace CapitalPool
 
     int CapitalPool::tryRebalance(const string& fromToken, const string& toToken, double amount)
     {
+        spdlog::debug("func: tryRebalance, from: {}, to: {}, amount: {}", fromToken, toToken, amount);
         auto symbolData = apiWrapper.GetSymbolData(fromToken, toToken);
+        auto side = apiWrapper.GetSide(fromToken, toToken);
+
         Pathfinder::GetExchangePriceReq priceReq{};
-        priceReq.BaseToken = symbolData.BaseToken;
         priceReq.FromToken = fromToken;
         priceReq.ToToken = toToken;
 
@@ -154,16 +156,19 @@ namespace CapitalPool
 
         HttpWrapper::OrderData req;
         req.OrderId = GenerateId();
-        req.FromToken = fromToken;
-        req.FromPrice = priceResp.FromPrice;
-        req.FromQuantity = amount <= priceResp.FromQuantity? amount: priceResp.FromQuantity;
-        req.ToToken = toToken;
-        req.ToPrice = priceResp.ToPrice;
-        req.ToQuantity = amount <= priceResp.ToQuantity? amount: priceResp.ToQuantity;
-
+        req.BaseToken = symbolData.BaseToken;
+        req.QuoteToken = symbolData.QuoteToken;
+        req.Side = side;
         req.OrderType = define::LIMIT;
         req.TimeInForce = define::IOC;
 
+        if (side == define::SELL) {
+            req.Price = priceResp.SellPrice;
+            req.Quantity = amount <= priceResp.SellQuantity? amount: priceResp.SellQuantity;
+        } else {
+            req.Price = priceResp.BuyPrice;
+            req.Quantity = amount <= priceResp.BuyQuantity? amount: priceResp.BuyQuantity;
+        }
 
         auto err = apiWrapper.CreateOrder(req, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
         if (err > 0) {
@@ -181,23 +186,23 @@ namespace CapitalPool
             return;
         }
 
-        if (not balancePool.count(data.FromToken)) {
+        if (not balancePool.count(data.GetFromToken())) {
             spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
-            balancePool[data.FromToken] = 0;
-        } else if (balancePool[data.FromToken] < data.ExecuteQuantity) {
+            balancePool[data.GetFromToken()] = 0;
+        } else if (balancePool[data.GetFromToken()] < data.ExecuteQuantity) {
             spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
-            balancePool[data.FromToken] = 0;
+            balancePool[data.GetFromToken()] = 0;
         } else {
-            balancePool[data.FromToken] = balancePool[data.FromToken] - data.ExecuteQuantity;
+            balancePool[data.GetFromToken()] = balancePool[data.GetFromToken()] - data.ExecuteQuantity;
         }
 
-        if (not balancePool.count(data.ToToken)) {
-            balancePool[data.ToToken] = data.ExecuteQuantity * data.ExecutePrice;
+        if (not balancePool.count(data.GetToToken())) {
+            balancePool[data.GetToToken()] = data.ExecuteQuantity * data.Price;
         } else {
-            balancePool[data.ToToken] = balancePool[data.ToToken] + data.ExecuteQuantity * data.ExecutePrice;
+            balancePool[data.GetToToken()] = balancePool[data.GetToToken()] + data.ExecuteQuantity * data.Price;
         }
 
-        lockedBalance[data.FromToken] = false;
+        lockedBalance[data.GetFromToken()] = false;
         vector<string> info;
         for (const auto &item: balancePool) {
             info.push_back(item.first);

@@ -15,7 +15,7 @@ namespace Arbitrage{
     }
 
     int MakerTriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
-        spdlog::info("func: {}, msg: {}", "Run", "MakerTriangularArbitrage start");
+        /*spdlog::info("func: {}, msg: {}", "Run", "MakerTriangularArbitrage start");
         Pathfinder::TransactionPathItem firstPath = chance.Path[0];
         double lockAmount = 0;
         if (auto err = capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity, lockAmount); err > 0) {
@@ -25,7 +25,7 @@ namespace Arbitrage{
         this->OriginQuantity = firstPath.FromQuantity;
         this->OriginToken = firstPath.FromToken;
         this->TargetToken = firstPath.FromToken;
-        TriangularArbitrage::ExecuteTrans(firstPath);
+        TriangularArbitrage::ExecuteTrans(firstPath);*/
         return 0;
     }
 

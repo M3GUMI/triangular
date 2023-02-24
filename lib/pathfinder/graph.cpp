@@ -4,7 +4,7 @@ namespace Pathfinder{
     Graph::Graph() = default;
     Graph::~Graph() = default;
 
-    void Graph::AddEdge(const string& from, const string& to, double originPrice, double quantity, bool isFrom) {
+    void Graph::AddEdge(const string& from, const string& to, double originPrice, double quantity, bool isSell) {
         // 将边加入相应的节点的邻接表中
         if (not tokenToIndex.count(to)) {
             int index = nodes.size();
@@ -31,12 +31,14 @@ namespace Pathfinder{
         for (auto &edge: nodes[fromIndex]) {
             if (edge.from == fromIndex && edge.to == toIndex) {
                 edge.originPrice = originPrice;
-                edge.quantity = quantity;
-                edge.isFrom = isFrom;
-                if (isFrom) {
+                edge.originQuantity = quantity;
+                edge.isSell = isSell;
+                if (isSell) {
                     edge.weight = -log(originPrice);
+                    edge.weightQuantity = quantity;
                 } else {
                     edge.weight = log(originPrice);
+                    edge.weightQuantity = quantity/originPrice;
                 }
 
                 return;
@@ -48,12 +50,14 @@ namespace Pathfinder{
         edge->from = fromIndex;
         edge->to = toIndex;
         edge->originPrice = originPrice;
-        edge->quantity = quantity;
-        edge->isFrom = isFrom;
-        if (isFrom) {
+        edge->originQuantity = quantity;
+        edge->isSell = isSell;
+        if (isSell) {
             edge->weight = -log(originPrice);
+            edge->weightQuantity = quantity;
         } else {
             edge->weight = log(originPrice);
+            edge->weightQuantity = quantity/originPrice;
         }
 
         nodes[fromIndex].push_back(*edge);
@@ -62,8 +66,8 @@ namespace Pathfinder{
     int Graph::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
     {
         // 获取负权图中价格
-        resp.FromPrice = 0;
-        resp.ToPrice = 0;
+        resp.SellPrice = 0;
+        resp.BuyPrice = 0;
 
         if (not tokenToIndex.count(req.FromToken) || not tokenToIndex.count(req.ToToken)) {
             return define::ErrorGraphNotReady;
@@ -72,39 +76,26 @@ namespace Pathfinder{
         int fromIndex = tokenToIndex[req.FromToken];
         int toIndex = tokenToIndex[req.ToToken];
 
-        bool isFrom =  req.FromToken == req.BaseToken;
         // todo edge存储方式优化一下，以下逻辑需要调整
         for(auto edge:nodes[fromIndex]) {
-            /*if (isFrom) {
-                continue;
-            }*/
-
+            // 我方可卖出价格
             if (edge.from==fromIndex && edge.to == toIndex) { // 盘口卖出价格，己方
-                if (indexToToken[edge.to] == "TRY") {
-                    spdlog::info("case1 fromToken: {}, isFrom: {}, op: {}", indexToToken[edge.from], edge.isFrom, edge.originPrice);
-                }
-                resp.FromPrice = edge.originPrice;
-                resp.FromQuantity = edge.quantity;
+                // spdlog::debug("sell price: {}, fromIndex: {}, toIndex: {}", edge.originPrice, indexToToken[edge.from], indexToToken[edge.to]);
+                resp.SellPrice = edge.originPrice;
+                resp.SellQuantity = edge.originQuantity;
             }
         }
 
         for(auto edge:nodes[toIndex]) {
-            /*if (!isFrom) {
-                continue;
-            }*/
-
-            if (edge.to==fromIndex && edge.from == toIndex) {
-                if (indexToToken[edge.to] == "TRY") {
-                    spdlog::info("case2 fromToken: {}, isFrom: {}, op: {}, oq: {}", indexToToken[edge.to], edge.isFrom, edge.originPrice, edge.quantity);
-                }
-                resp.ToPrice = edge.originPrice;
-                resp.ToQuantity = edge.quantity;
-                //resp.FromPrice = 1/edge.originPrice;
-                //resp.FromQuantity = edge.originPrice*edge.quantity;
+            // 我方可买入价格
+            if (edge.to==fromIndex && edge.from == toIndex) { // 盘口卖出价格，己方
+                // spdlog::debug("buy price: {}, fromIndex: {}, toIndex: {}", edge.originPrice, indexToToken[edge.to], indexToToken[edge.from]);
+                resp.BuyPrice = edge.originPrice;
+                resp.BuyQuantity = edge.originQuantity;
             }
         }
 
-        if (resp.FromPrice == 0 || resp.ToPrice == 0) {
+        if (resp.SellPrice == 0 || resp.BuyPrice == 0) {
             return define::ErrorGraphNotReady;
         }
 
@@ -113,20 +104,20 @@ namespace Pathfinder{
 
     TransactionPathItem Graph::formatTransactionPathItem(Edge& edge) {
         TransactionPathItem item{};
-        if (edge.isFrom) {
-            item.FromToken = indexToToken[edge.from];
-            item.FromPrice = edge.originPrice;
-            item.FromQuantity = edge.quantity;
-            item.ToToken = indexToToken[edge.to];
-            item.ToPrice = 1/edge.originPrice;
-            item.ToQuantity = edge.originPrice*edge.quantity;
+        if (edge.isSell) {
+            item.BaseToken = indexToToken[edge.from];
+            item.QuoteToken = indexToToken[edge.to];
+            item.Side = define::SELL;
+
+            item.Price = edge.originPrice;
+            item.Quantity = edge.originPrice;
         } else {
-            item.ToToken = indexToToken[edge.to];
-            item.ToPrice = edge.originPrice;
-            item.ToQuantity = edge.quantity;
-            item.FromToken = indexToToken[edge.from];
-            item.FromPrice = 1/edge.originPrice;
-            item.FromQuantity = edge.originPrice*edge.quantity;
+            item.BaseToken = indexToToken[edge.to];
+            item.QuoteToken = indexToToken[edge.from];
+            item.Side = define::BUY;
+
+            item.Price = edge.originPrice;
+            item.Quantity = edge.originPrice;
         }
 
         return item;
@@ -184,7 +175,11 @@ namespace Pathfinder{
         double profit = 1; // 验算利润率
         vector<string> info;
         for (const auto& item:path) {
-            profit = profit*item.FromPrice*(1-this->fee);
+            if (item.Side == define::SELL) {
+                profit = profit*item.Price*(1-this->fee);
+            } else {
+                profit = profit*(1/item.Price)*(1-this->fee);
+            }
         }
 
         if (profit <= 1) {
@@ -194,7 +189,7 @@ namespace Pathfinder{
 
         adjustQuantities(path);
         chance.Profit = profit;
-        chance.Quantity = path.front().FromQuantity;
+        chance.Quantity = path.front().Quantity;
         chance.Path = path;
         return chance;
     }
@@ -211,14 +206,18 @@ namespace Pathfinder{
             data = &oneStepResult;
         }
 
-        if (data->second.front().FromQuantity > quantity) {
-            data->second.front().FromQuantity = quantity;
-            data->second.front().ToQuantity = data->second.front().FromPrice * quantity;
+        auto pathPrice = data->second.front().Price;
+        auto pathQuantity = data->second.front().Quantity;
+        if (data->second.front().Side == define::SELL) {
+            data->second.front().Quantity = quantity <= pathQuantity? quantity: pathQuantity;
+        } else {
+            quantity /= pathPrice; // 转换成baseToken数量
+            data->second.front().Quantity = quantity <= pathQuantity? quantity: pathQuantity;
         }
 
         adjustQuantities(data->second);
         chance.Profit = data->first;
-        chance.Quantity = data->second.front().FromQuantity;
+        chance.Quantity = data->second.front().Quantity;
         chance.Path = data->second;
         return chance;
     }
@@ -267,27 +266,34 @@ namespace Pathfinder{
     }
 
     void Graph::adjustQuantities(vector<TransactionPathItem>& items) {
-        double cumQuantity = items[0].FromQuantity;
+        double cumQuantity = items[0].Quantity;
         // spdlog::info("token: {}, quantity: {}", items[0].FromToken, cumQuantity);
         for (int i = 0; i < items.size(); i++) {
             // 获取第i项以前的累加数量
             auto &curItem = items[i];
             // 判断第i项容量
-            if (cumQuantity <= curItem.FromQuantity) {
+            if (cumQuantity <= curItem.Quantity) {
                 // 容量足够，直接赋值
-                curItem.FromQuantity = cumQuantity;
-                curItem.ToQuantity = curItem.FromPrice * curItem.FromQuantity;
-                cumQuantity = cumQuantity*curItem.FromPrice;
+                curItem.Quantity = cumQuantity;
+                if (curItem.Side == define::SELL) {
+                    cumQuantity = curItem.Quantity*curItem.Price;
+                } else {
+                    cumQuantity = curItem.Quantity/curItem.Price;
+                }
                 // spdlog::info("i: {}, token: {}, over, newQuantity: {}", i, curItem.FromToken+curItem.ToToken, curItem.FromQuantity);
             } else {
                 // 容量不足，逆推数量
                 // spdlog::info("i: {}, token: {}, less, need: {}, have: {}", i, curItem.FromToken+curItem.ToToken, cumQuantity, curItem.FromQuantity);
-                cumQuantity = curItem.FromQuantity;
-                double reverseCumQuantity = curItem.FromQuantity;
+                cumQuantity = curItem.Quantity;
+                double reverseCumQuantity = curItem.Quantity;
                 for (int k = i - 1; k >= 0; k--) {
-                    reverseCumQuantity /= items[k].FromPrice;
-                    items[k].FromQuantity = reverseCumQuantity;
-                    items[k].ToQuantity = items[k].FromPrice * items[k].FromQuantity;
+                    if (items[k].Side == define::SELL) {
+                        reverseCumQuantity /= items[k].Price;
+                        items[k].Quantity = reverseCumQuantity;
+                    } else {
+                        reverseCumQuantity *= items[k].Price;
+                        items[k].Quantity = reverseCumQuantity;
+                    }
                     // spdlog::info("k: {}, token: {}, newQuantity: {}", k, items[k].FromToken+items[k].ToToken, items[k].FromQuantity);
                 }
             }

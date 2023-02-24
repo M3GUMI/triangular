@@ -39,12 +39,11 @@ namespace Arbitrage{
     int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path) {
         auto order = new HttpWrapper::OrderData();
         order->OrderId = GenerateId();
-        order->FromToken = path.FromToken;
-        order->FromPrice = path.FromPrice;
-        order->FromQuantity = path.FromQuantity;
-        order->ToToken = path.ToToken;
-        order->ToPrice = path.ToPrice;
-        order->ToQuantity = path.ToQuantity;
+        order->BaseToken = path.BaseToken;
+        order->QuoteToken = path.QuoteToken;
+        order->Side = path.Side;
+        order->Price = path.Price;
+        order->Quantity = path.Quantity;
         order->OrderType = define::LIMIT;
         order->TimeInForce = define::IOC;
         order->OrderStatus = define::INIT;
@@ -52,11 +51,12 @@ namespace Arbitrage{
         orderMap[order->OrderId] = order;
 
         spdlog::info(
-                "func: ExecuteTrans, from: {}, to: {}, price: {}, quantity: {}",
-                path.FromToken,
-                path.ToToken,
-                path.FromPrice,
-                path.FromQuantity
+                "func: ExecuteTrans, base: {}, quote: {}, side: {}, price: {}, quantity: {}",
+                path.BaseToken,
+                path.QuoteToken,
+                path.Side,
+                path.Price,
+                path.Quantity
         );
         auto err = apiWrapper.CreateOrder(
                 *order,
@@ -83,7 +83,7 @@ namespace Arbitrage{
 
         spdlog::info(
                 "func: RevisePath, maxQuantity: {}, bestPath: {}",
-                resp.FirstStep().FromQuantity,
+                resp.FirstStep().Quantity,
                 spdlog::fmt_lib::join(resp.Format(), ","));
 
         err = ExecuteTrans(resp.FirstStep());
@@ -121,7 +121,6 @@ namespace Arbitrage{
 
         order->OrderStatus = data.OrderStatus;
         // todo 这里的origin改成校验逻辑
-        order->ExecutePrice = data.ExecutePrice;
         order->ExecuteQuantity = data.ExecuteQuantity;
         order->CummulativeQuoteQuantity = data.CummulativeQuoteQuantity;
         order->UpdateTime = data.UpdateTime;

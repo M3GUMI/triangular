@@ -25,7 +25,6 @@ namespace Arbitrage{
 
         map<uint64_t, HttpWrapper::OrderData*> orderMap; // 订单map
 
-        string OriginToken;       // 原始起点token
         string TargetToken;       // 目标token
         double OriginQuantity = 0; // 原始起点token数量
 
