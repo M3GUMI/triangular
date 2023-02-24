@@ -1,3 +1,4 @@
+#include <cfloat>
 #include "graph.h"
 
 namespace Pathfinder{
@@ -69,26 +70,26 @@ namespace Pathfinder{
         resp.SellPrice = 0;
         resp.BuyPrice = 0;
 
-        if (not tokenToIndex.count(req.FromToken) || not tokenToIndex.count(req.ToToken)) {
+        if (not tokenToIndex.count(req.BaseToken) || not tokenToIndex.count(req.QuoteToken)) {
             return define::ErrorGraphNotReady;
         }
 
-        int fromIndex = tokenToIndex[req.FromToken];
-        int toIndex = tokenToIndex[req.ToToken];
+        int baseIndex = tokenToIndex[req.BaseToken];
+        int quoteIndex = tokenToIndex[req.QuoteToken];
 
         // todo edge存储方式优化一下，以下逻辑需要调整
-        for(auto edge:nodes[fromIndex]) {
+        for(auto edge:nodes[baseIndex]) {
             // 我方可卖出价格
-            if (edge.from==fromIndex && edge.to == toIndex) { // 盘口卖出价格，己方
+            if (edge.from==baseIndex && edge.to == quoteIndex) { // 盘口卖出价格，己方
                 // spdlog::debug("sell price: {}, fromIndex: {}, toIndex: {}", edge.originPrice, indexToToken[edge.from], indexToToken[edge.to]);
                 resp.SellPrice = edge.originPrice;
                 resp.SellQuantity = edge.originQuantity;
             }
         }
 
-        for(auto edge:nodes[toIndex]) {
+        for(auto edge:nodes[quoteIndex]) {
             // 我方可买入价格
-            if (edge.to==fromIndex && edge.from == toIndex) { // 盘口卖出价格，己方
+            if (edge.to==baseIndex && edge.from == quoteIndex) { // 盘口卖出价格，己方
                 // spdlog::debug("buy price: {}, fromIndex: {}, toIndex: {}", edge.originPrice, indexToToken[edge.to], indexToToken[edge.from]);
                 resp.BuyPrice = edge.originPrice;
                 resp.BuyQuantity = edge.originQuantity;
@@ -155,11 +156,17 @@ namespace Pathfinder{
                             // 负数。最长路径处理为最短路径
                             double rate = firstWeight + secondWeight + thirdWeight - 3 * log(1 - fee);
                             if (rate < 0 && rate < minRate) {
-                                minRate = rate;
-                                path.clear();
-                                path.push_back(formatTransactionPathItem(firstEdge));
-                                path.push_back(formatTransactionPathItem(secondEdge));
-                                path.push_back(formatTransactionPathItem(thirdEdge));
+                                vector<TransactionPathItem> newPath;
+                                newPath.clear();
+                                newPath.push_back(formatTransactionPathItem(firstEdge));
+                                newPath.push_back(formatTransactionPathItem(secondEdge));
+                                newPath.push_back(formatTransactionPathItem(thirdEdge));
+                                adjustQuantities(newPath);
+
+                                if (newPath.front().Quantity >= conf::MinTriangularQuantity) {
+                                    minRate = rate;
+                                    path = newPath;
+                                }
                             }
                         }
                     }
@@ -187,7 +194,6 @@ namespace Pathfinder{
             return chance;
         }
 
-        adjustQuantities(path);
         chance.Profit = profit;
         chance.Quantity = path.front().Quantity;
         chance.Path = path;
@@ -234,13 +240,13 @@ namespace Pathfinder{
             return make_pair(edge.weight + log(1 - fee), path);
         }
 
-        return make_pair(0, path);
+        return make_pair(DBL_MAX, path);
     }
 
     // 走两步
     pair<double, vector<TransactionPathItem>> Graph::bestTwoStep(int start, int end) {
         vector<TransactionPathItem> path;
-        double minRate = 0;
+        double minRate = DBL_MAX;
 
         for (auto &firstEdge: nodes[start]) {
             double firstWeight = firstEdge.weight; // 第一条边权重
@@ -267,7 +273,7 @@ namespace Pathfinder{
 
     void Graph::adjustQuantities(vector<TransactionPathItem>& items) {
         double cumQuantity = items[0].Quantity;
-        // spdlog::info("token: {}, quantity: {}", items[0].FromToken, cumQuantity);
+        // spdlog::info("token: {}, quantity: {}", items[0].Quantity, cumQuantity);
         for (int i = 0; i < items.size(); i++) {
             // 获取第i项以前的累加数量
             auto &curItem = items[i];
@@ -280,10 +286,10 @@ namespace Pathfinder{
                 } else {
                     cumQuantity = curItem.Quantity/curItem.Price;
                 }
-                // spdlog::info("i: {}, token: {}, over, newQuantity: {}", i, curItem.FromToken+curItem.ToToken, curItem.FromQuantity);
+                // spdlog::info("i: {}, token: {}, over, newQuantity: {}", i, curItem.GetFromToken()+curItem.GetToToken(), curItem.Quantity);
             } else {
                 // 容量不足，逆推数量
-                // spdlog::info("i: {}, token: {}, less, need: {}, have: {}", i, curItem.FromToken+curItem.ToToken, cumQuantity, curItem.FromQuantity);
+                // spdlog::info("i: {}, token: {}, less, need: {}, have: {}", i, curItem.GetFromToken()+curItem.GetToToken(), cumQuantity, curItem.Quantity);
                 cumQuantity = curItem.Quantity;
                 double reverseCumQuantity = curItem.Quantity;
                 for (int k = i - 1; k >= 0; k--) {
@@ -294,7 +300,7 @@ namespace Pathfinder{
                         reverseCumQuantity *= items[k].Price;
                         items[k].Quantity = reverseCumQuantity;
                     }
-                    // spdlog::info("k: {}, token: {}, newQuantity: {}", k, items[k].FromToken+items[k].ToToken, items[k].FromQuantity);
+                    // spdlog::info("k: {}, token: {}, newQuantity: {}", k, items[k].GetFromToken()+items[k].GetToToken(), items[k].Quantity);
                 }
             }
         }

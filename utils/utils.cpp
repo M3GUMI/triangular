@@ -1,6 +1,7 @@
 #include <iomanip>
 #include <iostream>
 #include <cctype>
+#include <cmath>
 #include <algorithm>
 #include <sstream>
 #include <string>
@@ -57,4 +58,9 @@ string FormatDouble(double val) {
     stream << std::fixed << std::setprecision(8) << val;
 
     return stream.str();
+}
+
+double FormatDoubleV2(double val) {
+    double result = round(val*pow(10, 8)) / pow(10, 8);
+    return result;
 }

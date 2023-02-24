@@ -4,6 +4,7 @@
 #include <functional>
 #include "websocketpp/config/asio_client.hpp"
 #include "define/define.h"
+#include "utils/utils.h"
 
 using namespace std;
 namespace HttpWrapper
@@ -54,6 +55,33 @@ namespace HttpWrapper
                 return QuoteToken;
             } else {
                 return BaseToken;
+            }
+        }
+
+
+        double GetUnExecuteQuantity()
+        {
+            if (Side == define::SELL) {
+                return FormatDoubleV2(Quantity - ExecuteQuantity);
+            } else {
+                return FormatDoubleV2(Quantity*Price - CummulativeQuoteQuantity);
+            }
+        }
+
+        double GetExecuteQuantity() {
+            if (Side == define::SELL) {
+                return FormatDoubleV2(ExecuteQuantity);
+            } else {
+                return FormatDoubleV2(CummulativeQuoteQuantity);
+            }
+        }
+
+        double GetNewQuantity()
+        {
+            if (Side == define::SELL) {
+                return FormatDoubleV2(CummulativeQuoteQuantity);
+            } else {
+                return FormatDoubleV2(CummulativeQuoteQuantity/Price);
             }
         }
     };

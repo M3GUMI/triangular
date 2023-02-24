@@ -11,25 +11,29 @@ namespace Arbitrage{
     TriangularArbitrage::~TriangularArbitrage() = default;
 
 
-    int TriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
+    int TriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance)
+    {
         exit(EXIT_FAILURE);
     }
 
-    bool TriangularArbitrage::CheckFinish() {
-        for (const auto &item: orderMap) {
+    bool TriangularArbitrage::CheckFinish(double finalQuantity)
+    {
+        for (const auto& item : orderMap)
+        {
             auto order = item.second;
-            if (order->OrderStatus != define::FILLED && order->OrderStatus != define::PARTIALLY_FILLED) {
+            if (order->OrderStatus != define::FILLED &&
+                order->OrderStatus != define::PARTIALLY_FILLED &&
+                order->OrderStatus != define::EXPIRED)
+            {
                 return false;
             }
         }
-        return true;
-    }
 
-    int TriangularArbitrage::Finish(double finalQuantity) {
-        spdlog::info("func: Finish, profit: {}, finalQuantity: {}, originQuantity: {}", finalQuantity / this->OriginQuantity, finalQuantity, this->OriginQuantity);
-        capitalPool.Refresh();
+        spdlog::info("func: Finish, profit: {}, finalQuantity: {}, originQuantity: {}",
+                     finalQuantity / this->OriginQuantity, finalQuantity, this->OriginQuantity);
+        finished = true;
         this->subscriber();
-        return 0;
+        return true;
     }
 
     void TriangularArbitrage::SubscribeFinish(function<void()> callback) {
@@ -50,14 +54,10 @@ namespace Arbitrage{
         order->UpdateTime = GetNowTime();
         orderMap[order->OrderId] = order;
 
-        spdlog::info(
-                "func: ExecuteTrans, base: {}, quote: {}, side: {}, price: {}, quantity: {}",
-                path.BaseToken,
-                path.QuoteToken,
-                path.Side,
-                path.Price,
-                path.Quantity
-        );
+        if (finished) {
+            return 0;
+        }
+
         auto err = apiWrapper.CreateOrder(
                 *order,
                 bind(
@@ -66,7 +66,18 @@ namespace Arbitrage{
                         placeholders::_1,
                         placeholders::_2
                 ));
-        if (err == define::ErrorLessTicketSize) {
+        spdlog::info(
+                "func: ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, price: {}, quantity: {}",
+                err,
+                path.BaseToken,
+                path.QuoteToken,
+                path.Side,
+                path.Price,
+                path.Quantity
+        );
+
+        if (err == define::ErrorLessTicketSize || err == define::ErrorLessMinNotional) {
+            TriangularArbitrage::CheckFinish(0);
             return 0;
         }
 

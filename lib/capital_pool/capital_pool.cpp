@@ -141,13 +141,12 @@ namespace CapitalPool
 
     int CapitalPool::tryRebalance(const string& fromToken, const string& toToken, double amount)
     {
-        spdlog::debug("func: tryRebalance, from: {}, to: {}, amount: {}", fromToken, toToken, amount);
         auto symbolData = apiWrapper.GetSymbolData(fromToken, toToken);
         auto side = apiWrapper.GetSide(fromToken, toToken);
 
         Pathfinder::GetExchangePriceReq priceReq{};
-        priceReq.FromToken = fromToken;
-        priceReq.ToToken = toToken;
+        priceReq.BaseToken = symbolData.BaseToken;
+        priceReq.QuoteToken = symbolData.QuoteToken;
 
         Pathfinder::GetExchangePriceResp priceResp{};
         if (auto err = pathfinder.GetExchangePrice(priceReq, priceResp); err > 0) {
@@ -167,6 +166,7 @@ namespace CapitalPool
             req.Quantity = amount <= priceResp.SellQuantity? amount: priceResp.SellQuantity;
         } else {
             req.Price = priceResp.BuyPrice;
+            amount = FormatDoubleV2(amount/req.Price);
             req.Quantity = amount <= priceResp.BuyQuantity? amount: priceResp.BuyQuantity;
         }
 
@@ -189,17 +189,17 @@ namespace CapitalPool
         if (not balancePool.count(data.GetFromToken())) {
             spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.GetFromToken()] = 0;
-        } else if (balancePool[data.GetFromToken()] < data.ExecuteQuantity) {
+        } else if (balancePool[data.GetFromToken()] < data.GetExecuteQuantity()) {
             spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.GetFromToken()] = 0;
         } else {
-            balancePool[data.GetFromToken()] = balancePool[data.GetFromToken()] - data.ExecuteQuantity;
+            balancePool[data.GetFromToken()] = balancePool[data.GetFromToken()] - data.GetExecuteQuantity();
         }
 
         if (not balancePool.count(data.GetToToken())) {
-            balancePool[data.GetToToken()] = data.ExecuteQuantity * data.Price;
+            balancePool[data.GetToToken()] = data.GetNewQuantity();
         } else {
-            balancePool[data.GetToToken()] = balancePool[data.GetToToken()] + data.ExecuteQuantity * data.Price;
+            balancePool[data.GetToToken()] = balancePool[data.GetToToken()] + data.GetNewQuantity();
         }
 
         lockedBalance[data.GetFromToken()] = false;
@@ -277,7 +277,9 @@ namespace CapitalPool
         for (const auto& asset : info.Balances)
         {
             if (asset.Free > 0) {
-                spdlog::info("token: {}, free: {}", asset.Token, asset.Free);
+                if (asset.Token == "BUSD" || asset.Free > 2) {
+                    spdlog::debug("token: {}, free: {}", asset.Token, asset.Free);
+                }
                 this->balancePool[asset.Token] = asset.Free;
             }
         }

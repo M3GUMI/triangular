@@ -17,6 +17,30 @@ namespace Pathfinder{
         double Price = 0;
         double Quantity = 0;
 
+        double GetParsePrice() {
+            if (Side == define::SELL) {
+                return FormatDoubleV2(Price);
+            } else {
+                return FormatDoubleV2(1/Price);
+            }
+        }
+
+        double GetParseQuantity() {
+            if (Side == define::SELL) {
+                return FormatDoubleV2(Quantity);
+            } else {
+                return FormatDoubleV2(Quantity*Price);
+            }
+        }
+
+        double GetPrice() {
+            return FormatDoubleV2(Price);
+        }
+
+        double GetQuantity() {
+            return FormatDoubleV2(Quantity);
+        }
+
         string GetFromToken() {
             if (Side == define::SELL) {
                 return BaseToken;
@@ -51,7 +75,8 @@ namespace Pathfinder{
             }
             info.push_back(this->Path.front().GetFromToken());
             for (TransactionPathItem item: this->Path) {
-                info.push_back(to_string(item.Price));
+                info.push_back(to_string(item.GetParsePrice()));
+                info.push_back(to_string(item.GetQuantity()));
                 info.push_back(item.GetToToken());
             }
 
@@ -61,8 +86,8 @@ namespace Pathfinder{
 
     struct GetExchangePriceReq
     {
-        string FromToken = "";
-        string ToToken = "";
+        string BaseToken = "";
+        string QuoteToken = "";
     };
 
     struct GetExchangePriceResp

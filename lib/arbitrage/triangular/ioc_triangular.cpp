@@ -33,6 +33,11 @@ namespace Arbitrage{
                 lockedQuantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
 
+
+        if (firstStep.Side == define::BUY) {
+            lockedQuantity /= firstStep.Price;
+        }
+
         firstStep.Quantity = lockedQuantity;
         this->TargetToken = targetToken;
         this->OriginQuantity = lockedQuantity;
@@ -42,24 +47,24 @@ namespace Arbitrage{
 
     void IocTriangularArbitrage::TransHandler(HttpWrapper::OrderData &data) {
         spdlog::info(
-                "func: TransHandler, base: {}, quote: {}, orderStatus: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
+                "func: TransHandler, base: {}, quote: {}, orderStatus: {}, quantity: {}, price: {}, executeQuantity: {}, cumQuantity: {}",
                 data.BaseToken,
                 data.QuoteToken,
                 data.OrderStatus,
                 data.Quantity,
                 data.Price,
                 data.ExecuteQuantity,
-                data.ExecuteQuantity * data.Price
+                data.CummulativeQuoteQuantity
         );
 
         // 完全失败, 终止
         if (data.GetFromToken() == TargetToken && data.ExecuteQuantity == 0) {
-            TriangularArbitrage::Finish(0);
+            TriangularArbitrage::CheckFinish(0);
             return;
         }
 
         int err = 0;
-        if (data.OrderStatus == define::FILLED || data.OrderStatus == define::EXPIRED) {
+        if (data.OrderStatus == define::FILLED) {
             err = filledHandler(data);
         } else if (data.OrderStatus == define::PARTIALLY_FILLED) {
             err = partiallyFilledHandler(data);
@@ -72,10 +77,7 @@ namespace Arbitrage{
             return;
         }
 
-        if (CheckFinish()) {
-            Finish(data.ExecuteQuantity * data.Price);
-            return;
-        }
+        CheckFinish(data.ExecuteQuantity * data.Price);
     }
 
     int IocTriangularArbitrage::filledHandler(HttpWrapper::OrderData &data) {
@@ -85,7 +87,7 @@ namespace Arbitrage{
         }
 
         return TriangularArbitrage::ReviseTrans(
-                data.GetToToken(), this->TargetToken, data.ExecuteQuantity * data.Price
+                data.GetToToken(), this->TargetToken,data.GetNewQuantity()
         );
     }
 
@@ -93,13 +95,13 @@ namespace Arbitrage{
         // 处理未成交部分
         if (define::IsStableCoin(data.GetFromToken())) {
             // 稳定币持仓，等待重平衡
-            auto err = TriangularArbitrage::capitalPool.FreeAsset(data.GetFromToken(), data.Quantity - data.ExecuteQuantity);
+            auto err = TriangularArbitrage::capitalPool.FreeAsset(data.GetFromToken(), data.GetUnExecuteQuantity());
             if (err > 0) {
                 return err;
             }
         } else if (define::NotStableCoin(data.GetFromToken())) {
             // 未成交部分重执行
-            auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, data.Quantity - data.ExecuteQuantity);
+            auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, data.GetUnExecuteQuantity());
             if (err > 0) {
                 return err;
             }
@@ -107,7 +109,7 @@ namespace Arbitrage{
 
         if (data.GetToToken() != this->TargetToken) {
             // 已成交部分继续执行
-            auto err = this->ReviseTrans(data.GetToToken(), this->TargetToken, data.CummulativeQuoteQuantity);
+            auto err = this->ReviseTrans(data.GetToToken(), this->TargetToken, data.GetNewQuantity());
             if (err > 0) {
                 return err;
             }

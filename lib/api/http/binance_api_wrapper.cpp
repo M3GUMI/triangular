@@ -240,10 +240,12 @@ namespace HttpWrapper
         quantity = tmp * ticketSize;
 
         if (quantity == 0) {
+            req.OrderStatus = define::EXPIRED;
             return define::ErrorLessTicketSize;
         }
 
         if (quantity*req.Price < symbolData.MinNotional) {
+            req.OrderStatus = define::EXPIRED;
             return define::ErrorLessTicketSize;
         }
 
@@ -319,6 +321,7 @@ namespace HttpWrapper
             return callback(data, checkResult.Err);
         }
 
+        spdlog::debug("func: createOrderCallback, res: {}", res->payload());
         rapidjson::Document order;
         order.Parse(res->payload().c_str());
 
@@ -327,7 +330,7 @@ namespace HttpWrapper
         outOrderIdMap[clientOrderId] = req.OrderId;
 
         // 当前均为IOC数据推送
-        auto symbol = order["symbol"].GetString();
+        auto symbolData = GetSymbolData(order["symbol"].GetString());
         auto side = stringToSide(order["side"].GetString());
 
         if (side == define::INVALID_SIDE) {
@@ -335,33 +338,24 @@ namespace HttpWrapper
             return;
         }
 
-        spdlog::info("info: {}", res->payload());
+        double price, quantity;
+        double executeQuantity, cummulativeQuoteQty;
+        String2Double(order["price"].GetString(), price);
+        String2Double(order["origQty"].GetString(), quantity);
+        String2Double(order["executedQty"].GetString(), executeQuantity);
+        String2Double(order["cummulativeQuoteQty"].GetString(), cummulativeQuoteQty);
 
         data.OrderId = this->outOrderIdMap[order["clientOrderId"].GetString()];
+        data.BaseToken = symbolData.BaseToken;
+        data.QuoteToken = symbolData.QuoteToken;
+        data.Side = side;
+        data.Price = price;
+        data.Quantity = quantity;
+
         data.UpdateTime = GetNowTime(); // todo 这里看看要不要改
         data.OrderStatus = stringToOrderStatus(order["status"].GetString());
-
-        // todo api层收from和to数据需要更完整
-        if (side == define::SELL) {
-            double originPrice, originQuantity, executePrice, executeQuantity;
-            String2Double(order["price"].GetString(), originPrice);
-            String2Double(order["origQty"].GetString(), originQuantity);
-            String2Double(order["price"].GetString(), executePrice);
-            String2Double(order["executedQty"].GetString(), executeQuantity);
-
-            data.ExecuteQuantity = executeQuantity;
-        } else {
-            // 等于toPrice、toQuantity
-            double originPrice, originQuantity, executePrice, executeQuantity, cummulativeQuoteQty;
-            String2Double(order["price"].GetString(), originPrice);
-            String2Double(order["origQty"].GetString(), originQuantity);
-            String2Double(order["price"].GetString(), executePrice);
-            String2Double(order["executedQty"].GetString(), executeQuantity);
-            String2Double(order["cummulativeQuoteQty"].GetString(), cummulativeQuoteQty);
-
-            data.ExecuteQuantity = executePrice*executeQuantity;
-            data.CummulativeQuoteQuantity = cummulativeQuoteQty;
-        }
+        data.ExecuteQuantity = executeQuantity;
+        data.CummulativeQuoteQuantity = cummulativeQuoteQty;
 
         spdlog::debug(
                 "func: createOrderCallback, orderId: {}, status: {}, base: {}, quote: {}, side: {}, price: {}, originQuantity: {}, executeQuantity: {}",
