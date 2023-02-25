@@ -4,6 +4,7 @@
 #include <functional>
 #include "websocketpp/config/asio_client.hpp"
 #include "define/define.h"
+#include "utils/utils.h"
 
 using namespace std;
 namespace HttpWrapper
@@ -26,23 +27,63 @@ namespace HttpWrapper
 
     struct OrderData {
         uint64_t OrderId = 0;
-        string FromToken;
-        double FromPrice = 0;
-        double FromQuantity = 0;
-        string ToToken;
-        double ToPrice = 0;
-        double ToQuantity = 0;
+        string BaseToken;
+        string QuoteToken;
+        double Price = 0;
+        double Quantity = 0;
+
+        define::OrderSide Side;
         define::OrderType OrderType;
         define::TimeInForce TimeInForce;
 
         define::OrderStatus OrderStatus; // 订单状态
-        double OriginPrice = 0; // 实际选择的fromPrice或toPrice
-        double OriginQuantity = 0; // 实际选择的fromQuantity或toQuantity
-        double ExecutePrice = 0; // 成交价格，经过一层sell、buy转换
         double ExecuteQuantity = 0; // 已成交数量，经过一层sell、buy转换
         double CummulativeQuoteQuantity = 0; // 新token数量
 
         uint64_t UpdateTime = 0; // 最后一次更新实际
+
+        string GetFromToken() {
+            if (Side == define::SELL) {
+                return BaseToken;
+            } else {
+                return QuoteToken;
+            }
+        }
+
+        string GetToToken() {
+            if (Side == define::SELL) {
+                return QuoteToken;
+            } else {
+                return BaseToken;
+            }
+        }
+
+
+        double GetUnExecuteQuantity()
+        {
+            if (Side == define::SELL) {
+                return FormatDoubleV2(Quantity - ExecuteQuantity);
+            } else {
+                return FormatDoubleV2(Quantity*Price - CummulativeQuoteQuantity);
+            }
+        }
+
+        double GetExecuteQuantity() {
+            if (Side == define::SELL) {
+                return FormatDoubleV2(ExecuteQuantity);
+            } else {
+                return FormatDoubleV2(CummulativeQuoteQuantity);
+            }
+        }
+
+        double GetNewQuantity()
+        {
+            if (Side == define::SELL) {
+                return FormatDoubleV2(CummulativeQuoteQuantity);
+            } else {
+                return FormatDoubleV2(CummulativeQuoteQuantity/Price);
+            }
+        }
     };
 
     struct CancelOrderReq
@@ -81,7 +122,6 @@ namespace HttpWrapper
 
         uint64_t GetOrderId(const string& outOrderId);
         string GetOutOrderId(uint64_t orderId);
-        pair<double, double> SelectPriceQuantity(OrderData& req, define::OrderSide side);
 
         int CheckResp(shared_ptr<HttpRespone> &res);
         CheckRespWithCodeResp CheckRespWithCode(shared_ptr<HttpRespone> &res);

@@ -11,25 +11,33 @@ namespace Arbitrage{
     TriangularArbitrage::~TriangularArbitrage() = default;
 
 
-    int TriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
+    int TriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance)
+    {
         exit(EXIT_FAILURE);
     }
 
-    bool TriangularArbitrage::CheckFinish() {
-        for (const auto &item: orderMap) {
+    bool TriangularArbitrage::CheckFinish(double finalQuantity)
+    {
+        if (finished) {
+            return true;
+        }
+
+        for (const auto& item : orderMap)
+        {
             auto order = item.second;
-            if (order->OrderStatus != define::FILLED && order->OrderStatus != define::PARTIALLY_FILLED) {
+            if (order->OrderStatus != define::FILLED &&
+                order->OrderStatus != define::PARTIALLY_FILLED &&
+                order->OrderStatus != define::EXPIRED)
+            {
                 return false;
             }
         }
-        return true;
-    }
 
-    int TriangularArbitrage::Finish(double finalQuantity) {
-        spdlog::info("func: Finish, profit: {}, finalQuantity: {}, originQuantity: {}", finalQuantity / this->OriginQuantity, finalQuantity, this->OriginQuantity);
-        capitalPool.Refresh();
+        spdlog::info("func: Finish, profit: {}, finalQuantity: {}, originQuantity: {}",
+                     finalQuantity / this->OriginQuantity, finalQuantity, this->OriginQuantity);
+        finished = true;
         this->subscriber();
-        return 0;
+        return true;
     }
 
     void TriangularArbitrage::SubscribeFinish(function<void()> callback) {
@@ -39,25 +47,17 @@ namespace Arbitrage{
     int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path) {
         auto order = new HttpWrapper::OrderData();
         order->OrderId = GenerateId();
-        order->FromToken = path.FromToken;
-        order->FromPrice = path.FromPrice;
-        order->FromQuantity = path.FromQuantity;
-        order->ToToken = path.ToToken;
-        order->ToPrice = path.ToPrice;
-        order->ToQuantity = path.ToQuantity;
+        order->BaseToken = path.BaseToken;
+        order->QuoteToken = path.QuoteToken;
+        order->Side = path.Side;
+        order->Price = path.Price;
+        order->Quantity = path.Quantity;
         order->OrderType = define::LIMIT;
         order->TimeInForce = define::IOC;
         order->OrderStatus = define::INIT;
         order->UpdateTime = GetNowTime();
         orderMap[order->OrderId] = order;
 
-        spdlog::info(
-                "func: ExecuteTrans, from: {}, to: {}, price: {}, quantity: {}",
-                path.FromToken,
-                path.ToToken,
-                path.FromPrice,
-                path.FromQuantity
-        );
         auto err = apiWrapper.CreateOrder(
                 *order,
                 bind(
@@ -66,7 +66,17 @@ namespace Arbitrage{
                         placeholders::_1,
                         placeholders::_2
                 ));
-        if (err == define::ErrorLessTicketSize) {
+        spdlog::info(
+                "func: ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, price: {}, quantity: {}",
+                err,
+                path.BaseToken,
+                path.QuoteToken,
+                path.Side,
+                path.Price,
+                path.Quantity
+        );
+
+        if (err == define::ErrorLessTicketSize || err == define::ErrorLessMinNotional) {
             return 0;
         }
 
@@ -83,13 +93,10 @@ namespace Arbitrage{
 
         spdlog::info(
                 "func: RevisePath, maxQuantity: {}, bestPath: {}",
-                resp.FirstStep().FromQuantity,
+                resp.FirstStep().Quantity,
                 spdlog::fmt_lib::join(resp.Format(), ","));
 
-        err = ExecuteTrans(resp.FirstStep());
-        if (err > 0) {
-            return err;
-        }
+        return ExecuteTrans(resp.FirstStep());
     }
 
     void TriangularArbitrage::baseOrderHandler(HttpWrapper::OrderData &data, int err) {
@@ -121,12 +128,12 @@ namespace Arbitrage{
 
         order->OrderStatus = data.OrderStatus;
         // todo 这里的origin改成校验逻辑
-        order->ExecutePrice = data.ExecutePrice;
         order->ExecuteQuantity = data.ExecuteQuantity;
         order->CummulativeQuoteQuantity = data.CummulativeQuoteQuantity;
         order->UpdateTime = data.UpdateTime;
 
         TransHandler(*order);
+        TriangularArbitrage::CheckFinish(data.GetNewQuantity());
     }
 
     void TriangularArbitrage::TransHandler(HttpWrapper::OrderData &orderData) {

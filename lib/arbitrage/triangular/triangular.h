@@ -25,7 +25,6 @@ namespace Arbitrage{
 
         map<uint64_t, HttpWrapper::OrderData*> orderMap; // 订单map
 
-        string OriginToken;       // 原始起点token
         string TargetToken;       // 目标token
         double OriginQuantity = 0; // 原始起点token数量
 
@@ -35,10 +34,10 @@ namespace Arbitrage{
 
         int ExecuteTrans(Pathfinder::TransactionPathItem &path);
         int ReviseTrans(string origin, string end, double quantity);
-        bool CheckFinish();
-        int Finish(double finalQuantity);
+        bool CheckFinish(double finalQuantity);
 
     private:
+        bool finished = false;
         function<void()> subscriber = nullptr;
 
         virtual void TransHandler(HttpWrapper::OrderData &orderData);

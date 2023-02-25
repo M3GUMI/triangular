@@ -22,3 +22,4 @@ string toUpper(const string &str);
 
 string WrapErr(int err);
 string FormatDouble(double val); // 数量、价格转8位小数字符串
+double FormatDoubleV2(double val);

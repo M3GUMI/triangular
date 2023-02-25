@@ -18,7 +18,6 @@ namespace Executor{
 
     void Executor::arbitragePathHandler(Pathfinder::ArbitrageChance &chance) {
         if (lock) {
-            spdlog::debug("func: {}, msg: {}", "arbitragePathHandler", "arbitrage executing, ignore path");
             return;
         }
 
@@ -38,5 +37,6 @@ namespace Executor{
 
     void Executor::arbitrageFinishHandler() {
         lock = false;
+        capitalPool.Refresh();
     }
 }

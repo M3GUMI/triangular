@@ -23,11 +23,11 @@ namespace Pathfinder
 
         for (const auto &item: data) {
             if (conf::EnableMock &&
-                (item.first != "BTCUSDT" && item.first != "ETHUSDT" && item.first != "ETHBTC" &&
-                 item.first != "XRPBTC" && item.first != "XRPUSDT" && item.first != "XRPETH" &&
-                 item.first != "LTCBTC" && item.first != "LTCUSDT" && item.first != "LTCETH" &&
-                 item.first != "DGBUSDT" && item.first != "DGBBTC" && item.first != "RUNEGBP" && item.first != "RUNEUSDT" &&
-                 item.first != "MATICBTC" && item.first != "MATICUSDT" && item.first != "MATICETH")) {
+                (item.first != "BTCBUSD" && item.first != "ETHBUSD" && item.first != "ETHBTC" && item.first != "BUSDUSDT" &&
+                 item.first != "XRPBTC" && item.first != "FTTBUSD" && item.first != "XRPETH" &&
+                 item.first != "LTCBTC" && item.first != "LTCBUSD" && item.first != "LTCETH" &&
+                 item.first != "DGBBUSD" && item.first != "DOGEBUSD" && item.first != "XRPBUSD" && item.first != "RUNEBUSD" &&
+                 item.first != "MATICBTC" && item.first != "MATICBUSD" && item.first != "MATICETH")) {
                 continue;
             }
 
@@ -94,22 +94,22 @@ namespace Pathfinder
     }
 
 	void Pathfinder::depthDataHandler(WebsocketWrapper::DepthData &data) {
-        // Graph::AddEdge("USDT", "BTC", 5, 100);
-        // Graph::AddEdge("BTC", "USDT", double(1) / double(5), 100);
+        // Graph::AddEdge("BUSD", "BTC", 5, 100, true);
+        // Graph::AddEdge("BTC", "BUSD", 5.1, 100, false);
 
-        // Graph::AddEdge("BTC", "ETH", 10, 50);
-        // Graph::AddEdge("ETH", "BTC", double(1) / double(10), 50);
+        // Graph::AddEdge("BTC", "ETH", 10, 50, true);
+        // Graph::AddEdge("ETH", "BTC", 10.1, 50, false);
 
-        // Graph::AddEdge("ETH", "USDT", double(1) / double(40), 10);
-        // Graph::AddEdge("USDT", "ETH", 40, 10);
+        // Graph::AddEdge("ETH", "BUSD", FormatDoubleV2(0.025), 10, true);
+        // Graph::AddEdge("BUSD", "ETH", FormatDoubleV2(0.026), 10, false;
 
         if (!data.Bids.empty()) { // 买单挂出价，我方卖出价
             auto depth = data.Bids[0];
-            Graph::AddEdge(data.FromToken, data.ToToken, depth.Price, depth.Quantity);
+            Graph::AddEdge(data.FromToken, data.ToToken, depth.Price, depth.Quantity, true);
         }
         if (!data.Asks.empty()) { // 卖单挂出价，我方买入价
             auto depth = data.Asks[0];
-            Graph::AddEdge(data.ToToken, data.FromToken, 1/depth.Price, depth.Price*depth.Quantity);
+            Graph::AddEdge(data.ToToken, data.FromToken, depth.Price, depth.Quantity, false);
         }
     }
 
