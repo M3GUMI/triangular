@@ -47,20 +47,21 @@ namespace Arbitrage{
 
     void IocTriangularArbitrage::TransHandler(HttpWrapper::OrderData &data) {
         spdlog::info(
-                "func: TransHandler, base: {}, quote: {}, orderStatus: {}, quantity: {}, price: {}, executeQuantity: {}, cumQuantity: {}",
+                "func: IocTransHandler, base: {}, quote: {}, orderStatus: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
                 data.BaseToken,
                 data.QuoteToken,
                 data.OrderStatus,
                 data.Quantity,
                 data.Price,
-                data.ExecuteQuantity,
-                data.CummulativeQuoteQuantity
+                data.GetExecuteQuantity(),
+                data.GetNewQuantity()
         );
 
         // 完全失败, 终止
-        if (data.GetFromToken() == TargetToken && data.ExecuteQuantity == 0) {
-            TriangularArbitrage::CheckFinish(0);
-            return;
+        if (data.GetFromToken() == TargetToken && data.GetExecuteQuantity() == 0) {
+            if(TriangularArbitrage::CheckFinish(0)) {
+                return;
+            }
         }
 
         int err = 0;
@@ -73,11 +74,9 @@ namespace Arbitrage{
         }
 
         if (err > 0) {
-            spdlog::error("func: TransHandler, err: {}", err);
+            spdlog::error("func: TransHandler, err: {}", WrapErr(err));
             return;
         }
-
-        CheckFinish(data.ExecuteQuantity * data.Price);
     }
 
     int IocTriangularArbitrage::filledHandler(HttpWrapper::OrderData &data) {

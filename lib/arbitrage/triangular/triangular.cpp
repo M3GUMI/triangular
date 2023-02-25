@@ -18,6 +18,10 @@ namespace Arbitrage{
 
     bool TriangularArbitrage::CheckFinish(double finalQuantity)
     {
+        if (finished) {
+            return true;
+        }
+
         for (const auto& item : orderMap)
         {
             auto order = item.second;
@@ -54,10 +58,6 @@ namespace Arbitrage{
         order->UpdateTime = GetNowTime();
         orderMap[order->OrderId] = order;
 
-        if (finished) {
-            return 0;
-        }
-
         auto err = apiWrapper.CreateOrder(
                 *order,
                 bind(
@@ -77,7 +77,6 @@ namespace Arbitrage{
         );
 
         if (err == define::ErrorLessTicketSize || err == define::ErrorLessMinNotional) {
-            TriangularArbitrage::CheckFinish(0);
             return 0;
         }
 
@@ -97,10 +96,7 @@ namespace Arbitrage{
                 resp.FirstStep().Quantity,
                 spdlog::fmt_lib::join(resp.Format(), ","));
 
-        err = ExecuteTrans(resp.FirstStep());
-        if (err > 0) {
-            return err;
-        }
+        return ExecuteTrans(resp.FirstStep());
     }
 
     void TriangularArbitrage::baseOrderHandler(HttpWrapper::OrderData &data, int err) {
@@ -137,6 +133,7 @@ namespace Arbitrage{
         order->UpdateTime = data.UpdateTime;
 
         TransHandler(*order);
+        TriangularArbitrage::CheckFinish(data.GetNewQuantity());
     }
 
     void TriangularArbitrage::TransHandler(HttpWrapper::OrderData &orderData) {
