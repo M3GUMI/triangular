@@ -1,4 +1,5 @@
 #include "lib/api/http/binance_api_wrapper.h"
+#include "lib/order/order.h"
 #include "utils/utils.h"
 #include "binance_order_wrapper.h"
 
@@ -6,6 +7,7 @@ namespace WebsocketWrapper
 {
     BinanceOrderWrapper::BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper, string hostname, string hostport): WebsocketWrapper(hostname, hostport, ioService), apiWrapper(binanceApiWrapper)
     {
+        apiWrapper.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
     }
 
     BinanceOrderWrapper::~BinanceOrderWrapper()
@@ -17,26 +19,29 @@ namespace WebsocketWrapper
         this->orderSubscriber.push_back(handler);
     }
 
-    void BinanceOrderWrapper::Connect()
-    {
-        auto binance = HttpWrapper::BinanceApiWrapper(this->ioService);
-        binance.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
-    }
-
     void BinanceOrderWrapper::createListenKeyHandler(string listenKey, int err)
     {
-        string msg = R"({"method":"SUBSCRIBE","params":[],"id":)" + to_string(time(NULL) % 1000) + R"(})";
-        WebsocketWrapper::Connect(listenKey, msg, bind(&BinanceOrderWrapper::msgHandler, this, placeholders::_1, placeholders::_2));
-
-        uint64_t next_keep_time_ms = err > 0 ? 1000 * 60:1000 * 60 * 20;
-        auto listenkeyKeepTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(this->ioService, websocketpp::lib::asio::milliseconds(next_keep_time_ms));
-        listenkeyKeepTimer->async_wait(bind(&BinanceOrderWrapper::keepListenKeyHandler, this));
+        if (err == 0) {
+            // string msg = R"({"method":"SUBSCRIBE","params":[],"id":)" + to_string(time(NULL) % 1000) + R"(})";
+            string msg = R"({"method":"SUBSCRIBE","params":[")" + toLower("USD") + R"(@depth5@100ms"],"id":)" + to_string(time(NULL) % 1000) + R"(})";
+            this->listenKey = listenKey;
+            WebsocketWrapper::Connect("/"+listenKey, msg, bind(&BinanceOrderWrapper::msgHandler, this, placeholders::_1, placeholders::_2));
+            keepListenKeyHandler(false);
+        } else {
+            apiWrapper.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
+        }
     }
 
-    void BinanceOrderWrapper::keepListenKeyHandler()
+    void BinanceOrderWrapper::keepListenKeyHandler(bool call)
     {
-        auto binance = HttpWrapper::BinanceApiWrapper(this->ioService);
-        binance.CreateListenKey(this->listenKey, bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
+        /*uint64_t next_keep_time_ms = 1000 * 60 * 20;
+        auto listenkeyKeepTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(this->ioService,
+                                                                                         websocketpp::lib::asio::milliseconds(
+                                                                                                 next_keep_time_ms));
+        listenkeyKeepTimer->async_wait(bind(&BinanceOrderWrapper::keepListenKeyHandler, this, true));
+
+        auto func = [](string listenKey, int err) -> void{};
+        apiWrapper.CreateListenKey(this->listenKey, func);*/
     }
 
     void BinanceOrderWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)
@@ -54,7 +59,6 @@ namespace WebsocketWrapper
 
         if (e != "executionReport")
         {
-            spdlog::error("func: {}, err: {}", "msgHandler", WrapErr(define::ErrorInvalidResp));
             return;
         }
 
@@ -63,32 +67,44 @@ namespace WebsocketWrapper
 
     void BinanceOrderWrapper::executionReportHandler(const rapidjson::Document &msg)
     {
-        std::string from, to;
-        std::string symbol = msg.FindMember("s")->value.GetString();        // 交易对
-        std::string side = msg.FindMember("S")->value.GetString();          // 购买方向
-        std::string ori = msg.FindMember("q")->value.GetString();           // 原始数量
-        std::string exced = msg.FindMember("z")->value.GetString();         // 成交数量
-        std::string clientOrderID = msg.FindMember("C")->value.GetString(); // orderId
-        double doubleExced = 0, doubleOri = 0;
-        String2Double(exced, doubleExced);
-        String2Double(ori, doubleOri);
-        std::string status = msg.FindMember("X")->value.GetString(); // 订单状态
-        uint64_t updateTime = GetNowTime();
-
+        string clientOrderID = msg.FindMember("c")->value.GetString(); // orderId
+        string symbol = msg.FindMember("s")->value.GetString();        // 交易对
+        string side = msg.FindMember("S")->value.GetString();        // 交易对
+        uint64_t updateTime = msg.FindMember("T")->value.GetUint64();
+        string status = msg.FindMember("X")->value.GetString(); // 订单状态
         auto symbolData = this->apiWrapper.GetSymbolData(symbol);
-        from = symbolData.BaseToken;
-        to = symbolData.QuoteToken;
 
-        if (side == "BUY")
-        {
-            swap(from, to);
-        }
+        double price, quantity;
+        String2Double(msg.FindMember("p")->value.GetString(), price);
+        String2Double(msg.FindMember("q")->value.GetString(), quantity);
+
+        double executeQuantity, cummulativeQuoteQty;
+        String2Double(msg.FindMember("z")->value.GetString(), executeQuantity);
+        String2Double(msg.FindMember("Z")->value.GetString(), cummulativeQuoteQty);
 
         OrderData data;
         data.OrderId = apiWrapper.GetOrderId(clientOrderID);
-        data.OrderStatus = status;
+        data.BaseToken = symbolData.BaseToken;
+        data.QuoteToken = symbolData.QuoteToken;
+        data.Side = stringToSide(side);
+
+        data.OrderStatus = stringToOrderStatus(status);
+        data.BaseToken = symbolData.BaseToken;
+        data.QuoteToken = symbolData.QuoteToken;
+
+        data.Price = price;
+        data.Quantity = quantity;
+        data.ExecuteQuantity = executeQuantity;
+        data.CummulativeQuoteQuantity = cummulativeQuoteQty;
+
         data.UpdateTime = updateTime;
 
+        // spdlog::debug(
+        //        "func: executionReportHandler, symbol: {}, side: {}, price: {}, quantity: {}, executeQuantity: {}, newQuantity: {}",
+        //        symbol, side, data.Price, data.Quantity, data.GetExecuteQuantity(), data.GetNewQuantity()
+        // );
+
+        // 需要内存管理
         for (auto func : this->orderSubscriber)
         {
             func(data);

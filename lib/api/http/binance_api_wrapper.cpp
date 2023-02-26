@@ -250,14 +250,14 @@ namespace HttpWrapper
         }
 
         args["symbol"] = symbolData.Symbol;
-        args["side"] = this->sideToString(req.Side);
-        args["type"] = this->orderTypeToString(req.OrderType);
+        args["side"] = sideToString(req.Side);
+        args["type"] = orderTypeToString(req.OrderType);
         args["timestamp"] = std::to_string(time(NULL) * 1000);
         args["quantity"] =  FormatDouble(quantity);
 
         // 市价单 不能有下面这些参数
         if (req.OrderType != define::MARKET && req.OrderType != define::LIMIT_MAKER) {
-            args["timeInForce"] = this->timeInForceToString(req.TimeInForce);
+            args["timeInForce"] = timeInForceToString(req.TimeInForce);
         }
 
         if (req.OrderType != define::MARKET) {
@@ -329,33 +329,34 @@ namespace HttpWrapper
         orderIdMap[req.OrderId] = clientOrderId;
         outOrderIdMap[clientOrderId] = req.OrderId;
 
-        // 当前均为IOC数据推送
         auto symbolData = GetSymbolData(order["symbol"].GetString());
-        auto side = stringToSide(order["side"].GetString());
-
-        if (side == define::INVALID_SIDE) {
-            spdlog::error("func: {}, msg: {}, err: {}", "CreateOrder", "invalid side", define::ErrorInvalidResp);
-            return;
-        }
-
-        double price, quantity;
-        double executeQuantity, cummulativeQuoteQty;
-        String2Double(order["price"].GetString(), price);
-        String2Double(order["origQty"].GetString(), quantity);
-        String2Double(order["executedQty"].GetString(), executeQuantity);
-        String2Double(order["cummulativeQuoteQty"].GetString(), cummulativeQuoteQty);
+        uint64_t transactTime = order["transactTime"].GetUint64();
 
         data.OrderId = this->outOrderIdMap[order["clientOrderId"].GetString()];
         data.BaseToken = symbolData.BaseToken;
         data.QuoteToken = symbolData.QuoteToken;
-        data.Side = side;
-        data.Price = price;
-        data.Quantity = quantity;
+        data.UpdateTime = transactTime;
 
-        data.UpdateTime = GetNowTime(); // todo 这里看看要不要改
-        data.OrderStatus = stringToOrderStatus(order["status"].GetString());
-        data.ExecuteQuantity = executeQuantity;
-        data.CummulativeQuoteQuantity = cummulativeQuoteQty;
+        if (req.OrderType == define::LIMIT_MAKER && req.TimeInForce == define::GTC) {
+            // maker下单ack
+            data.OrderStatus = define::NEW;
+        } else {
+            // taker下单
+            double price, quantity;
+            double executeQuantity, cummulativeQuoteQty;
+            String2Double(order["price"].GetString(), price);
+            String2Double(order["origQty"].GetString(), quantity);
+            String2Double(order["executedQty"].GetString(), executeQuantity);
+            String2Double(order["cummulativeQuoteQty"].GetString(), cummulativeQuoteQty);
+
+            data.OrderStatus = stringToOrderStatus(order["status"].GetString());
+            data.Side = stringToSide(order["side"].GetString());
+
+            data.Price = price;
+            data.Quantity = quantity;
+            data.ExecuteQuantity = executeQuantity;
+            data.CummulativeQuoteQuantity = cummulativeQuoteQty;
+        }
 
         spdlog::debug(
                 "func: createOrderCallback, orderId: {}, status: {}, base: {}, quote: {}, side: {}, price: {}, originQuantity: {}, executeQuantity: {}",
@@ -443,7 +444,7 @@ namespace HttpWrapper
         req.sign = true;
         auto apiCallback = bind(&BinanceApiWrapper::createListkeyCallback, this, placeholders::_1, placeholders::_2, callback);
 
-        if (listenKey.size() == 0)
+        if (listenKey.size() != 0)
         {
             req.args["listenKey"] = listenKey;
             req.method = "PUT";
@@ -456,8 +457,7 @@ namespace HttpWrapper
     {
         if (auto err = this->CheckResp(res); err > 0)
         {
-            // todo error日志
-            cout << __func__ << " " << __LINE__ << " CreateListkey error " << endl;
+            spdlog::error("func: createListkeyCallback, err: {}, resp: {}", WrapErr(err), res->payload());
             return callback("", err);
         }
 
@@ -466,119 +466,11 @@ namespace HttpWrapper
 
         if (!listenKeyInfo.HasMember("listenKey"))
         {
-            // todo error日志
-            return callback("", define::ErrorDefault);
+            spdlog::error("func: createListkeyCallback, err: {}, resp: {}", WrapErr(ErrorInvalidResp), res->payload());
+            return callback("", define::ErrorInvalidResp);
         }
 
         auto listenKey = listenKeyInfo.FindMember("listenKey")->value.GetString();
         return callback(listenKey, 0);
-    }
-
-    define::OrderStatus BinanceApiWrapper::stringToOrderStatus(string status)
-    {
-        if (status == "NEW")
-        {
-            return define::NEW;
-        }
-        else if (status == "PARTIALLY_FILLED")
-        {
-            return define::PARTIALLY_FILLED;
-        }
-        else if (status == "FILLED")
-        {
-            return define::FILLED;
-        }
-        else if (status == "CANCELED")
-        {
-            return define::CANCELED;
-        }
-        else if (status == "PENDING_CANCEL")
-        {
-
-            return define::PENDING_CANCEL;
-        }
-        else if (status == "REJECTED")
-        {
-            return define::REJECTED;
-        }
-        else if (status == "EXPIRED")
-        {
-
-            return define::EXPIRED;
-        }
-
-        return define::INVALID_ORDER_STATUS;
-    }
-
-    define::OrderSide BinanceApiWrapper::stringToSide(string side)
-    {
-        if (side == "BUY") {
-            return define::BUY;
-        } else if (side == "SELL") {
-            return define::SELL;
-        }
-
-        return define::INVALID_SIDE;
-    }
-
-    string BinanceApiWrapper::sideToString(uint32_t side)
-    {
-        switch (side)
-        {
-        case define::BUY:
-            return "BUY";
-        case define::SELL:
-            return "SELL";
-        }
-
-        return "";
-    }
-
-    string BinanceApiWrapper::orderTypeToString(uint32_t orderType)
-    {
-        switch (orderType)
-        {
-        case define::LIMIT:
-            return "LIMIT";
-        case define::MARKET:
-            return "MARKET";
-        case define::STOP_LOSS:
-            return "STOP_LOSS";
-        case define::STOP_LOSS_LIMIT:
-            return "STOP_LOSS_LIMIT";
-        case define::TAKE_PROFIT:
-            return "TAKE_PROFIT";
-        case define::TAKE_PROFIT_LIMIT:
-            return "TAKE_PROFIT_LIMIT";
-        case define::LIMIT_MAKER:
-            return "LIMIT_MAKER";
-        }
-
-        return "";
-    }
-
-    string BinanceApiWrapper::timeInForceToString(uint32_t timeInForce)
-    {
-        switch (timeInForce)
-        {
-        case define::GTC:
-            return "GTC";
-        case define::IOC:
-            return "IOC";
-        case define::FOK:
-            return "FOK";
-        }
-
-        return "";
-    }
-
-    pair<string, string> BinanceApiWrapper::parseToken(string symbol, define::OrderSide side)
-    {
-        auto data = GetSymbolData(symbol);
-        if (side == define::BUY) {
-            return make_pair(data.QuoteToken, data.BaseToken);
-        } else {
-            return make_pair(data.BaseToken, data.QuoteToken);
-        }
     }
 }

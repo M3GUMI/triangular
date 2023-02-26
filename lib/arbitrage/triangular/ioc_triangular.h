@@ -16,8 +16,8 @@ namespace Arbitrage{
         int Run(Pathfinder::ArbitrageChance &chance) override;
 
     private:
-        void TransHandler(HttpWrapper::OrderData &orderData) override;
-        int filledHandler(HttpWrapper::OrderData &data);
-        int partiallyFilledHandler(HttpWrapper::OrderData &data);
+        void TransHandler(OrderData &orderData) override;
+        int filledHandler(OrderData &data);
+        int partiallyFilledHandler(OrderData &data);
     };
 }

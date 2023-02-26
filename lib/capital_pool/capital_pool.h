@@ -3,6 +3,7 @@
 #include <map>
 #include "lib/api/http/binance_api_wrapper.h"
 #include "lib/pathfinder/pathfinder.h"
+#include "lib/order/order.h"
 
 using namespace std;
 namespace CapitalPool
@@ -21,7 +22,7 @@ namespace CapitalPool
 
         bool locked; // 刷新中，锁定
         int tryRebalance(const string& from, const string& to, double amount);
-        void rebalanceHandler(HttpWrapper::OrderData &data);
+        void rebalanceHandler(OrderData &data);
         void refreshAccountHandler(HttpWrapper::AccountInfo &info, int err);
 
     public:

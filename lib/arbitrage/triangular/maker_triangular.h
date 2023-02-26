@@ -14,6 +14,6 @@ namespace Arbitrage {
         int Run(Pathfinder::ArbitrageChance &chance);
 
     private:
-        void TransHandler(HttpWrapper::OrderData &orderData);
+        void TransHandler(OrderData &orderData);
     };
 }

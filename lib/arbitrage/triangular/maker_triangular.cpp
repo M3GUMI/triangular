@@ -9,6 +9,7 @@ namespace Arbitrage{
             CapitalPool::CapitalPool &pool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
     ) : TriangularArbitrage(pathfinder, pool, apiWrapper) {
+        this->strategy = "maker";
     }
 
     MakerTriangularArbitrage::~MakerTriangularArbitrage() {
@@ -29,7 +30,7 @@ namespace Arbitrage{
         return 0;
     }
 
-    void MakerTriangularArbitrage::TransHandler(HttpWrapper::OrderData &data) {
+    void MakerTriangularArbitrage::TransHandler(OrderData &data) {
         // todo 需要增加套利任务的资金池锁定金额。需要增加订单管理
         // 1. 每一步maker盘口挂单
         // 2. 实时监测盘口价格，超过阈值则取消挂单重新挂

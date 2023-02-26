@@ -5,6 +5,7 @@
 #include "lib/pathfinder/pathfinder.h"
 #include "lib/capital_pool/capital_pool.h"
 #include "lib/api/http/binance_api_wrapper.h"
+#include "lib/order/order.h"
 #include "define/define.h"
 
 using namespace std;
@@ -23,10 +24,12 @@ namespace Arbitrage{
         );
         ~TriangularArbitrage();
 
-        map<uint64_t, HttpWrapper::OrderData*> orderMap; // 订单map
+        map<uint64_t, OrderData*> orderMap; // 订单map
 
-        string TargetToken;       // 目标token
+        string strategy;           // 策略名
+        string TargetToken;        // 目标token
         double OriginQuantity = 0; // 原始起点token数量
+        double FinalQuantity = 0; // 最终起点token数量
 
         Pathfinder::Pathfinder &pathfinder;
         CapitalPool::CapitalPool &capitalPool;
@@ -34,13 +37,13 @@ namespace Arbitrage{
 
         int ExecuteTrans(Pathfinder::TransactionPathItem &path);
         int ReviseTrans(string origin, string end, double quantity);
-        bool CheckFinish(double finalQuantity);
+        bool CheckFinish();
 
     private:
         bool finished = false;
         function<void()> subscriber = nullptr;
 
-        virtual void TransHandler(HttpWrapper::OrderData &orderData);
-        void baseOrderHandler(HttpWrapper::OrderData &data, int err);
+        virtual void TransHandler(OrderData &orderData);
+        void baseOrderHandler(OrderData &data, int err);
     };
 }

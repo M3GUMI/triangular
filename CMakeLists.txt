@@ -64,7 +64,9 @@ set(ALL_FILES
         lib/pathfinder/graph.h
         main.cpp
         utils/utils.cpp
-        utils/utils.h)
+        utils/utils.h
+        lib/order/order.h
+        lib/order/order.cpp)
 
 add_executable(MoneyTriangular ${ALL_FILES})
 

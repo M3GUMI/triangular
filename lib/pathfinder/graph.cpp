@@ -103,28 +103,39 @@ namespace Pathfinder{
         return 0;
     }
 
-    TransactionPathItem Graph::formatTransactionPathItem(Edge& edge) {
+    TransactionPathItem Graph::formatTransactionPathItem(Edge& edge, Strategy& strategy) {
         TransactionPathItem item{};
         if (edge.isSell) {
             item.BaseToken = indexToToken[edge.from];
             item.QuoteToken = indexToToken[edge.to];
             item.Side = define::SELL;
 
-            item.Price = edge.originPrice;
-            item.Quantity = edge.originPrice;
         } else {
             item.BaseToken = indexToToken[edge.to];
             item.QuoteToken = indexToToken[edge.from];
             item.Side = define::BUY;
-
-            item.Price = edge.originPrice;
-            item.Quantity = edge.originPrice;
         }
+
+        item.OrderType = strategy.OrderType;
+        item.TimeInForce = strategy.TimeInForce;
+        item.Price = edge.originPrice;
+        item.Quantity = edge.originPrice;
 
         return item;
     };
 
-    ArbitrageChance Graph::CalculateArbitrage() {
+    ArbitrageChance Graph::CalculateArbitrage(const string& name) {
+        Strategy strategy{};
+        if (name == "maker") {
+            strategy.Fee = 0;
+            strategy.OrderType = define::LIMIT_MAKER;
+            strategy.TimeInForce = define::GTC;
+        } else {
+            strategy.Fee = 0.0004;
+            strategy.OrderType = define::LIMIT;
+            strategy.TimeInForce = define::IOC;
+        }
+
         vector<TransactionPathItem> path;
         double minRate = 0;
 
@@ -154,13 +165,13 @@ namespace Pathfinder{
                         if (firstToken == endToken) {
                             // 对数。乘法处理为加法
                             // 负数。最长路径处理为最短路径
-                            double rate = firstWeight + secondWeight + thirdWeight - 3 * log(1 - fee);
+                            double rate = firstWeight + secondWeight + thirdWeight - 3 * log(1 - strategy.Fee);
                             if (rate < 0 && rate < minRate) {
                                 vector<TransactionPathItem> newPath;
                                 newPath.clear();
-                                newPath.push_back(formatTransactionPathItem(firstEdge));
-                                newPath.push_back(formatTransactionPathItem(secondEdge));
-                                newPath.push_back(formatTransactionPathItem(thirdEdge));
+                                newPath.push_back(formatTransactionPathItem(firstEdge, strategy));
+                                newPath.push_back(formatTransactionPathItem(secondEdge, strategy));
+                                newPath.push_back(formatTransactionPathItem(thirdEdge, strategy));
                                 adjustQuantities(newPath);
 
                                 if (newPath.front().Quantity >= conf::MinTriangularQuantity) {
@@ -183,9 +194,9 @@ namespace Pathfinder{
         vector<string> info;
         for (const auto& item:path) {
             if (item.Side == define::SELL) {
-                profit = profit*item.Price*(1-this->fee);
+                profit = profit*item.Price*(1-strategy.Fee);
             } else {
-                profit = profit*(1/item.Price)*(1-this->fee);
+                profit = profit*(1/item.Price)*(1-strategy.Fee);
             }
         }
 
@@ -200,9 +211,20 @@ namespace Pathfinder{
         return chance;
     }
 
-    ArbitrageChance Graph::FindBestPath(string start, string end, double quantity) {
-        auto oneStepResult = bestOneStep(tokenToIndex[start], tokenToIndex[end]);
-        auto twoStepResult = bestTwoStep(tokenToIndex[start], tokenToIndex[end]);
+    ArbitrageChance Graph::FindBestPath(string name, string start, string end, double quantity) {
+        Strategy strategy{};
+        if (name == "maker") {
+            strategy.Fee = 0;
+            strategy.OrderType = define::LIMIT_MAKER;
+            strategy.TimeInForce = define::GTC;
+        } else {
+            strategy.Fee = 0.0004;
+            strategy.OrderType = define::LIMIT;
+            strategy.TimeInForce = define::IOC;
+        }
+
+        auto oneStepResult = bestOneStep(tokenToIndex[start], tokenToIndex[end], strategy);
+        auto twoStepResult = bestTwoStep(tokenToIndex[start], tokenToIndex[end], strategy);
 
         ArbitrageChance chance{};
         pair<double, vector<TransactionPathItem>> *data;
@@ -229,22 +251,22 @@ namespace Pathfinder{
     }
 
     // 走一步
-    pair<double, vector<TransactionPathItem>> Graph::bestOneStep(int start, int end) {
+    pair<double, vector<TransactionPathItem>> Graph::bestOneStep(int start, int end, Strategy& strategy) {
         vector<TransactionPathItem> path;
         auto edges = nodes[start]; // 起点出发边
         for (auto &edge: edges) {
             if (edge.to != end) {
                 continue;
             }
-            path.push_back(formatTransactionPathItem(edge));
-            return make_pair(edge.weight + log(1 - fee), path);
+            path.push_back(formatTransactionPathItem(edge, strategy));
+            return make_pair(edge.weight + log(1 - strategy.Fee), path);
         }
 
         return make_pair(DBL_MAX, path);
     }
 
     // 走两步
-    pair<double, vector<TransactionPathItem>> Graph::bestTwoStep(int start, int end) {
+    pair<double, vector<TransactionPathItem>> Graph::bestTwoStep(int start, int end, Strategy& strategy) {
         vector<TransactionPathItem> path;
         double minRate = DBL_MAX;
 
@@ -257,12 +279,12 @@ namespace Pathfinder{
                 double secondWeight = secondEdge.weight; // 第二条边权重
 
                 if (secondEdge.to == end) {
-                    double rate = firstWeight + secondWeight - 2 * log(1 - fee);
+                    double rate = firstWeight + secondWeight - 2 * log(1 - strategy.Fee);
                     if (rate < 0 && rate < minRate) {
                         minRate = rate;
                         path.clear();
-                        path.push_back(formatTransactionPathItem(firstEdge));
-                        path.push_back(formatTransactionPathItem(secondEdge));
+                        path.push_back(formatTransactionPathItem(firstEdge, strategy));
+                        path.push_back(formatTransactionPathItem(secondEdge, strategy));
                     }
                 }
             }

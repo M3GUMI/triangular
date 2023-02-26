@@ -1,6 +1,7 @@
 #pragma once
 #include <string.h>
 #include <functional>
+#include "lib/order/order.h"
 #include "lib/libmix/libmix.h"
 #include "lib/ahttp/http_client.hpp"
 #include "define/define.h"
@@ -35,13 +36,6 @@ namespace HttpWrapper
     private:
         map<string, BinanceSymbolData> symbolMap;
         vector<function<void(map<string, BinanceSymbolData> &data)>> symbolReadySubscriber;
-
-        define::OrderStatus stringToOrderStatus(string status);
-        define::OrderSide stringToSide(string side);
-        string sideToString(uint32_t side);
-        string orderTypeToString(uint32_t orderType);
-        string timeInForceToString(uint32_t timeInForce);
-        pair<string, string> parseToken(string symbol, define::OrderSide side);
 
         void initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec);
         void accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo &info, int err)> callback);

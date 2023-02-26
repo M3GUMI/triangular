@@ -6,12 +6,6 @@
 using namespace std;
 namespace WebsocketWrapper
 {
-    struct OrderData {
-        string OrderId;
-        string OrderStatus;
-        uint64_t UpdateTime;
-    };
-
     class BinanceOrderWrapper : public WebsocketWrapper
     {
     private:
@@ -20,7 +14,7 @@ namespace WebsocketWrapper
         HttpWrapper::BinanceApiWrapper &apiWrapper;
 
         void createListenKeyHandler(string listenKey, int err);
-        void keepListenKeyHandler();
+        void keepListenKeyHandler(bool call);
         void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg);
         void executionReportHandler(const rapidjson::Document &msg);
 
@@ -28,7 +22,6 @@ namespace WebsocketWrapper
         BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper, string hostname, string hostport);
         ~BinanceOrderWrapper();
 
-        void Connect();
         void SubscribeOrder(function<void(OrderData& req)> handler);
     };
 }

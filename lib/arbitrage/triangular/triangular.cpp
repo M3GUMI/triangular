@@ -16,7 +16,7 @@ namespace Arbitrage{
         exit(EXIT_FAILURE);
     }
 
-    bool TriangularArbitrage::CheckFinish(double finalQuantity)
+    bool TriangularArbitrage::CheckFinish()
     {
         if (finished) {
             return true;
@@ -34,7 +34,7 @@ namespace Arbitrage{
         }
 
         spdlog::info("func: Finish, profit: {}, finalQuantity: {}, originQuantity: {}",
-                     finalQuantity / this->OriginQuantity, finalQuantity, this->OriginQuantity);
+                     this->FinalQuantity / this->OriginQuantity, this->FinalQuantity, this->OriginQuantity);
         finished = true;
         this->subscriber();
         return true;
@@ -45,15 +45,15 @@ namespace Arbitrage{
     }
 
     int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path) {
-        auto order = new HttpWrapper::OrderData();
+        auto order = new OrderData();
         order->OrderId = GenerateId();
         order->BaseToken = path.BaseToken;
         order->QuoteToken = path.QuoteToken;
         order->Side = path.Side;
         order->Price = path.Price;
         order->Quantity = path.Quantity;
-        order->OrderType = define::LIMIT;
-        order->TimeInForce = define::IOC;
+        order->OrderType = path.OrderType;
+        order->TimeInForce = path.TimeInForce;
         order->OrderStatus = define::INIT;
         order->UpdateTime = GetNowTime();
         orderMap[order->OrderId] = order;
@@ -85,21 +85,16 @@ namespace Arbitrage{
 
     int TriangularArbitrage::ReviseTrans(string origin, string end, double quantity) {
         // 寻找新路径重试
-        Pathfinder::ArbitrageChance resp;
-        auto err = pathfinder.RevisePath(Pathfinder::RevisePathReq(origin, end, quantity), resp);
-        if (err > 0) {
-            return err;
-        }
-
+        auto chance = pathfinder.FindBestPath(this->strategy, origin, end, quantity);
         spdlog::info(
                 "func: RevisePath, maxQuantity: {}, bestPath: {}",
-                resp.FirstStep().Quantity,
-                spdlog::fmt_lib::join(resp.Format(), ","));
+                chance.FirstStep().Quantity,
+                spdlog::fmt_lib::join(chance.Format(), ","));
 
-        return ExecuteTrans(resp.FirstStep());
+        return ExecuteTrans(chance.FirstStep());
     }
 
-    void TriangularArbitrage::baseOrderHandler(HttpWrapper::OrderData &data, int err) {
+    void TriangularArbitrage::baseOrderHandler(OrderData &data, int err) {
         if (err > 0) {
             spdlog::error("func: baseOrderHandler, err: {}", WrapErr(err));
             return;
@@ -115,7 +110,7 @@ namespace Arbitrage{
             return;
         }
 
-        HttpWrapper::OrderData* order = orderMap[data.OrderId];
+        OrderData* order = orderMap[data.OrderId];
         if (conf::EnableMock) { // mock情况下可相同毫秒更新
             if (order->UpdateTime > data.UpdateTime) {
                 return;
@@ -127,16 +122,15 @@ namespace Arbitrage{
         }
 
         order->OrderStatus = data.OrderStatus;
-        // todo 这里的origin改成校验逻辑
         order->ExecuteQuantity = data.ExecuteQuantity;
         order->CummulativeQuoteQuantity = data.CummulativeQuoteQuantity;
         order->UpdateTime = data.UpdateTime;
 
         TransHandler(*order);
-        TriangularArbitrage::CheckFinish(data.GetNewQuantity());
+        TriangularArbitrage::CheckFinish();
     }
 
-    void TriangularArbitrage::TransHandler(HttpWrapper::OrderData &orderData) {
+    void TriangularArbitrage::TransHandler(OrderData &orderData) {
         exit(EXIT_FAILURE);
     }
 }

@@ -153,24 +153,24 @@ namespace CapitalPool
             return err;
         }
 
-        HttpWrapper::OrderData req;
-        req.OrderId = GenerateId();
-        req.BaseToken = symbolData.BaseToken;
-        req.QuoteToken = symbolData.QuoteToken;
-        req.Side = side;
-        req.OrderType = define::LIMIT;
-        req.TimeInForce = define::IOC;
+        OrderData order;
+        order.OrderId = GenerateId();
+        order.BaseToken = symbolData.BaseToken;
+        order.QuoteToken = symbolData.QuoteToken;
+        order.Side = side;
+        order.OrderType = define::LIMIT;
+        order.TimeInForce = define::IOC;
 
         if (side == define::SELL) {
-            req.Price = priceResp.SellPrice;
-            req.Quantity = amount <= priceResp.SellQuantity? amount: priceResp.SellQuantity;
+            order.Price = priceResp.SellPrice;
+            order.Quantity = amount <= priceResp.SellQuantity? amount: priceResp.SellQuantity;
         } else {
-            req.Price = priceResp.BuyPrice;
-            amount = FormatDoubleV2(amount/req.Price);
-            req.Quantity = amount <= priceResp.BuyQuantity? amount: priceResp.BuyQuantity;
+            order.Price = priceResp.BuyPrice;
+            amount = FormatDoubleV2(amount/order.Price);
+            order.Quantity = amount <= priceResp.BuyQuantity? amount: priceResp.BuyQuantity;
         }
 
-        auto err = apiWrapper.CreateOrder(req, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
+        auto err = apiWrapper.CreateOrder(order, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
         if (err > 0) {
             return err;
         }
@@ -179,7 +179,7 @@ namespace CapitalPool
         return 0;
     }
 
-    void CapitalPool::rebalanceHandler(HttpWrapper::OrderData &data) {
+    void CapitalPool::rebalanceHandler(OrderData &data) {
         if (locked) {
             // 刷新期间不执行
             spdlog::debug("func: {}, msg: {}", "rebalanceHandler", "refresh execute, ignore");

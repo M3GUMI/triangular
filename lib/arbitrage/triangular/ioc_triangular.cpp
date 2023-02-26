@@ -8,6 +8,7 @@ namespace Arbitrage{
             CapitalPool::CapitalPool &pool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
     ) : TriangularArbitrage(pathfinder, pool, apiWrapper) {
+        this->strategy = "taker";
     }
 
     IocTriangularArbitrage::~IocTriangularArbitrage() = default;
@@ -28,7 +29,7 @@ namespace Arbitrage{
         }
 
         spdlog::info(
-                "func: IocTriangularArbitrage::Run, profit: {}, quantity: {}, path: {}",
+                "IocTriangularArbitrage::Run, profit: {}, quantity: {}, path: {}",
                 chance.Profit,
                 lockedQuantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
@@ -45,9 +46,9 @@ namespace Arbitrage{
         return 0;
     }
 
-    void IocTriangularArbitrage::TransHandler(HttpWrapper::OrderData &data) {
+    void IocTriangularArbitrage::TransHandler(OrderData &data) {
         spdlog::info(
-                "func: IocTransHandler, base: {}, quote: {}, orderStatus: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
+                "IocTriangularArbitrage::Handler, base: {}, quote: {}, orderStatus: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
                 data.BaseToken,
                 data.QuoteToken,
                 data.OrderStatus,
@@ -59,7 +60,8 @@ namespace Arbitrage{
 
         // 完全失败, 终止
         if (data.GetFromToken() == TargetToken && data.GetExecuteQuantity() == 0) {
-            if(TriangularArbitrage::CheckFinish(0)) {
+            if(TriangularArbitrage::CheckFinish()) {
+                spdlog::info("!!!!!!!!!!!!finish");
                 return;
             }
         }
@@ -79,9 +81,10 @@ namespace Arbitrage{
         }
     }
 
-    int IocTriangularArbitrage::filledHandler(HttpWrapper::OrderData &data) {
+    int IocTriangularArbitrage::filledHandler(OrderData &data) {
         // 抵达目标
         if (data.GetToToken() == this->TargetToken) {
+            FinalQuantity += data.GetNewQuantity();
             return 0;
         }
 
@@ -90,7 +93,7 @@ namespace Arbitrage{
         );
     }
 
-    int IocTriangularArbitrage::partiallyFilledHandler(HttpWrapper::OrderData &data) {
+    int IocTriangularArbitrage::partiallyFilledHandler(OrderData &data) {
         // 处理未成交部分
         if (define::IsStableCoin(data.GetFromToken())) {
             // 稳定币持仓，等待重平衡
@@ -112,6 +115,8 @@ namespace Arbitrage{
             if (err > 0) {
                 return err;
             }
+        } else {
+            FinalQuantity += data.GetNewQuantity();
         }
     }
 }

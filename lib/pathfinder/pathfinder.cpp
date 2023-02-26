@@ -82,10 +82,10 @@ namespace Pathfinder
     }
 
     void Pathfinder::HuntingKing() {
-        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(200));
+        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(50));
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
-        auto chance = Graph::CalculateArbitrage();
+        auto chance = Graph::CalculateArbitrage("taker");
         if (chance.Profit <= 1) {
             return;
         }
@@ -117,13 +117,4 @@ namespace Pathfinder
 	{
 		this->subscriber = handler;
 	}
-
-	int Pathfinder::RevisePath(RevisePathReq req, ArbitrageChance &resp)
-	{
-        auto chance = Graph::FindBestPath(req.Origin, req.End, req.Quantity);
-        resp.Profit = chance.Profit;
-        resp.Quantity = chance.Quantity;
-        resp.Path = chance.Path;
-        return 0;
-    }
 }

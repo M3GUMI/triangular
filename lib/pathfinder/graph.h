@@ -10,52 +10,79 @@
 using namespace std;
 namespace Pathfinder{
     // 套利路径项
-    struct TransactionPathItem {
+    struct TransactionPathItem
+    {
         string BaseToken;
         string QuoteToken;
         define::OrderSide Side;
+        define::OrderType OrderType;
+        define::TimeInForce TimeInForce;
         double Price = 0;
         double Quantity = 0;
 
-        double GetParsePrice() {
-            if (Side == define::SELL) {
+        double GetParsePrice()
+        {
+            if (Side == define::SELL)
+            {
                 return FormatDoubleV2(Price);
-            } else {
-                return FormatDoubleV2(1/Price);
+            }
+            else
+            {
+                return FormatDoubleV2(1 / Price);
             }
         }
 
-        double GetParseQuantity() {
-            if (Side == define::SELL) {
+        double GetParseQuantity()
+        {
+            if (Side == define::SELL)
+            {
                 return FormatDoubleV2(Quantity);
-            } else {
-                return FormatDoubleV2(Quantity*Price);
+            }
+            else
+            {
+                return FormatDoubleV2(Quantity * Price);
             }
         }
 
-        double GetPrice() {
+        double GetPrice()
+        {
             return FormatDoubleV2(Price);
         }
 
-        double GetQuantity() {
+        double GetQuantity()
+        {
             return FormatDoubleV2(Quantity);
         }
 
-        string GetFromToken() {
-            if (Side == define::SELL) {
+        string GetFromToken()
+        {
+            if (Side == define::SELL)
+            {
                 return BaseToken;
-            } else {
+            }
+            else
+            {
                 return QuoteToken;
             }
         }
 
-        string GetToToken() {
-            if (Side == define::SELL) {
+        string GetToToken()
+        {
+            if (Side == define::SELL)
+            {
                 return QuoteToken;
-            } else {
+            }
+            else
+            {
                 return BaseToken;
             }
         }
+    };
+
+    struct Strategy {
+        double Fee;
+        define::OrderType OrderType;
+        define::TimeInForce TimeInForce;
     };
 
     struct ArbitrageChance
@@ -118,18 +145,17 @@ namespace Pathfinder{
         void AddEdge(const string& from, const string& to, double originPrice, double quantity, bool isFrom);
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
 
-        ArbitrageChance FindBestPath(string start, string end, double quantity);
-        ArbitrageChance CalculateArbitrage();
+        ArbitrageChance FindBestPath(string name, string start, string end, double quantity);
+        ArbitrageChance CalculateArbitrage(const string& strategy);
 
     private:
         map<string, int> tokenToIndex;
         map<int, string> indexToToken;
 
-        double fee = 0.0004; // 手续费
         vector<vector<Edge>> nodes; // 存储图中所有的节点及其邻接表
-        TransactionPathItem formatTransactionPathItem(Edge& edge);
+        TransactionPathItem formatTransactionPathItem(Edge& edge, Strategy& strategy);
         static void adjustQuantities(vector<TransactionPathItem>& items);
-        pair<double, vector<TransactionPathItem>> bestOneStep(int start, int end);
-        pair<double, vector<TransactionPathItem>> bestTwoStep(int start, int end);
+        pair<double, vector<TransactionPathItem>> bestOneStep(int start, int end, Strategy& strategy);
+        pair<double, vector<TransactionPathItem>> bestTwoStep(int start, int end, Strategy& strategy);
     };
 }
