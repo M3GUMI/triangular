@@ -140,7 +140,7 @@ namespace Pathfinder{
             strategy.OrderType = define::LIMIT_MAKER;
             strategy.TimeInForce = define::GTC;
         } else {
-            strategy.Fee = 0.0002;
+            strategy.Fee = 0.0004;
             strategy.OrderType = define::LIMIT;
             strategy.TimeInForce = define::IOC;
         }
@@ -233,8 +233,7 @@ namespace Pathfinder{
             strategy.OrderType = define::LIMIT_MAKER;
             strategy.TimeInForce = define::GTC;
         } else {
-            strategy.Fee = 0;
-            // strategy.Fee = 0.0002;
+            strategy.Fee = 0.0004;
             strategy.OrderType = define::LIMIT;
             strategy.TimeInForce = define::IOC;
         }

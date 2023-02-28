@@ -85,7 +85,7 @@ namespace Pathfinder
         huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(50));
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
-        auto chance = Graph::CalculateArbitrage("taker");
+        auto chance = Graph::CalculateArbitrage("IocTriangular");
         if (chance.Profit <= 1) {
             return;
         }

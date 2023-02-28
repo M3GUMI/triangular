@@ -8,7 +8,7 @@ namespace Arbitrage{
             CapitalPool::CapitalPool &pool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
     ) : TriangularArbitrage(pathfinder, pool, apiWrapper) {
-        this->strategy = "taker";
+        this->strategy = "IocTriangular";
     }
 
     IocTriangularArbitrage::~IocTriangularArbitrage() = default;
@@ -29,7 +29,8 @@ namespace Arbitrage{
         }
 
         spdlog::info(
-                "IocTriangularArbitrage::Run, profit: {}, quantity: {}, path: {}",
+                "{}::Run, profit: {}, quantity: {}, path: {}",
+                this->strategy,
                 chance.Profit,
                 lockedQuantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
@@ -48,7 +49,8 @@ namespace Arbitrage{
 
     void IocTriangularArbitrage::TransHandler(OrderData &data) {
         spdlog::info(
-                "IocTriangularArbitrage::Handler, base: {}, quote: {}, orderStatus: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
+                "{}::Handler, base: {}, quote: {}, orderStatus: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
+                this->strategy,
                 data.BaseToken,
                 data.QuoteToken,
                 data.OrderStatus,
@@ -61,7 +63,6 @@ namespace Arbitrage{
         // 完全失败, 终止
         if (data.GetFromToken() == TargetToken && data.GetExecuteQuantity() == 0) {
             if(TriangularArbitrage::CheckFinish()) {
-                spdlog::info("!!!!!!!!!!!!finish");
                 return;
             }
         }
@@ -95,19 +96,19 @@ namespace Arbitrage{
 
     int IocTriangularArbitrage::partiallyFilledHandler(OrderData &data) {
         // 处理未成交部分
-        /*if (define::IsStableCoin(data.GetFromToken())) {
+        if (define::IsStableCoin(data.GetFromToken())) {
             // 稳定币持仓，等待重平衡
             auto err = TriangularArbitrage::capitalPool.FreeAsset(data.GetFromToken(), data.GetUnExecuteQuantity());
             if (err > 0) {
                 return err;
             }
-        } else if (define::NotStableCoin(data.GetFromToken())) {*/
+        } else if (define::NotStableCoin(data.GetFromToken())) {
             // 未成交部分重执行
             auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, data.GetUnExecuteQuantity());
             if (err > 0) {
                 return err;
             }
-        //}
+        }
 
         if (data.GetToToken() != this->TargetToken) {
             // 已成交部分继续执行

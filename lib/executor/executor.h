@@ -14,7 +14,7 @@ namespace Executor
     CapitalPool::CapitalPool &capitalPool;
     HttpWrapper::BinanceApiWrapper &apiWrapper;
 
-    bool lock; // 同时只执行一个套利任务
+    bool lock = false; // 同时只执行一个套利任务
     void arbitragePathHandler(Pathfinder::ArbitrageChance &chance);
     void arbitrageFinishHandler();
 

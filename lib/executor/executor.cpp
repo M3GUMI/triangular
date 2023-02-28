@@ -17,12 +17,13 @@ namespace Executor{
     }
 
     void Executor::arbitragePathHandler(Pathfinder::ArbitrageChance &chance) {
-        if (lock) {
+        if (this->lock) {
+            spdlog::info("lock");
             return;
         }
 
         // todo 此处需要内存管理。需要增加套利任务结束，清除subscribe
-        lock = true;
+        this->lock = true;
         Arbitrage::TriangularArbitrage *iocTriangular = new Arbitrage::IocTriangularArbitrage(
                 pathfinder,
                 capitalPool,
@@ -30,14 +31,13 @@ namespace Executor{
         );
         iocTriangular->SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
         if (auto err = iocTriangular->Run(chance); err > 0) {
-            lock = false;
+            this->lock = false;
             return;
         }
     }
 
     void Executor::arbitrageFinishHandler() {
-        lock = false;
-        exit(1);
+        this->lock = false;
         capitalPool.Refresh();
     }
 }
