@@ -15,6 +15,7 @@ namespace HttpWrapper
         string Symbol;
         string BaseToken;
         string QuoteToken;
+        double StepSize = 0;
         double TicketSize = 0;
         double MinNotional = 0;
     };
@@ -39,6 +40,7 @@ namespace HttpWrapper
 
         void initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec);
         void accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo &info, int err)> callback);
+        void getOpenOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec);
         void createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, OrderData &req, function<void(OrderData& data, int err)> callback);
 
         void cancelOrder(uint64_t orderId, string symbol);
@@ -60,13 +62,15 @@ namespace HttpWrapper
 
         // 账户信息
         int GetAccountInfo(function<void(AccountInfo &info, int err)> callback);
+        int GetOpenOrder(string symbol);
 
         // 创建订单
         int CreateOrder(OrderData& req, function<void(OrderData& data, int err)> callback);
 
         // 取消订单
         void CancelOrder(uint64_t orderId);
-        void CancelOrderSymbol(vector<pair<string, string>> symbols);
+        void CancelOrderSymbol(string token0, string token1);
+        void CancelOrderSymbols(vector<pair<string, string>> symbols);
         void CancelOrderAll();
 
         // listenKey

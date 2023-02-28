@@ -71,7 +71,7 @@ namespace Arbitrage{
                 err,
                 path.BaseToken,
                 path.QuoteToken,
-                path.Side,
+                sideToString(path.Side),
                 path.Price,
                 path.Quantity
         );

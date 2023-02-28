@@ -5,6 +5,7 @@
 #include <map>
 #include <cmath>
 #include <limits>
+#include "lib/api/http/binance_api_wrapper.h"
 #include "utils/utils.h"
 
 using namespace std;
@@ -115,6 +116,7 @@ namespace Pathfinder{
     {
         string BaseToken = "";
         string QuoteToken = "";
+        define::OrderType OrderType;
     };
 
     struct GetExchangePriceResp
@@ -139,7 +141,7 @@ namespace Pathfinder{
     // 定义一个图的类
     class Graph {
     public:
-        Graph();
+        Graph(HttpWrapper::BinanceApiWrapper &apiWrapper);
         ~Graph();
 
         void AddEdge(const string& from, const string& to, double originPrice, double quantity, bool isFrom);
@@ -148,6 +150,8 @@ namespace Pathfinder{
         ArbitrageChance FindBestPath(string name, string start, string end, double quantity);
         ArbitrageChance CalculateArbitrage(const string& strategy);
 
+    protected:
+        HttpWrapper::BinanceApiWrapper &apiWrapper;
     private:
         map<string, int> tokenToIndex;
         map<int, string> indexToToken;
@@ -157,5 +161,6 @@ namespace Pathfinder{
         static void adjustQuantities(vector<TransactionPathItem>& items);
         pair<double, vector<TransactionPathItem>> bestOneStep(int start, int end, Strategy& strategy);
         pair<double, vector<TransactionPathItem>> bestTwoStep(int start, int end, Strategy& strategy);
+        bool checkToken(int token);
     };
 }

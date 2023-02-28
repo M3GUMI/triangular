@@ -20,7 +20,6 @@ namespace Pathfinder
     class Pathfinder: public Graph {
     private:
         function<void(ArbitrageChance &chance)> subscriber = nullptr;
-        HttpWrapper::BinanceApiWrapper &apiWrapper;
         websocketpp::lib::asio::io_service &ioService;
 
         map<string, WebsocketWrapper::BinanceDepthWrapper *> depthSocketMap; // depth连接管理

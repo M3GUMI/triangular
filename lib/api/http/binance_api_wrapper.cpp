@@ -48,7 +48,7 @@ namespace HttpWrapper
         const auto &symbols = exchangeInfoJson["symbols"];
         for (unsigned i = 0; i < symbols.Size(); i++)
         {
-            double doubleTickSize = 0, doubleMinNotional = 0;
+            double doubleStepSize = 0, doubleTicketSize = 0, doubleMinNotional = 0;
             string symbol = symbols[i].FindMember("symbol")->value.GetString();
             string baseAsset = symbols[i].FindMember("baseAsset")->value.GetString();
             string quoteAsset = symbols[i].FindMember("quoteAsset")->value.GetString();
@@ -66,8 +66,14 @@ namespace HttpWrapper
 
                     string filterType = filters[j].FindMember("filterType")->value.GetString();
                     if (filterType == "LOT_SIZE" && filters[j].HasMember("stepSize")) {
-                        string ticksize = filters[j].FindMember("stepSize")->value.GetString();
-                        String2Double(ticksize, doubleTickSize);
+                        string stepSize = filters[j].FindMember("stepSize")->value.GetString();
+                        String2Double(stepSize, doubleStepSize);
+                        if (doubleStepSize == 0) {
+                            doubleStepSize = 1;
+                        }
+                    } else if (filterType == "PRICE_FILTER" && filters[j].HasMember("tickSize")) {
+                        string ticketSize = filters[j].FindMember("tickSize")->value.GetString();
+                        String2Double(ticketSize, doubleTicketSize);
                     } else if (filterType == "MIN_NOTIONAL" && filters[j].HasMember("minNotional")) {
                         string minNotional = filters[j].FindMember("minNotional")->value.GetString();
                         String2Double(minNotional, doubleMinNotional);
@@ -79,7 +85,8 @@ namespace HttpWrapper
             data.Symbol = symbol;
             data.BaseToken = baseAsset;
             data.QuoteToken = quoteAsset;
-            data.TicketSize = doubleTickSize;
+            data.StepSize = doubleStepSize;
+            data.TicketSize = doubleTicketSize;
             data.MinNotional = doubleMinNotional;
 
             symbolMap[baseAsset + quoteAsset] = data;
@@ -206,6 +213,27 @@ namespace HttpWrapper
         return callback(info, 0);
     }
 
+    int BinanceApiWrapper::GetOpenOrder(string symbol)
+    {
+        uint64_t now = time(NULL);
+
+        ApiRequest req;
+        req.args["timestamp"] = to_string(now * 1000);
+        req.method = "GET";
+        req.uri = "https://api.binance.com/api/v3/openOrders";
+        req.data = "";
+        req.sign = true;
+        auto apiCallback = bind(&BinanceApiWrapper::getOpenOrderCallback, this, ::_1, ::_2);
+
+        this->MakeRequest(req, apiCallback);
+        return 0;
+    }
+
+    void BinanceApiWrapper::getOpenOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
+    {
+        spdlog::info("orders: {}", res->payload());
+    }
+
     int BinanceApiWrapper::CreateOrder(OrderData &req, function<void(OrderData& data, int err)> callback) {
         if (req.OrderId == 0) {
             spdlog::error("func: CreateOrder, orderId: {}, err: {}", req.OrderId, WrapErr(define::ErrorInvalidParam));
@@ -235,9 +263,8 @@ namespace HttpWrapper
         // ticketSize校验
         double quantity = req.Quantity;
         auto symbolData = GetSymbolData(req.BaseToken, req.QuoteToken);
-        double ticketSize = (symbolData.TicketSize == 0 ? 1 : symbolData.TicketSize);
-        uint32_t tmp = quantity / ticketSize;
-        quantity = tmp * ticketSize;
+        uint32_t tmp = quantity / symbolData.StepSize;
+        quantity = tmp * symbolData.StepSize;
 
         if (quantity == 0) {
             req.OrderStatus = define::EXPIRED;
@@ -376,10 +403,14 @@ namespace HttpWrapper
     {
         map<string, string> args;
         string uri = "https://api.binance.com/api/v3/openOrders";
-        args["symbol"] = symbol;
         args["timestamp"] = std::to_string(time(NULL) * 1000);
         args["recvWindow"] = "50000";
-        args["newClientOrderId"] = GetOutOrderId(orderId);
+        if (not symbol.empty()) {
+            args["symbol"] = symbol;
+        }
+        if (orderId > 0) {
+            args["newClientOrderId"] = GetOutOrderId(orderId);
+        }
 
         ApiRequest req;
         req.args = args;
@@ -397,7 +428,13 @@ namespace HttpWrapper
         this->cancelOrder(orderId, "");
     }
 
-    void BinanceApiWrapper::CancelOrderSymbol(vector<pair<string, string>> symbols)
+    void BinanceApiWrapper::CancelOrderSymbol(string token0, string token1)
+    {
+        auto symbolStr = this->GetSymbol(token0, token1);
+        this->cancelOrder(0, symbolStr);
+    }
+
+    void BinanceApiWrapper::CancelOrderSymbols(vector<pair<string, string>> symbols)
     {
         for (auto symbol : symbols)
         {
@@ -410,7 +447,7 @@ namespace HttpWrapper
     {
         // todo 增加账号symbol扫描
         vector<pair<string, string>> symbols;
-        this->CancelOrderSymbol(symbols);
+        this->CancelOrderSymbols(symbols);
     }
 
     void BinanceApiWrapper::cancelOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, std::string ori_symbol)

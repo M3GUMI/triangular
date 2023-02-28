@@ -99,10 +99,10 @@ namespace WebsocketWrapper
 
         data.UpdateTime = updateTime;
 
-        // spdlog::debug(
-        //        "func: executionReportHandler, symbol: {}, side: {}, price: {}, quantity: {}, executeQuantity: {}, newQuantity: {}",
-        //        symbol, side, data.Price, data.Quantity, data.GetExecuteQuantity(), data.GetNewQuantity()
-        // );
+        spdlog::debug(
+                "func: executionReportHandler, symbol: {}, side: {}, price: {}, quantity: {}, executeQuantity: {}, newQuantity: {}",
+                symbol, side, data.Price, data.Quantity, data.GetExecuteQuantity(), data.GetNewQuantity()
+        );
 
         // 需要内存管理
         for (auto func : this->orderSubscriber)

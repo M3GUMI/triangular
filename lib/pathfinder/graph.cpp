@@ -2,7 +2,8 @@
 #include "graph.h"
 
 namespace Pathfinder{
-    Graph::Graph() = default;
+    Graph::Graph(HttpWrapper::BinanceApiWrapper &apiWrapper): apiWrapper(apiWrapper) {
+    }
     Graph::~Graph() = default;
 
     void Graph::AddEdge(const string& from, const string& to, double originPrice, double quantity, bool isSell) {
@@ -74,6 +75,7 @@ namespace Pathfinder{
             return define::ErrorGraphNotReady;
         }
 
+        auto symbolData = apiWrapper.GetSymbolData(req.BaseToken, req.QuoteToken);
         int baseIndex = tokenToIndex[req.BaseToken];
         int quoteIndex = tokenToIndex[req.QuoteToken];
 
@@ -81,18 +83,25 @@ namespace Pathfinder{
         for(auto edge:nodes[baseIndex]) {
             // 我方可卖出价格
             if (edge.from==baseIndex && edge.to == quoteIndex) { // 盘口卖出价格，己方
-                // spdlog::debug("sell price: {}, fromIndex: {}, toIndex: {}", edge.originPrice, indexToToken[edge.from], indexToToken[edge.to]);
                 resp.SellPrice = edge.originPrice;
                 resp.SellQuantity = edge.originQuantity;
+
+                // maker不可下单到对手盘
+                if (req.OrderType == define::LIMIT_MAKER) {
+                    resp.SellPrice = resp.SellPrice + symbolData.TicketSize;
+                }
             }
         }
 
         for(auto edge:nodes[quoteIndex]) {
             // 我方可买入价格
             if (edge.to==baseIndex && edge.from == quoteIndex) { // 盘口卖出价格，己方
-                // spdlog::debug("buy price: {}, fromIndex: {}, toIndex: {}", edge.originPrice, indexToToken[edge.to], indexToToken[edge.from]);
                 resp.BuyPrice = edge.originPrice;
                 resp.BuyQuantity = edge.originQuantity;
+                // maker不可下单到对手盘
+                if (req.OrderType == define::LIMIT_MAKER) {
+                    resp.BuyPrice = resp.BuyPrice - symbolData.TicketSize;
+                }
             }
         }
 
@@ -119,10 +128,11 @@ namespace Pathfinder{
         item.OrderType = strategy.OrderType;
         item.TimeInForce = strategy.TimeInForce;
         item.Price = edge.originPrice;
-        item.Quantity = edge.originPrice;
+        item.Quantity = edge.originQuantity;
 
         return item;
     };
+
 
     ArbitrageChance Graph::CalculateArbitrage(const string& name) {
         Strategy strategy{};
@@ -131,7 +141,8 @@ namespace Pathfinder{
             strategy.OrderType = define::LIMIT_MAKER;
             strategy.TimeInForce = define::GTC;
         } else {
-            strategy.Fee = 0.0004;
+            strategy.Fee = 0;
+            // strategy.Fee = 0.0002;
             strategy.OrderType = define::LIMIT;
             strategy.TimeInForce = define::IOC;
         }
@@ -153,11 +164,103 @@ namespace Pathfinder{
                 double firstWeight = firstEdge.weight; // 第一条边权重
                 int secondToken = firstEdge.to; // 第二token
                 auto secondEdges = nodes[secondToken]; // 第二token出发边
+                if (checkToken(secondToken)) {
+                    continue;
+                }
+
+                for (auto &secondEdge: secondEdges) {
+                    double secondWeight = secondEdge.weight; // 第二条边权重
+                    int endToken = secondEdge.to; // 第二条边目标token
+
+                    if (firstToken == endToken) {
+                        // 对数。乘法处理为加法
+                        // 负数。最长路径处理为最短路径
+                        double rate = firstWeight + secondWeight - 2 * log(1 - strategy.Fee);
+                        spdlog::info("rate: {}, first: {}, second: {}", rate, firstWeight, secondWeight);
+                        if (rate < 0 && rate < minRate) {
+                            spdlog::info("rate: {}", rate);
+                            vector<TransactionPathItem> newPath;
+                            newPath.clear();
+                            newPath.push_back(formatTransactionPathItem(firstEdge, strategy));
+                            newPath.push_back(formatTransactionPathItem(secondEdge, strategy));
+                            adjustQuantities(newPath);
+
+                            if (newPath.front().Quantity >= conf::MinTriangularQuantity) {
+                                minRate = rate;
+                                path = newPath;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ArbitrageChance chance{};
+        if (path.size() != 2) {
+            return chance;
+        }
+
+        double profit = 1; // 验算利润率
+        vector<string> info;
+        for (const auto& item:path) {
+            if (item.Side == define::SELL) {
+                profit = profit*item.Price*(1-strategy.Fee);
+            } else {
+                profit = profit*(1/item.Price)*(1-strategy.Fee);
+            }
+        }
+
+        if (profit <= 1) {
+            spdlog::error("func: CalculateArbitrage, err: path can not get money");
+            return chance;
+        }
+
+        chance.Profit = profit;
+        chance.Quantity = path.front().Quantity;
+        chance.Path = path;
+        return chance;
+    }
+
+    /*ArbitrageChance Graph::CalculateArbitrage(const string& name) {
+        Strategy strategy{};
+        if (name == "maker") {
+            strategy.Fee = 0;
+            strategy.OrderType = define::LIMIT_MAKER;
+            strategy.TimeInForce = define::GTC;
+        } else {
+            strategy.Fee = 0.0002;
+            strategy.OrderType = define::LIMIT;
+            strategy.TimeInForce = define::IOC;
+        }
+
+        vector<TransactionPathItem> path;
+        double minRate = 0;
+
+        // 枚举所有三角路径，判断是否存在套利机会。起点为稳定币
+        // 穷举起点出发的所有边组合，最终回到起点，是否可套利
+        for (const auto &baseToken: conf::BaseAssets) {
+            if (not tokenToIndex.count(baseToken.first)) {
+                continue;
+            };
+
+            int firstToken = tokenToIndex[baseToken.first]; // 起点token
+            auto firstEdges = nodes[firstToken]; // 起点出发边
+
+            for (auto &firstEdge: firstEdges) {
+                double firstWeight = firstEdge.weight; // 第一条边权重
+                int secondToken = firstEdge.to; // 第二token
+                auto secondEdges = nodes[secondToken]; // 第二token出发边
+                if (checkToken(secondToken)) {
+                    continue;
+                }
 
                 for (auto &secondEdge: secondEdges) {
                     double secondWeight = secondEdge.weight; // 第二条边权重
                     int thirdToken = secondEdge.to; // 第三token
                     auto thirdEdges = nodes[thirdToken]; // 第三token出发边
+                    if (checkToken(thirdToken)) {
+                        continue;
+                    }
 
                     for (auto &thirdEdge: thirdEdges) {
                         double thirdWeight = thirdEdge.weight; // 第三条边权重
@@ -209,7 +312,7 @@ namespace Pathfinder{
         chance.Quantity = path.front().Quantity;
         chance.Path = path;
         return chance;
-    }
+    }*/
 
     ArbitrageChance Graph::FindBestPath(string name, string start, string end, double quantity) {
         Strategy strategy{};
@@ -218,7 +321,8 @@ namespace Pathfinder{
             strategy.OrderType = define::LIMIT_MAKER;
             strategy.TimeInForce = define::GTC;
         } else {
-            strategy.Fee = 0.0004;
+            strategy.Fee = 0;
+            // strategy.Fee = 0.0002;
             strategy.OrderType = define::LIMIT;
             strategy.TimeInForce = define::IOC;
         }
@@ -274,6 +378,9 @@ namespace Pathfinder{
             double firstWeight = firstEdge.weight; // 第一条边权重
             int secondToken = firstEdge.to; // 第二token
             auto secondEdges = nodes[secondToken]; // 第二token出发边
+            if (checkToken(secondToken)) {
+                continue;
+            }
 
             for (auto &secondEdge: secondEdges) {
                 double secondWeight = secondEdge.weight; // 第二条边权重
@@ -326,5 +433,14 @@ namespace Pathfinder{
                 }
             }
         }
+    }
+
+    // 摘掉usdt
+    bool Graph::checkToken(int token) {
+        if (token == tokenToIndex["USDT"]) {
+            return true;
+        }
+
+        return false;
     }
 }
