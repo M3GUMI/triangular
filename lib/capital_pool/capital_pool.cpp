@@ -143,10 +143,19 @@ namespace CapitalPool
     {
         auto symbolData = apiWrapper.GetSymbolData(fromToken, toToken);
         auto side = apiWrapper.GetSide(fromToken, toToken);
+        define::OrderType orderType = define::LIMIT_MAKER;
+        define::TimeInForce timeInForce = define::GTC;
+
+        // 没有波动的稳定币，用taker
+        //if (symbolData.Symbol == "USDCBUSD" || symbolData.Symbol == "BUSDUSDT") {
+            orderType = define::LIMIT;
+            timeInForce = define::IOC;
+        //}
 
         Pathfinder::GetExchangePriceReq priceReq{};
         priceReq.BaseToken = symbolData.BaseToken;
         priceReq.QuoteToken = symbolData.QuoteToken;
+        priceReq.OrderType = orderType;
 
         Pathfinder::GetExchangePriceResp priceResp{};
         if (auto err = pathfinder.GetExchangePrice(priceReq, priceResp); err > 0) {
@@ -158,8 +167,8 @@ namespace CapitalPool
         order.BaseToken = symbolData.BaseToken;
         order.QuoteToken = symbolData.QuoteToken;
         order.Side = side;
-        order.OrderType = define::LIMIT;
-        order.TimeInForce = define::IOC;
+        order.OrderType = orderType;
+        order.TimeInForce = timeInForce;
 
         if (side == define::SELL) {
             order.Price = priceResp.SellPrice;
@@ -277,9 +286,11 @@ namespace CapitalPool
         for (const auto& asset : info.Balances)
         {
             if (asset.Free > 0) {
-                if (asset.Token == "BUSD" || asset.Free > 2) {
-                    spdlog::debug("token: {}, free: {}", asset.Token, asset.Free);
-                }
+                spdlog::debug("token: {}, free: {}", asset.Token, asset.Free);
+                /*if (asset.Token == "BUSD" || asset.Free > 20) {
+                    this->balancePool[asset.Token] = 20;
+                    continue;
+                }*/
                 this->balancePool[asset.Token] = asset.Free;
             }
         }
