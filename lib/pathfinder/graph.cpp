@@ -133,107 +133,7 @@ namespace Pathfinder{
         return item;
     };
 
-
     ArbitrageChance Graph::CalculateArbitrage(const string& name) {
-        Strategy strategy{};
-        if (name == "maker") {
-            strategy.Fee = 0;
-            strategy.OrderType = define::LIMIT_MAKER;
-            strategy.TimeInForce = define::GTC;
-        } else {
-            strategy.Fee = 0;
-            // strategy.Fee = 0.0002;
-            strategy.OrderType = define::LIMIT;
-            strategy.TimeInForce = define::IOC;
-        }
-
-        vector<TransactionPathItem> path;
-        double minRate = 0;
-
-        // 枚举所有三角路径，判断是否存在套利机会。起点为稳定币
-        // 穷举起点出发的所有边组合，最终回到起点，是否可套利
-        for (const auto &baseToken: conf::BaseAssets) {
-            if (not tokenToIndex.count(baseToken.first)) {
-                continue;
-            };
-
-            int firstToken = tokenToIndex[baseToken.first]; // 起点token
-            auto firstEdges = nodes[firstToken]; // 起点出发边
-
-            for (auto &firstEdge: firstEdges) {
-                double firstWeight = firstEdge.weight; // 第一条边权重
-                int secondToken = firstEdge.to; // 第二token
-                auto secondEdges = nodes[secondToken]; // 第二token出发边
-                if (checkToken(secondToken)) {
-                    continue;
-                }
-
-                for (auto &secondEdge: secondEdges) {
-                    double secondWeight = secondEdge.weight; // 第二条边权重
-                    int endToken = secondEdge.to; // 第二条边目标token
-
-                    if (firstToken == endToken) {
-                        /*double profit = 1; // 验算利润率
-                        if (firstEdge.isSell) {
-                            profit = profit*firstEdge.originPrice;
-                        } else {
-                            profit = profit*(1/firstEdge.originPrice);
-                        }
-                        if (secondEdge.isSell) {
-                            profit = profit*secondEdge.originPrice;
-                        } else {
-                            profit = profit*(1/secondEdge.originPrice);
-                        }*/
-
-                        // 对数。乘法处理为加法
-                        // 负数。最长路径处理为最短路径
-                        double rate = firstWeight + secondWeight - 2 * log(1 - strategy.Fee);
-                        // spdlog::info("profit: {}, path: {}, {}, {}", to_string(profit), indexToToken[firstEdge.from], indexToToken[firstEdge.to], indexToToken[secondEdge.to]);
-                        if (rate < 0 && rate < minRate) {
-                            spdlog::info("rate: {}", rate);
-                            vector<TransactionPathItem> newPath;
-                            newPath.clear();
-                            newPath.push_back(formatTransactionPathItem(firstEdge, strategy));
-                            newPath.push_back(formatTransactionPathItem(secondEdge, strategy));
-                            adjustQuantities(newPath);
-
-                            if (newPath.front().Quantity >= conf::MinTriangularQuantity) {
-                                minRate = rate;
-                                path = newPath;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        ArbitrageChance chance{};
-        if (path.size() != 2) {
-            return chance;
-        }
-
-        double profit = 1; // 验算利润率
-        vector<string> info;
-        for (const auto& item:path) {
-            if (item.Side == define::SELL) {
-                profit = profit*item.Price*(1-strategy.Fee);
-            } else {
-                profit = profit*(1/item.Price)*(1-strategy.Fee);
-            }
-        }
-
-        if (profit <= 1) {
-            spdlog::error("func: CalculateArbitrage, err: path can not get money");
-            return chance;
-        }
-
-        chance.Profit = profit;
-        chance.Quantity = path.front().Quantity;
-        chance.Path = path;
-        return chance;
-    }
-
-    /*ArbitrageChance Graph::CalculateArbitrage(const string& name) {
         Strategy strategy{};
         if (name == "maker") {
             strategy.Fee = 0;
@@ -324,7 +224,7 @@ namespace Pathfinder{
         chance.Quantity = path.front().Quantity;
         chance.Path = path;
         return chance;
-    }*/
+    }
 
     ArbitrageChance Graph::FindBestPath(string name, string start, string end, double quantity) {
         Strategy strategy{};

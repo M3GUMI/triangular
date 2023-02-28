@@ -2,10 +2,10 @@
 
 namespace conf
 {
-    bool EnableMock = false;
+    bool EnableMock = true;
 
-    string AccessKey = "c52zdrltx6vSMgojFzxJcVQ1v7qiD55G0PgTe31v3fCfEazqgnBu3xNRWOPVOj86";
-    string SecretKey = "lDOZfpTNBIG8ICteeNfoOIoOHBONvBsiAP88GJ5rgDMF6bGGPETkM1Ri14mrbkfJ";
+    string AccessKey = "bBDPMyhkBrKm3u6KrRtCD2F5jIJ1EREvmpwN62aV8T27oMFvwPTGUoo3MtEU7SCO";
+    string SecretKey = "R38810tJ27f8ua8cvoGXV1yzOMMaxTXicV74IjGuU9rp1HeCB8DsXu5XolVMAp9T";
 
     double MaxTriangularQuantity = 60;
     double MinTriangularQuantity = 15;

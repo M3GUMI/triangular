@@ -37,6 +37,7 @@ namespace Executor{
 
     void Executor::arbitrageFinishHandler() {
         lock = false;
+        exit(1);
         capitalPool.Refresh();
     }
 }
