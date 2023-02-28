@@ -5,10 +5,10 @@
 
 using namespace std;
 int main() {
-    spdlog::set_level(spdlog::level::info);
+    spdlog::set_level(spdlog::level::debug);
     websocketpp::lib::asio::io_service ioService;
     HttpWrapper::BinanceApiWrapper apiWrapper(ioService);
-    WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
+   // WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
     Pathfinder::Pathfinder pathfinder(ioService, apiWrapper);
     CapitalPool::CapitalPool capitalPool(ioService, pathfinder, apiWrapper);
     Executor::Executor executor(pathfinder, capitalPool, apiWrapper);

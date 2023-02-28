@@ -173,10 +173,22 @@ namespace Pathfinder{
                     int endToken = secondEdge.to; // 第二条边目标token
 
                     if (firstToken == endToken) {
+                        /*double profit = 1; // 验算利润率
+                        if (firstEdge.isSell) {
+                            profit = profit*firstEdge.originPrice;
+                        } else {
+                            profit = profit*(1/firstEdge.originPrice);
+                        }
+                        if (secondEdge.isSell) {
+                            profit = profit*secondEdge.originPrice;
+                        } else {
+                            profit = profit*(1/secondEdge.originPrice);
+                        }*/
+
                         // 对数。乘法处理为加法
                         // 负数。最长路径处理为最短路径
                         double rate = firstWeight + secondWeight - 2 * log(1 - strategy.Fee);
-                        spdlog::info("rate: {}, first: {}, second: {}", rate, firstWeight, secondWeight);
+                        // spdlog::info("profit: {}, path: {}, {}, {}", to_string(profit), indexToToken[firstEdge.from], indexToToken[firstEdge.to], indexToToken[secondEdge.to]);
                         if (rate < 0 && rate < minRate) {
                             spdlog::info("rate: {}", rate);
                             vector<TransactionPathItem> newPath;
