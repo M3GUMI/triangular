@@ -11,9 +11,12 @@ namespace Arbitrage {
 
         ~MakerTriangularArbitrage();
 
-        int Run(Pathfinder::ArbitrageChance &chance);
+        int Run(double threshold,OrderData &newOrder);
 
     private:
-        void TransHandler(OrderData &orderData);
-    };
+        void TransHandler(double threshold,OrderData &depthData,OrderData &orderData);
+
+        int FilledHandler(OrderData &orderData);
+        int partiallyFilledHandler(,OrderData &orderData);
+} ;
 }

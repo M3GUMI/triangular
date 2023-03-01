@@ -15,26 +15,63 @@ namespace Arbitrage{
     MakerTriangularArbitrage::~MakerTriangularArbitrage() {
     }
 
-    int MakerTriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
-        /*spdlog::info("func: {}, msg: {}", "Run", "MakerTriangularArbitrage start");
-        Pathfinder::TransactionPathItem firstPath = chance.Path[0];
-        double lockAmount = 0;
-        if (auto err = capitalPool.LockAsset(firstPath.FromToken, firstPath.FromQuantity, lockAmount); err > 0) {
-            return err;
-        }
-
-        this->OriginQuantity = firstPath.FromQuantity;
-        this->OriginToken = firstPath.FromToken;
-        this->TargetToken = firstPath.FromToken;
-        TriangularArbitrage::ExecuteTrans(firstPath);*/
+    int MakerTriangularArbitrage::Run(double threshold,OrderData &newOrder) {
+        OrderData order = {};
+        orderMap[newOrder.OrderId] = &newOrder;
+        makerOrderChangeHandler(threshold, newOrder, order);
         return 0;
     }
 
-    void MakerTriangularArbitrage::TransHandler(OrderData &data) {
-        // todo 需要增加套利任务的资金池锁定金额。需要增加订单管理
-        // 1. 每一步maker盘口挂单
-        // 2. 实时监测盘口价格，超过阈值则取消挂单重新挂
-        // 3. 检测maker单成交数量，记录在套利任务的资金池中
-        // 4. 资金池中某笔数量达到一定阈值。调用算法层，继续执行maker挂单
+    void MakerTriangularArbitrage::TransHandler(double threshold,OrderData &depthData,OrderData &data) {
+        spdlog::info(
+                "makerTriangularArbitrage::Handler, base: {}, quote: {}, orderStatus: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
+                data.BaseToken,
+                data.QuoteToken,
+                data.OrderStatus,
+                data.Quantity,
+                data.Price,
+                data.GetExecuteQuantity(),
+                data.GetNewQuantity()
+        );
+        //完全交易
+        int err = 0;
+        if (data.OrderStatus == define::FILLED){
+            MakerTriangularArbitrage::FilledHandler(data);
+        }
+        else if (data.OrderStatus == define::PARTIALLY_FILLED){
+            MakerTriangularArbitrage::partiallyFilledHandler(data);
+        }
     }
+
+    int MakerTriangularArbitrage::FilledHandler(OrderData &orderData){
+        //全部转换之后放去进行ioc
+        spdlog::info(
+                "Now there are {} {} left"
+                ,orderData.GetUnExecuteQuantity()
+                ,orderData.BaseToken
+                );
+        return makerOrderIocHandler(orderData);
+    }
+
+
+    int MakerTriangularArbitrage::partiallyFilledHandler(OrderData &orderData){
+        //部分转换之后放去ioc，剩余的部分放回资金池
+        spdlog::info(
+                "Now there are {} {} left"
+                ,orderData.GetUnExecuteQuantity()
+                ,orderData.BaseToken
+        );
+        if (define::IsStableCoin(orderData.GetFromToken())) {
+            // 稳定币持仓，等待重平衡
+            auto err = TriangularArbitrage::capitalPool.FreeAsset(orderData.GetFromToken(), orderData.GetUnExecuteQuantity());
+            if (err > 0) {
+                return err;
+            }
+            cancelOrder(orderData);
+            //逻辑上应该有问题
+        makerOrderIocHandler(orderData);
+    }
+
+        return makerOrderIocHandler(orderData);
+}
 }
