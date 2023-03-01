@@ -41,8 +41,7 @@ namespace Arbitrage{
         int ExecuteTrans(Pathfinder::TransactionPathItem &path);
         int ReviseTrans(string origin, string end, double quantity);
         bool CheckFinish();
-        void makerOrderChangeHandler(double threshold,OrderData &depthData,OrderData &lastOrder);//价格变化幅度不够大，撤单重挂单
-        int makerOrderIocHandler(OrderData &orderData);//挂单交易成功，后续ioc操作
+
         int executeOrder(OrderData &orderData);//挂出新订单
         int cancelOrder(OrderData &orderData);//取消订单
     private:
