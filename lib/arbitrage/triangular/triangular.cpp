@@ -67,14 +67,16 @@ namespace Arbitrage{
                         placeholders::_2
                 ));
         spdlog::info(
-                "{}::ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, price: {}, quantity: {}",
+                "{}::ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, price: {}, calPrice: {}, quantity: {}, minNational: {}",
                 this->strategy,
                 err,
                 path.BaseToken,
                 path.QuoteToken,
                 sideToString(path.Side),
                 path.Price,
-                path.Quantity
+                1/path.Price,
+                path.Quantity,
+                path.MinNotional
         );
 
         if (err == define::ErrorLessTicketSize || err == define::ErrorLessMinNotional) {
@@ -88,8 +90,9 @@ namespace Arbitrage{
         // 寻找新路径重试
         auto chance = pathfinder.FindBestPath(this->strategy, origin, end, quantity);
         spdlog::info(
-                "{}::RevisePath, maxQuantity: {}, bestPath: {}",
+                "{}::RevisePath, profit: {}, quantity: {}, bestPath: {}",
                 this->strategy,
+                quantity*chance.Profit/this->OriginQuantity,
                 chance.FirstStep().Quantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
 

@@ -19,5 +19,6 @@ namespace Arbitrage{
         void TransHandler(OrderData &orderData) override;
         int filledHandler(OrderData &data);
         int partiallyFilledHandler(OrderData &data);
+        int expiredHandler(OrderData &data);
     };
 }

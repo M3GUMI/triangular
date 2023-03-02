@@ -35,6 +35,11 @@ struct OrderData {
         }
     }
 
+    // 预期新币成交额
+    double GetNationalQuantity()
+    {
+        return FormatDoubleV2(Price*Quantity);
+    }
 
     double GetUnExecuteQuantity()
     {
@@ -53,6 +58,7 @@ struct OrderData {
         }
     }
 
+    // 实际新币数量
     double GetNewQuantity()
     {
         if (Side == define::SELL) {

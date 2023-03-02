@@ -59,9 +59,7 @@ namespace CapitalPool
                 if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional)
                 {
                     spdlog::error("func: RebalancePool, err: {}", WrapErr(err));
-                    return;
                 }
-                continue;
             }
         }
 

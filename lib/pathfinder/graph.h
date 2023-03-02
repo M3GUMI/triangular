@@ -20,6 +20,13 @@ namespace Pathfinder{
         define::TimeInForce TimeInForce;
         double Price = 0;
         double Quantity = 0;
+        double MinNotional = 0;
+
+        // 预期新币成交额
+        double GetNationalQuantity()
+        {
+            return FormatDoubleV2(Price*Quantity);
+        }
 
         double GetParsePrice()
         {
@@ -88,7 +95,7 @@ namespace Pathfinder{
 
     struct ArbitrageChance
     {
-        double Profit = 0; // 利润率
+        double Profit = 0; // 套利利润率。最佳路径计算利润率
         double Quantity = 0; // 起点可执行token数量
         vector<TransactionPathItem> Path;
 
@@ -104,7 +111,6 @@ namespace Pathfinder{
             info.push_back(this->Path.front().GetFromToken());
             for (TransactionPathItem item: this->Path) {
                 info.push_back(to_string(item.GetParsePrice()));
-                info.push_back(to_string(item.GetQuantity()));
                 info.push_back(item.GetToToken());
             }
 
@@ -135,6 +141,7 @@ namespace Pathfinder{
         double weightQuantity = 0;  // 转换后数量 todo 现在只存了第一档
         double originQuantity = 0;  // 原始数量
         double originPrice = 0;  // 原始价格
+        double minNotional = 0;  // 最小成交数量
         bool isSell = true;  // 是否为卖出
     };
 
@@ -144,7 +151,7 @@ namespace Pathfinder{
         Graph(HttpWrapper::BinanceApiWrapper &apiWrapper);
         ~Graph();
 
-        void AddEdge(const string& from, const string& to, double originPrice, double quantity, bool isFrom);
+        void AddEdge(const string& from, const string& to, double originPrice, double quantity, double minNotional, bool isFrom);
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
 
         ArbitrageChance FindBestPath(string name, string start, string end, double quantity);
@@ -161,6 +168,8 @@ namespace Pathfinder{
         static void adjustQuantities(vector<TransactionPathItem>& items);
         pair<double, vector<TransactionPathItem>> bestOneStep(int start, int end, Strategy& strategy);
         pair<double, vector<TransactionPathItem>> bestTwoStep(int start, int end, Strategy& strategy);
+
         bool checkToken(int token);
+        double calProfit(Strategy &strategy, vector<TransactionPathItem> &path);
     };
 }
