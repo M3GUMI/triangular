@@ -103,13 +103,14 @@ namespace Pathfinder
         // Graph::AddEdge("ETH", "BUSD", FormatDoubleV2(0.025), 10, true);
         // Graph::AddEdge("BUSD", "ETH", FormatDoubleV2(0.026), 10, false;
 
+        auto symbolData = apiWrapper.GetSymbolData(data.FromToken, data.ToToken);
         if (!data.Bids.empty()) { // 买单挂出价，我方卖出价
             auto depth = data.Bids[0];
-            Graph::AddEdge(data.FromToken, data.ToToken, depth.Price, depth.Quantity, true);
+            Graph::AddEdge(data.FromToken, data.ToToken, depth.Price, depth.Quantity, symbolData.MinNotional, true);
         }
         if (!data.Asks.empty()) { // 卖单挂出价，我方买入价
             auto depth = data.Asks[0];
-            Graph::AddEdge(data.ToToken, data.FromToken, depth.Price, depth.Quantity, false);
+            Graph::AddEdge(data.ToToken, data.FromToken, depth.Price, depth.Quantity, symbolData.MinNotional, false);
         }
     }
 

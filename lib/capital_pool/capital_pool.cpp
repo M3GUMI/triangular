@@ -212,8 +212,10 @@ namespace CapitalPool
         lockedBalance[data.GetFromToken()] = false;
         vector<string> info;
         for (const auto &item: balancePool) {
-            info.push_back(item.first);
-            info.push_back(to_string(item.second));
+            if (not item.first.empty()) {
+                info.push_back(item.first);
+                info.push_back(to_string(item.second));
+            }
         }
         spdlog::info("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
     }

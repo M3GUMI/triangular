@@ -234,6 +234,40 @@ namespace HttpWrapper
         spdlog::info("orders: {}", res->payload());
     }
 
+    int BinanceApiWrapper::GetUserAsset(function<void(double btc)> callback)
+    {
+        uint64_t now = time(NULL);
+
+        ApiRequest req;
+        req.args["timestamp"] = to_string(now * 1000);
+        req.args["needBtcValuation"] = "true";
+        req.method = "POST";
+        req.uri = "https://api.binance.com/sapi/v3/asset/getUserAsset";
+        req.data = "";
+        req.sign = true;
+        auto apiCallback = bind(&BinanceApiWrapper::getUserAssetHandler, this, ::_1, ::_2, callback);
+
+        this->MakeRequest(req, apiCallback);
+        return 0;
+    }
+
+    void BinanceApiWrapper::getUserAssetHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(double btc)> callback)
+    {
+        rapidjson::Document data;
+        data.Parse(res->payload().c_str());
+
+        double btcAsset;
+        auto arr = data.GetArray();
+        for (int i = 0;i < arr.Size();i++) {
+            double assetVal;
+            string asset = arr[i].FindMember("btcValuation")->value.GetString();
+            String2Double(asset, assetVal);
+            btcAsset += assetVal;
+        }
+
+        callback(btcAsset);
+    }
+
     int BinanceApiWrapper::CreateOrder(OrderData &req, function<void(OrderData& data, int err)> callback) {
         if (req.OrderId == 0) {
             spdlog::error("func: CreateOrder, orderId: {}, err: {}", req.OrderId, WrapErr(define::ErrorInvalidParam));
@@ -261,17 +295,16 @@ namespace HttpWrapper
         string uri = "https://api.binance.com/api/v3/order";
 
         // ticketSize校验
-        double quantity = req.Quantity;
         auto symbolData = GetSymbolData(req.BaseToken, req.QuoteToken);
-        uint32_t tmp = quantity / symbolData.StepSize;
-        quantity = tmp * symbolData.StepSize;
+        uint32_t tmp = req.Quantity / symbolData.StepSize;
+        req.Quantity = tmp * symbolData.StepSize;
 
-        if (quantity == 0) {
+        if (req.Quantity == 0) {
             req.OrderStatus = define::EXPIRED;
             return define::ErrorLessTicketSize;
         }
 
-        if (quantity*req.Price < symbolData.MinNotional) {
+        if (req.GetNationalQuantity() < symbolData.MinNotional) {
             req.OrderStatus = define::EXPIRED;
             return define::ErrorLessTicketSize;
         }
@@ -280,7 +313,7 @@ namespace HttpWrapper
         args["side"] = sideToString(req.Side);
         args["type"] = orderTypeToString(req.OrderType);
         args["timestamp"] = std::to_string(time(NULL) * 1000);
-        args["quantity"] =  FormatDouble(quantity);
+        args["quantity"] =  FormatDouble(req.Quantity);
 
         // 市价单 不能有下面这些参数
         if (req.OrderType != define::MARKET && req.OrderType != define::LIMIT_MAKER) {
