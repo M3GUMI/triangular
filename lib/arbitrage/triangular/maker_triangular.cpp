@@ -2,7 +2,7 @@
 #include <sstream>
 #include "maker_triangular.h"
 #include "utils/utils.h"
-#include "pathfinder/graph.h"
+#include "lib/pathfinder/graph.h"
 #include <boost/asio.hpp>
 
 
@@ -135,7 +135,7 @@ namespace Arbitrage{
         req.QuoteToken = QuoteToken;
         req.BaseToken = BaseToken;
         Pathfinder::GetExchangePriceResp res;
-        Pathfinder::Graph::GetExchangePrice(req, res);
+        pathfinder.GetExchangePrice(req, res);
         double nowPrice = res.BuyPrice;
         double nowQuantity = res.BuyQuantity;
         define::TimeInForce TimeInForce = define::GTC;

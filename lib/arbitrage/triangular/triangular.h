@@ -7,7 +7,7 @@
 #include "lib/api/http/binance_api_wrapper.h"
 #include "lib/order/order.h"
 #include "define/define.h"
-#include "lib/api/ws/binance_depth"
+#include "lib/api/ws/binance_depth_wrapper.h"
 
 using namespace std;
 namespace Arbitrage{

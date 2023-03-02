@@ -1,6 +1,7 @@
 #pragma once
 #include "triangular.h"
 
+
 using namespace std;
 namespace Arbitrage {
     // 两次maker挂单三角套利
