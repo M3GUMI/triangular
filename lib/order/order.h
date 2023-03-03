@@ -14,7 +14,7 @@ struct OrderData {
     define::TimeInForce TimeInForce;
 
     define::OrderStatus OrderStatus; // 订单状态
-    double ExecuteQuantity = 0; // 已成交数量，经过一层sell、buy转换
+    double ExecuteQuantity = 0; // 已成交数量
     double CummulativeQuoteQuantity = 0; // 新token数量
 
     uint64_t UpdateTime = 0; // 最后一次更新实际

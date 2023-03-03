@@ -174,8 +174,8 @@ namespace HttpWrapper
         AccountInfo info;
         if (conf::EnableMock) {
             BalanceData data;
-            data.Token = "ETH";
-            data.Free = 100;
+            data.Token = "BUSD";
+            data.Free = 20;
             data.Locked = 0;
             info.Balances.push_back(data);
             spdlog::debug("func: {}, msg: {}", "GetAccountInfo", "mock account_info");
@@ -306,7 +306,7 @@ namespace HttpWrapper
 
         if (req.GetNationalQuantity() < symbolData.MinNotional) {
             req.OrderStatus = define::EXPIRED;
-            return define::ErrorLessTicketSize;
+            return define::ErrorLessMinNotional;
         }
 
         args["symbol"] = symbolData.Symbol;
@@ -354,12 +354,12 @@ namespace HttpWrapper
             data.OrderStatus = define::FILLED;
             data.Price = req.Price;
             data.Quantity = req.Quantity;
+            data.Side = req.Side;
+            data.OrderType = req.OrderType;
+            data.TimeInForce = req.TimeInForce;
 
-            if (req.Side == define::SELL) {
-                data.ExecuteQuantity = req.Quantity;
-            } else {
-                data.ExecuteQuantity = req.Quantity;
-            }
+            data.ExecuteQuantity = req.Quantity;
+            data.CummulativeQuoteQuantity = FormatDoubleV2(req.Quantity*req.Price);
 
             // 最大成交50
             if (data.ExecuteQuantity == 1) {

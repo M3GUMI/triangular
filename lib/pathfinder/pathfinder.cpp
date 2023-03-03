@@ -22,15 +22,6 @@ namespace Pathfinder
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
         for (const auto &item: data) {
-            if (conf::EnableMock &&
-                (item.first != "BTCBUSD" && item.first != "ETHBUSD" && item.first != "ETHBTC" && item.first != "BUSDUSDT" &&
-                 item.first != "XRPBTC" && item.first != "FTTBUSD" && item.first != "XRPETH" &&
-                 item.first != "LTCBTC" && item.first != "LTCBUSD" && item.first != "LTCETH" &&
-                 item.first != "DGBBUSD" && item.first != "DOGEBUSD" && item.first != "XRPBUSD" && item.first != "RUNEBUSD" &&
-                 item.first != "MATICBTC" && item.first != "MATICBUSD" && item.first != "MATICETH")) {
-                continue;
-            }
-
             auto symbol = item.first;
             auto symbolData = item.second;
 
