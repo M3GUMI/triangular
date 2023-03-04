@@ -11,7 +11,7 @@
 using namespace std;
 using namespace define;
 
-void String2Double(const string &str, double &d);
+double String2Double(const string &str);
 
 extern uint32_t autoIncr; // 自增id
 uint64_t GenerateId();
@@ -22,4 +22,4 @@ string toUpper(const string &str);
 
 string WrapErr(int err);
 string FormatDouble(double val); // 数量、价格转8位小数字符串
-double FormatDoubleV2(double val);
+double RoundDouble(double val);

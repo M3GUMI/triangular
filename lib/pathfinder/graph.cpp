@@ -191,11 +191,16 @@ namespace Pathfinder{
                                 newPath.push_back(formatTransactionPathItem(thirdEdge, strategy));
                                 adjustQuantities(newPath);
 
+                                bool lessMinNotional;
                                 for (TransactionPathItem &item:newPath) {
                                     // 检查最小成交金额
                                     if (item.MinNotional > item.GetNationalQuantity()) {
-                                        continue;
+                                        lessMinNotional = true;
                                     }
+                                }
+
+                                if (lessMinNotional) {
+                                    continue;
                                 }
 
                                 if (newPath.front().Quantity >= conf::MinTriangularQuantity) {
@@ -251,15 +256,19 @@ namespace Pathfinder{
 
         auto pathPrice = data->second.front().Price;
         auto pathQuantity = data->second.front().Quantity;
+        double realQuantity = 0;
         if (data->second.front().Side == define::SELL) {
-            data->second.front().Quantity = quantity <= pathQuantity? quantity: pathQuantity;
+            spdlog::info("quantity: {}, pathQuantity: {}", quantity, pathQuantity);
+            realQuantity = quantity <= pathQuantity? quantity: pathQuantity;
         } else {
             quantity /= pathPrice; // 转换成baseToken数量
-            data->second.front().Quantity = quantity <= pathQuantity? quantity: pathQuantity;
+            spdlog::info("quantity: {}, pathQuantity: {}", quantity, pathQuantity);
+            realQuantity = quantity <= pathQuantity? quantity: pathQuantity;
         }
 
+        data->second.front().Quantity = realQuantity;
         chance.Profit = calProfit(strategy, data->second);
-        chance.Quantity = data->second.front().Quantity;
+        chance.Quantity = RoundDouble(realQuantity);
         chance.Path = data->second;
         return chance;
     }
@@ -305,15 +314,18 @@ namespace Pathfinder{
                         newPath.push_back(formatTransactionPathItem(secondEdge, strategy));
                         adjustQuantities(newPath);
 
+                        bool lessMinNotional;
                         for (TransactionPathItem &item:newPath)
                         {
                             // 检查最小成交金额
                             if (item.MinNotional > item.GetNationalQuantity())
                             {
-                                /*spdlog::info("find minNational, path: {}, {}, {}", indexToToken[firstEdge.from],
-                                             indexToToken[firstEdge.to], indexToToken[secondEdge.to]);*/
-                                continue;
+                                lessMinNotional = true;
                             }
+                        }
+
+                        if (lessMinNotional) {
+                            continue;
                         }
 
                         minRate = rate;

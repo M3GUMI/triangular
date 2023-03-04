@@ -21,7 +21,7 @@ namespace WebsocketWrapper
 
     int BinanceDepthWrapper::Connect(string symbol)
     {
-        string msg = R"({"method":"SUBSCRIBE","params":[")" + toLower(symbol) + R"(@depth5@100ms"],"id":)" + to_string(time(NULL) % 1000) + R"(})";
+        string msg = R"({"method":"SUBSCRIBE","params":[")" + toLower(symbol) + R"(@bookTicker"],"id":)" + to_string(time(NULL) % 1000) + R"(})";
         return WebsocketWrapper::Connect("", msg, bind(&BinanceDepthWrapper::msgHandler, this, placeholders::_1, placeholders::_2, symbol));
     }
 
@@ -30,9 +30,46 @@ namespace WebsocketWrapper
         rapidjson::Document depthInfoJson;
         depthInfoJson.Parse(msg->get_payload().c_str());
 
+        if (not depthInfoJson.HasMember("u")) {
+            return;
+        }
+
+        if (this->lastUpdateId < depthInfoJson["u"].GetUint64())
+        {
+            this->lastUpdateId = depthInfoJson["u"].GetUint64();
+        } else {
+            return;
+        }
+
+        DepthData data;
+        auto symbolData = this->apiWrapper.GetSymbolData(symbol);
+        data.FromToken = symbolData.BaseToken;
+        data.ToToken = symbolData.QuoteToken;
+        data.UpdateTime = GetNowTime();
+
+        DepthItem askData;
+        askData.Price = String2Double(depthInfoJson["a"].GetString());
+        askData.Quantity = String2Double(depthInfoJson["A"].GetString());
+        data.Asks.push_back(askData);
+
+        DepthItem bidData;
+        bidData.Price = String2Double(depthInfoJson["b"].GetString());
+        bidData.Quantity = String2Double(depthInfoJson["B"].GetString());
+        data.Bids.push_back(bidData);
+
+        for (auto func : this->depthSubscriber)
+        {
+            func(data);
+        }
+    }
+
+    /*void BinanceDepthWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string symbol)
+    {
+        rapidjson::Document depthInfoJson;
+        depthInfoJson.Parse(msg->get_payload().c_str());
+
         if (depthInfoJson.FindMember("bids") == depthInfoJson.MemberEnd())
         {
-            // spdlog::debug("func: {}, msg: {}", "msgHandler", "no depth data, return");
             return;
         }
 
@@ -92,5 +129,5 @@ namespace WebsocketWrapper
         {
             func(data);
         }
-    }
+    }*/
 }

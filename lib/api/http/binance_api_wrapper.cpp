@@ -67,16 +67,16 @@ namespace HttpWrapper
                     string filterType = filters[j].FindMember("filterType")->value.GetString();
                     if (filterType == "LOT_SIZE" && filters[j].HasMember("stepSize")) {
                         string stepSize = filters[j].FindMember("stepSize")->value.GetString();
-                        String2Double(stepSize, doubleStepSize);
+                        doubleStepSize = String2Double(stepSize);
                         if (doubleStepSize == 0) {
                             doubleStepSize = 1;
                         }
                     } else if (filterType == "PRICE_FILTER" && filters[j].HasMember("tickSize")) {
                         string ticketSize = filters[j].FindMember("tickSize")->value.GetString();
-                        String2Double(ticketSize, doubleTicketSize);
+                        doubleTicketSize = String2Double(ticketSize);
                     } else if (filterType == "MIN_NOTIONAL" && filters[j].HasMember("minNotional")) {
                         string minNotional = filters[j].FindMember("minNotional")->value.GetString();
-                        String2Double(minNotional, doubleMinNotional);
+                        doubleMinNotional = String2Double(minNotional);
                     }
                 }
             }
@@ -204,8 +204,8 @@ namespace HttpWrapper
 
             BalanceData data;
             data.Token = asset;
-            String2Double(free, data.Free);
-            String2Double(locked, data.Locked);
+            data.Free = String2Double(free);
+            data.Locked = String2Double(locked);
             info.Balances.push_back(data);
         }
 
@@ -256,13 +256,11 @@ namespace HttpWrapper
         rapidjson::Document data;
         data.Parse(res->payload().c_str());
 
-        double btcAsset;
+        double btcAsset = 0;
         auto arr = data.GetArray();
         for (int i = 0;i < arr.Size();i++) {
-            double assetVal;
             string asset = arr[i].FindMember("btcValuation")->value.GetString();
-            String2Double(asset, assetVal);
-            btcAsset += assetVal;
+            btcAsset += String2Double(asset);
         }
 
         callback(btcAsset);
@@ -309,6 +307,7 @@ namespace HttpWrapper
             return define::ErrorLessMinNotional;
         }
 
+        args["newOrderRespType"] = "RESULT";
         args["symbol"] = symbolData.Symbol;
         args["side"] = sideToString(req.Side);
         args["type"] = orderTypeToString(req.OrderType);
@@ -326,7 +325,7 @@ namespace HttpWrapper
 
         spdlog::debug(
                 "func: CreateOrder, symbol: {}, price: {}, quantity: {}, side: {}, orderType: {}",
-                args["symbol"], args["price"], args["quantity"], args["side"], args["type"]
+                args["symbol"], req.Price, args["quantity"], args["side"], args["type"]
         );
         ApiRequest apiReq;
         apiReq.args = args;
@@ -358,8 +357,9 @@ namespace HttpWrapper
             data.OrderType = req.OrderType;
             data.TimeInForce = req.TimeInForce;
 
+            data.ExecutePrice = req.Price;
             data.ExecuteQuantity = req.Quantity;
-            data.CummulativeQuoteQuantity = FormatDoubleV2(req.Quantity*req.Price);
+            data.CummulativeQuoteQuantity = RoundDouble(req.Quantity*req.ExecutePrice);
 
             // 最大成交50
             if (data.ExecuteQuantity == 1) {
@@ -402,31 +402,31 @@ namespace HttpWrapper
             data.OrderStatus = define::NEW;
         } else {
             // taker下单
-            double price, quantity;
-            double executeQuantity, cummulativeQuoteQty;
-            String2Double(order["price"].GetString(), price);
-            String2Double(order["origQty"].GetString(), quantity);
-            String2Double(order["executedQty"].GetString(), executeQuantity);
-            String2Double(order["cummulativeQuoteQty"].GetString(), cummulativeQuoteQty);
+            double price = String2Double(order["price"].GetString());
+            double quantity = String2Double(order["origQty"].GetString());
+            double executeQuantity = String2Double(order["executedQty"].GetString());
+            double cummulativeQuoteQty = String2Double(order["cummulativeQuoteQty"].GetString());
 
             data.OrderStatus = stringToOrderStatus(order["status"].GetString());
             data.Side = stringToSide(order["side"].GetString());
 
-            data.Price = price;
+            // data.Price = price; 使用内存数据
             data.Quantity = quantity;
+
+            data.ExecutePrice = price;
             data.ExecuteQuantity = executeQuantity;
             data.CummulativeQuoteQuantity = cummulativeQuoteQty;
         }
 
         spdlog::debug(
-                "func: createOrderCallback, orderId: {}, status: {}, base: {}, quote: {}, side: {}, price: {}, originQuantity: {}, executeQuantity: {}",
+                "func: createOrderCallback, orderId: {}, status: {}, base: {}, quote: {}, side: {}, originQuantity: {}, executePrice: {}, executeQuantity: {}",
                 data.OrderId,
                 data.OrderStatus,
                 data.BaseToken,
                 data.QuoteToken,
                 data.Side,
-                data.Price,
                 data.Quantity,
+                data.ExecutePrice,
                 data.ExecuteQuantity
         );
         return callback(data, 0);
