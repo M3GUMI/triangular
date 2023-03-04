@@ -173,7 +173,7 @@ namespace CapitalPool
             order.Quantity = amount <= priceResp.SellQuantity? amount: priceResp.SellQuantity;
         } else {
             order.Price = priceResp.BuyPrice;
-            amount = FormatDoubleV2(amount/order.Price);
+            amount = RoundDouble(amount/order.Price);
             order.Quantity = amount <= priceResp.BuyQuantity? amount: priceResp.BuyQuantity;
         }
 

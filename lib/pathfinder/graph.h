@@ -25,18 +25,18 @@ namespace Pathfinder{
         // 预期新币成交额
         double GetNationalQuantity()
         {
-            return FormatDoubleV2(Price*Quantity);
+            return RoundDouble(Price*Quantity);
         }
 
         double GetParsePrice()
         {
             if (Side == define::SELL)
             {
-                return FormatDoubleV2(Price);
+                return RoundDouble(Price);
             }
             else
             {
-                return FormatDoubleV2(1 / Price);
+                return RoundDouble(1 / Price);
             }
         }
 
@@ -44,22 +44,22 @@ namespace Pathfinder{
         {
             if (Side == define::SELL)
             {
-                return FormatDoubleV2(Quantity);
+                return RoundDouble(Quantity);
             }
             else
             {
-                return FormatDoubleV2(Quantity * Price);
+                return RoundDouble(Quantity * Price);
             }
         }
 
         double GetPrice()
         {
-            return FormatDoubleV2(Price);
+            return RoundDouble(Price);
         }
 
         double GetQuantity()
         {
-            return FormatDoubleV2(Quantity);
+            return RoundDouble(Quantity);
         }
 
         string GetFromToken()
@@ -139,8 +139,8 @@ namespace Pathfinder{
         int to = 0;     // 终点
         double weight = 0;  //  权重
         double weightQuantity = 0;  // 转换后数量 todo 现在只存了第一档
-        double originQuantity = 0;  // 原始数量
         double originPrice = 0;  // 原始价格
+        double originQuantity = 0;  // 原始数量
         double minNotional = 0;  // 最小成交数量
         bool isSell = true;  // 是否为卖出
     };

@@ -67,12 +67,13 @@ namespace Arbitrage{
                         placeholders::_2
                 ));
         spdlog::info(
-                "{}::ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, price: {}, calPrice: {}, quantity: {}, minNational: {}",
+                "{}::ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, orderType: {}, price: {}, calPrice: {}, quantity: {}, minNational: {}",
                 this->strategy,
                 err,
                 path.BaseToken,
                 path.QuoteToken,
                 sideToString(path.Side),
+                orderTypeToString(path.OrderType),
                 path.Price,
                 1/path.Price,
                 path.Quantity,
@@ -127,6 +128,7 @@ namespace Arbitrage{
         }
 
         order->OrderStatus = data.OrderStatus;
+        order->ExecutePrice = data.ExecutePrice;
         order->ExecuteQuantity = data.ExecuteQuantity;
         order->CummulativeQuoteQuantity = data.CummulativeQuoteQuantity;
         order->UpdateTime = data.UpdateTime;

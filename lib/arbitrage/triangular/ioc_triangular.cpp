@@ -55,12 +55,13 @@ namespace Arbitrage{
 
     void IocTriangularArbitrage::TransHandler(OrderData &data) {
         spdlog::info(
-                "{}::TransHandler, base: {}, quote: {}, orderStatus: {}, price: {}, unExecuteQuantity: {}, executeQuantity: {}, newQuantity: {}",
+                "{}::TransHandler, base: {}, quote: {}, orderStatus: {}, price: {}, executePrice: {}, unExecuteQuantity: {}, executeQuantity: {}, newQuantity: {}",
                 this->strategy,
                 data.BaseToken,
                 data.QuoteToken,
                 data.OrderStatus,
                 data.Price,
+                data.ExecutePrice,
                 data.GetUnExecuteQuantity(),
                 data.GetExecuteQuantity(),
                 data.GetNewQuantity()

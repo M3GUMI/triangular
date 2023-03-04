@@ -72,14 +72,19 @@ namespace Pathfinder
         }
     }
 
-    void Pathfinder::HuntingKing() {
-        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(50));
+    void Pathfinder::HuntingKing()
+    {
+        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
+                                                                              websocketpp::lib::asio::milliseconds(100));
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
+        auto time = GetNowTime();
         auto chance = Graph::CalculateArbitrage("IocTriangular");
-        if (chance.Profit <= 1) {
+        if (chance.Profit <= 1)
+        {
             return;
         }
+        spdlog::info("CalculateArbitrage time: {}ms", GetNowTime() - time);
 
         return this->subscriber(chance);
     }
