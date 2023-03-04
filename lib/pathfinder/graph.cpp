@@ -13,7 +13,7 @@ namespace Pathfinder{
             tokenToIndex[to] = index;
             indexToToken[index] = to;
 
-            auto edge = new vector<Edge>;
+            auto edge = new vector<Edge*>;
             nodes.push_back(*edge);
         }
 
@@ -22,7 +22,7 @@ namespace Pathfinder{
             tokenToIndex[from] = index;
             indexToToken[index] = from;
 
-            auto edge = new vector<Edge>;
+            auto edge = new vector<Edge*>;
             nodes.push_back(*edge);
         }
 
@@ -30,18 +30,18 @@ namespace Pathfinder{
         int toIndex = tokenToIndex[to];
 
         // 边已存在,更新
-        for (auto &edge: nodes[fromIndex]) {
-            if (edge.from == fromIndex && edge.to == toIndex) {
-                edge.originPrice = originPrice;
-                edge.originQuantity = quantity;
-                edge.minNotional = minNotional;
-                edge.isSell = isSell;
+        for (auto edge: nodes[fromIndex]) {
+            if (edge->from == fromIndex && edge->to == toIndex) {
+                edge->originPrice = originPrice;
+                edge->originQuantity = quantity;
+                edge->minNotional = minNotional;
+                edge->isSell = isSell;
                 if (isSell) {
-                    edge.weight = -log(originPrice);
-                    edge.weightQuantity = quantity;
+                    edge->weight = -log(originPrice);
+                    edge->weightQuantity = quantity;
                 } else {
-                    edge.weight = log(originPrice);
-                    edge.weightQuantity = quantity/originPrice;
+                    edge->weight = log(originPrice);
+                    edge->weightQuantity = quantity/originPrice;
                 }
 
                 return;
@@ -64,7 +64,7 @@ namespace Pathfinder{
             edge->weightQuantity = quantity/originPrice;
         }
 
-        nodes[fromIndex].push_back(*edge);
+        nodes[fromIndex].push_back(edge);
     }
 
     int Graph::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
@@ -84,9 +84,9 @@ namespace Pathfinder{
         // todo edge存储方式优化一下，以下逻辑需要调整
         for(auto edge:nodes[baseIndex]) {
             // 我方可卖出价格
-            if (edge.from==baseIndex && edge.to == quoteIndex) { // 盘口卖出价格，己方
-                resp.SellPrice = edge.originPrice;
-                resp.SellQuantity = edge.originQuantity;
+            if (edge->from==baseIndex && edge->to == quoteIndex) { // 盘口卖出价格，己方
+                resp.SellPrice = edge->originPrice;
+                resp.SellQuantity = edge->originQuantity;
 
                 // maker不可下单到对手盘
                 if (req.OrderType == define::LIMIT_MAKER) {
@@ -97,9 +97,9 @@ namespace Pathfinder{
 
         for(auto edge:nodes[quoteIndex]) {
             // 我方可买入价格
-            if (edge.to==baseIndex && edge.from == quoteIndex) { // 盘口卖出价格，己方
-                resp.BuyPrice = edge.originPrice;
-                resp.BuyQuantity = edge.originQuantity;
+            if (edge->to==baseIndex && edge->from == quoteIndex) { // 盘口卖出价格，己方
+                resp.BuyPrice = edge->originPrice;
+                resp.BuyQuantity = edge->originQuantity;
                 // maker不可下单到对手盘
                 if (req.OrderType == define::LIMIT_MAKER) {
                     resp.BuyPrice = resp.BuyPrice - symbolData.TicketSize;
@@ -114,23 +114,23 @@ namespace Pathfinder{
         return 0;
     }
 
-    TransactionPathItem Graph::formatTransactionPathItem(Edge& edge, Strategy& strategy) {
+    TransactionPathItem Graph::formatTransactionPathItem(Edge* edge, Strategy& strategy) {
         TransactionPathItem item{};
-        if (edge.isSell) {
-            item.BaseToken = indexToToken[edge.from];
-            item.QuoteToken = indexToToken[edge.to];
+        if (edge->isSell) {
+            item.BaseToken = indexToToken[edge->from];
+            item.QuoteToken = indexToToken[edge->to];
             item.Side = define::SELL;
         } else {
-            item.BaseToken = indexToToken[edge.to];
-            item.QuoteToken = indexToToken[edge.from];
+            item.BaseToken = indexToToken[edge->to];
+            item.QuoteToken = indexToToken[edge->from];
             item.Side = define::BUY;
         }
 
         item.OrderType = strategy.OrderType;
         item.TimeInForce = strategy.TimeInForce;
-        item.Price = edge.originPrice;
-        item.Quantity = edge.originQuantity;
-        item.MinNotional = edge.minNotional;
+        item.Price = edge->originPrice;
+        item.Quantity = edge->originQuantity;
+        item.MinNotional = edge->minNotional;
 
         return item;
     };
@@ -161,24 +161,24 @@ namespace Pathfinder{
             auto firstEdges = nodes[firstToken]; // 起点出发边
 
             for (auto &firstEdge: firstEdges) {
-                double firstWeight = firstEdge.weight; // 第一条边权重
-                int secondToken = firstEdge.to; // 第二token
+                double firstWeight = firstEdge->weight; // 第一条边权重
+                int secondToken = firstEdge->to; // 第二token
                 auto secondEdges = nodes[secondToken]; // 第二token出发边
                 if (checkToken(secondToken)) {
                     continue;
                 }
 
                 for (auto &secondEdge: secondEdges) {
-                    double secondWeight = secondEdge.weight; // 第二条边权重
-                    int thirdToken = secondEdge.to; // 第三token
+                    double secondWeight = secondEdge->weight; // 第二条边权重
+                    int thirdToken = secondEdge->to; // 第三token
                     auto thirdEdges = nodes[thirdToken]; // 第三token出发边
                     if (checkToken(thirdToken)) {
                         continue;
                     }
 
                     for (auto &thirdEdge: thirdEdges) {
-                        double thirdWeight = thirdEdge.weight; // 第三条边权重
-                        int endToken = thirdEdge.to; // 第三条边目标token
+                        double thirdWeight = thirdEdge->weight; // 第三条边权重
+                        int endToken = thirdEdge->to; // 第三条边目标token
                         if (firstToken == endToken) {
                             // 对数。乘法处理为加法
                             // 负数。最长路径处理为最短路径
@@ -277,13 +277,13 @@ namespace Pathfinder{
     pair<double, vector<TransactionPathItem>> Graph::bestOneStep(int start, int end, Strategy& strategy) {
         vector<TransactionPathItem> path;
         auto edges = nodes[start]; // 起点出发边
-        for (auto &edge: edges) {
-            if (edge.to != end) {
+        for (auto edge: edges) {
+            if (edge->to != end) {
                 continue;
             }
             path.push_back(formatTransactionPathItem(edge, strategy));
             adjustQuantities(path);
-            return make_pair(edge.weight + log(1 - strategy.Fee), path);
+            return make_pair(edge->weight + log(1 - strategy.Fee), path);
         }
 
         return make_pair(DBL_MAX, path);
@@ -295,17 +295,17 @@ namespace Pathfinder{
         double minRate = DBL_MAX;
 
         for (auto &firstEdge: nodes[start]) {
-            double firstWeight = firstEdge.weight; // 第一条边权重
-            int secondToken = firstEdge.to; // 第二token
+            double firstWeight = firstEdge->weight; // 第一条边权重
+            int secondToken = firstEdge->to; // 第二token
             auto secondEdges = nodes[secondToken]; // 第二token出发边
             if (checkToken(secondToken)) {
                 continue;
             }
 
             for (auto &secondEdge: secondEdges) {
-                double secondWeight = secondEdge.weight; // 第二条边权重
+                double secondWeight = secondEdge->weight; // 第二条边权重
 
-                if (secondEdge.to == end) {
+                if (secondEdge->to == end) {
                     double rate = firstWeight + secondWeight - 2 * log(1 - strategy.Fee);
                     if (rate < minRate) {
                         vector<TransactionPathItem> newPath;

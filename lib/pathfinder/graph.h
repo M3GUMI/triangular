@@ -163,8 +163,8 @@ namespace Pathfinder{
         map<string, int> tokenToIndex;
         map<int, string> indexToToken;
 
-        vector<vector<Edge>> nodes; // 存储图中所有的节点及其邻接表
-        TransactionPathItem formatTransactionPathItem(Edge& edge, Strategy& strategy);
+        vector<vector<Edge*>> nodes; // 存储图中所有的节点及其邻接表
+        TransactionPathItem formatTransactionPathItem(Edge* edge, Strategy& strategy);
         static void adjustQuantities(vector<TransactionPathItem>& items);
         pair<double, vector<TransactionPathItem>> bestOneStep(int start, int end, Strategy& strategy);
         pair<double, vector<TransactionPathItem>> bestTwoStep(int start, int end, Strategy& strategy);
