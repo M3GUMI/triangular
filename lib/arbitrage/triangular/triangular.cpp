@@ -67,7 +67,7 @@ namespace Arbitrage{
                         placeholders::_2
                 ));
         spdlog::info(
-                "{}::ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, orderType: {}, price: {}, calPrice: {}, quantity: {}, minNational: {}",
+                "{}::ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, orderType: {}, price: {}, calPrice: {}, quantity: {}",
                 this->strategy,
                 err,
                 path.BaseToken,
@@ -76,8 +76,7 @@ namespace Arbitrage{
                 orderTypeToString(path.OrderType),
                 path.Price,
                 1/path.Price,
-                path.Quantity,
-                path.MinNotional
+                path.Quantity
         );
 
         if (err == define::ErrorLessTicketSize || err == define::ErrorLessMinNotional) {

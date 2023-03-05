@@ -60,6 +60,8 @@ set(ALL_FILES
         lib/libmix/Tree.hpp
         lib/pathfinder/pathfinder.cpp
         lib/pathfinder/pathfinder.h
+        lib/pathfinder/node.cpp
+        lib/pathfinder/node.h
         lib/pathfinder/graph.cpp
         lib/pathfinder/graph.h
         main.cpp

@@ -67,3 +67,11 @@ double RoundDouble(double val) {
     double result = round(val*pow(10, 8)) / pow(10, 8);
     return result;
 }
+
+double Min(double val0, double val1) {
+    if (val0 > val1) {
+        return val1;
+    } else {
+        return val0;
+    }
+}

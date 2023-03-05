@@ -14,8 +14,8 @@ namespace WebsocketWrapper
 
     struct DepthData
     {
-        std::string FromToken; // 卖出的token
-        std::string ToToken;   // 买入的token
+        std::string BaseToken; // 卖出的token
+        std::string QuoteToken;   // 买入的token
         time_t UpdateTime;     // 更新时间，ms精度
         vector<DepthItem> Bids;
         vector<DepthItem> Asks;

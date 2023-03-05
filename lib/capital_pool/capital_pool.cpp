@@ -23,7 +23,7 @@ namespace CapitalPool
     }
 
     // todo 重平衡最好改成maker，考虑maker执行中的锁定情况
-    void CapitalPool::RebalancePool(map<string, HttpWrapper::BinanceSymbolData> &data)
+    void CapitalPool::RebalancePool(vector<HttpWrapper::BinanceSymbolData> &data)
     {
         // 每秒执行一次重平衡
         rebalanceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
