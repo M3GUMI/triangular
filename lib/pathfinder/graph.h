@@ -69,6 +69,10 @@ namespace Pathfinder{
         void UpdateNode(WebsocketWrapper::DepthData& data);
 
     private:
+        // 套利计算分组，一次只算500个环。取值为0-499、500-999、1000-1499、1500-1999、2000-2113
+        int indexStart = 0;
+        int groupSize = 500;
+
         map<string, int> tokenToIndex{};
         map<int, string> indexToToken{};
 

@@ -72,10 +72,10 @@ namespace Pathfinder
     void Pathfinder::HuntingKing()
     {
         huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
-                                                                              websocketpp::lib::asio::milliseconds(100));
+                                                                              websocketpp::lib::asio::milliseconds(20));
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
-        auto time = GetNowTime();
+        auto time = GetMicroTime();
         auto chance = Graph::CalculateArbitrage("IocTriangular");
         if (chance.Profit <= 1)
         {

@@ -175,15 +175,29 @@ namespace Pathfinder{
         vector<TransactionPathItem> resultPath{};
         for (const auto& item: triangularMap)
         {
-            for (vector<int> triangular: item.second) {
+            indexStart += groupSize;
+            if (indexStart > item.second.size()) {
+                indexStart = 0;
+            }
+
+            int indexEnd = indexStart+groupSize;
+            if (indexEnd > item.second.size()) {
+                indexEnd = int(item.second.size());
+            }
+
+            for (int i = indexStart; i < indexEnd; i++)
+            {
+                auto triangular = item.second[i];
                 double profit = calculateProfit(strategy, triangular);
-                if (profit <= 1 || profit <= maxProfit) {
+                if (profit <= 1 || profit <= maxProfit)
+                {
                     continue;
                 }
 
                 auto path = formatPath(strategy, triangular);
                 adjustQuantities(path);
-                if (not checkPath(path)) {
+                if (not checkPath(path))
+                {
                     continue;
                 }
 
