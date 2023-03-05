@@ -24,6 +24,22 @@ uint64_t GetNowTime() {
     return ms.count();
 }
 
+uint64_t GetMicroTime() {
+    std::chrono::microseconds micro = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch()
+    );
+
+    return micro.count();
+}
+
+uint64_t GetNanoTime() {
+    std::chrono::nanoseconds nano = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch()
+    );
+
+    return nano.count();
+}
+
 uint32_t autoIncr = 0; // 自增id
 
 uint64_t GenerateId() {

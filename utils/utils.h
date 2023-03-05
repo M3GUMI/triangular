@@ -16,6 +16,8 @@ double String2Double(const string &str);
 extern uint32_t autoIncr; // 自增id
 uint64_t GenerateId();
 uint64_t GetNowTime();
+uint64_t GetMicroTime();
+uint64_t GetNanoTime();
 
 string toLower(const string &str);
 string toUpper(const string &str);
