@@ -5,6 +5,7 @@
 #include <map>
 #include <cmath>
 #include <limits>
+#include <functional>
 #include "lib/api/http/binance_api_wrapper.h"
 #include "lib/api/ws/binance_depth_wrapper.h"
 #include "node.h"
@@ -54,11 +55,12 @@ namespace Pathfinder{
     // 定义一个图的类
     class Graph {
     public:
+        function<void(ArbitrageChance& chance)> subscriber = nullptr;
         Graph(HttpWrapper::BinanceApiWrapper &apiWrapper);
         ~Graph();
 
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
-        ArbitrageChance CalculateArbitrage(const string& strategy);
+        ArbitrageChance CalculateArbitrage(const string& name, int baseIndex, int quoteIndex);
         ArbitrageChance FindBestPath(const string& name, const string& origin, const string& end, double quantity);
 
     protected:
@@ -79,6 +81,7 @@ namespace Pathfinder{
         map<u_int64_t, Node*> tradeNodeMap{}; // key为baseIndex+quoteIndex、quoteIndex+baseIndex两种类型
         map<int, vector<vector<int>>> triangularMap{}; // 存储所有key起点的三元环
         map<u_int64_t, vector<vector<int>>> bestPathMap{}; // 存储所有两点间路径，最长两步。key前32位代表起点，后32位代表终点
+        map<u_int64_t, vector<vector<int>>> nodeTriangularMap{};
 
         vector<TransactionPathItem> formatPath(Strategy& strategy, vector<int>& path);
         double calculateProfit(Strategy& strategy, vector<int>& path);

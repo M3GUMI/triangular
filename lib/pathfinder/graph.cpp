@@ -12,6 +12,7 @@ namespace Pathfinder{
         indexToToken.clear();
         triangularMap.clear();
         bestPathMap.clear();
+        nodeTriangularMap.clear();
 
         // 初始化index
         int indexCount = 0;
@@ -78,6 +79,7 @@ namespace Pathfinder{
                     }
 
                     triangularMap[originIndex].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
+                    triangularMap[formatKey(originIndex, secondIndex)].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
                 }
             }
         }
@@ -126,6 +128,16 @@ namespace Pathfinder{
             auto depth = data.Asks[0];
             node->UpdateBuy(depth.Price, depth.Quantity);
         }
+
+        spdlog::info("func: {}", "UpdateNode");
+
+        auto chance = CalculateArbitrage("IocTriangular", baseIndex, quoteIndex);
+        if (chance.Profit <= 1)
+        {
+            return;
+        }
+
+        return this->subscriber(chance);
     }
 
     int Graph::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
@@ -159,7 +171,7 @@ namespace Pathfinder{
         return 0;
     }
 
-    ArbitrageChance Graph::CalculateArbitrage(const string& name) {
+    ArbitrageChance Graph::CalculateArbitrage(const string& name, int baseIndex, int quoteIndex) {
         Strategy strategy{};
         if (name == "maker") {
             strategy.Fee = 0;
@@ -173,20 +185,32 @@ namespace Pathfinder{
 
         double maxProfit = 0;
         vector<TransactionPathItem> resultPath{};
-        for (const auto& item: triangularMap)
-        {
-            indexStart += groupSize;
-            if (indexStart > item.second.size()) {
-                indexStart = 0;
-            }
 
-            int indexEnd = indexStart+groupSize;
-            if (indexEnd > item.second.size()) {
-                indexEnd = int(item.second.size());
-            }
+        // 三元环base到quote方向寻找套利机会
+        for (const auto& item: nodeTriangularMap[formatKey(baseIndex, quoteIndex)]){
+            for (int i = 0; i < item.second.size(); i++){
+                auto triangular = item.second[i];
+                double profit = calculateProfit(strategy, triangular);
+                if (profit <= 1 || profit <= maxProfit)
+                {
+                    continue;
+                }
 
-            for (int i = indexStart; i < indexEnd; i++)
-            {
+                auto path = formatPath(strategy, triangular);
+                adjustQuantities(path);
+                if (not checkPath(path))
+                {
+                    continue;
+                }
+
+                maxProfit = profit;
+                resultPath = path;
+            }
+        }
+
+        // 三元环quote到base方向找套利机会
+        for (const auto& item: nodeTriangularMap[formatKey(quoteIndex, baseIndex)]){
+            for (int i = 0; i < item.second.size(); i++){
                 auto triangular = item.second[i];
                 double profit = calculateProfit(strategy, triangular);
                 if (profit <= 1 || profit <= maxProfit)
@@ -216,6 +240,64 @@ namespace Pathfinder{
         chance.Path = resultPath;
         return chance;
     }
+
+//    ArbitrageChance Graph::CalculateArbitrage(const string& name) {
+//        Strategy strategy{};
+//        if (name == "maker") {
+//            strategy.Fee = 0;
+//            strategy.OrderType = define::LIMIT_MAKER;
+//            strategy.TimeInForce = define::GTC;
+//        } else {
+//            strategy.Fee = 0.0004;
+//            strategy.OrderType = define::LIMIT;
+//            strategy.TimeInForce = define::IOC;
+//        }
+//
+//        double maxProfit = 0;
+//        vector<TransactionPathItem> resultPath{};
+//        for (const auto& item: triangularMap)
+//        {
+//            indexStart += groupSize;
+//            if (indexStart > item.second.size()) {
+//                indexStart = 0;
+//            }
+//
+//            int indexEnd = indexStart+groupSize;
+//            if (indexEnd > item.second.size()) {
+//                indexEnd = int(item.second.size());
+//            }
+//
+//            for (int i = indexStart; i < indexEnd; i++)
+//            {
+//                auto triangular = item.second[i];
+//                double profit = calculateProfit(strategy, triangular);
+//                if (profit <= 1 || profit <= maxProfit)
+//                {
+//                    continue;
+//                }
+//
+//                auto path = formatPath(strategy, triangular);
+//                adjustQuantities(path);
+//                if (not checkPath(path))
+//                {
+//                    continue;
+//                }
+//
+//                maxProfit = profit;
+//                resultPath = path;
+//            }
+//        }
+//
+//        ArbitrageChance chance{};
+//        if (resultPath.size() != 3) {
+//            return chance;
+//        }
+//
+//        chance.Profit = maxProfit;
+//        chance.Quantity = resultPath.front().Quantity;
+//        chance.Path = resultPath;
+//        return chance;
+//    }
 
     ArbitrageChance Graph::FindBestPath(const string& name, const string& origin, const string& end, double quantity) {
         Strategy strategy{};

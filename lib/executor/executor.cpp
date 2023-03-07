@@ -6,11 +6,11 @@
 using namespace std;
 namespace Executor{
     Executor::Executor(
-            Pathfinder::Pathfinder &pathfinder,
+            Pathfinder::Graph &graph,
             CapitalPool::CapitalPool &capitalPool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
-    ) : pathfinder(pathfinder), capitalPool(capitalPool), apiWrapper(apiWrapper) {
-        pathfinder.SubscribeArbitrage((bind(&Executor::arbitragePathHandler, this, placeholders::_1)));
+    ) : graph(graph), capitalPool(capitalPool), apiWrapper(apiWrapper) {
+        graph.SubscribeArbitrage((bind(&Executor::arbitragePathHandler, this, placeholders::_1)));
     }
 
     Executor::~Executor() {

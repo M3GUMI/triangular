@@ -3,6 +3,7 @@
 #include "utils/utils.h"
 #include "lib/arbitrage/triangular/ioc_triangular.h"
 #include "lib/pathfinder/pathfinder.h"
+#include "lib/pathfinder/graph.h"
 
 using namespace std;
 namespace Executor
@@ -10,7 +11,7 @@ namespace Executor
     class Executor
     {
     private:
-        Pathfinder::Pathfinder& pathfinder;
+        Pathfinder::Graph& graph;
         CapitalPool::CapitalPool& capitalPool;
         HttpWrapper::BinanceApiWrapper& apiWrapper;
 
@@ -22,7 +23,7 @@ namespace Executor
         void print(double btc);
 
     public:
-        Executor(Pathfinder::Pathfinder& pathfinder, CapitalPool::CapitalPool& capitalPool,
+        Executor(Pathfinder::Graph& graph, CapitalPool::CapitalPool& capitalPool,
                  HttpWrapper::BinanceApiWrapper& apiWrapper);
 
         ~Executor();
