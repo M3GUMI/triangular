@@ -75,13 +75,13 @@ namespace Pathfinder
                                                                               websocketpp::lib::asio::milliseconds(20));
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
-        auto time = GetMicroTime();
+        auto time = GetNanoTime();
         auto chance = Graph::CalculateArbitrage("IocTriangular");
         if (chance.Profit <= 1)
         {
             return;
         }
-        spdlog::info("CalculateArbitrage time: {}ms", GetNowTime() - time);
+        spdlog::info("CalculateArbitrage time: {}micro", GetNanoTime() - time);
 
         return this->subscriber(chance);
     }

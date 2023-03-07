@@ -102,7 +102,7 @@ namespace Pathfinder
 
         double UpdateBuy(double price, double quantity);
 
-        TransactionPathItem Format(Strategy& strategy, map<int, string>& indexToToken, int from, int to);
+        TransactionPathItem Format(Strategy& strategy, unordered_map<int, string>& indexToToken, int from, int to);
 
     private:
         int baseIndex = 0;   // baseToken序号

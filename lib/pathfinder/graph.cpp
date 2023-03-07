@@ -113,16 +113,19 @@ namespace Pathfinder{
         }
     }
 
-    void Graph::UpdateNode(WebsocketWrapper::DepthData &data) {
+    void Graph::UpdateNode(WebsocketWrapper::DepthData &data)
+    {
         auto baseIndex = tokenToIndex[data.BaseToken];
         auto quoteIndex = tokenToIndex[data.QuoteToken];
 
         auto node = tradeNodeMap[formatKey(baseIndex, quoteIndex)];
-        if (not data.Bids.empty()) { // 买单挂出价，我方卖出价
+        if (not data.Bids.empty())
+        { // 买单挂出价，我方卖出价
             auto depth = data.Bids[0];
             node->UpdateSell(depth.Price, depth.Quantity);
         }
-        if (!data.Asks.empty()) { // 卖单挂出价，我方买入价
+        if (!data.Asks.empty())
+        { // 卖单挂出价，我方买入价
             auto depth = data.Asks[0];
             node->UpdateBuy(depth.Price, depth.Quantity);
         }
