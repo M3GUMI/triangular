@@ -41,6 +41,7 @@ namespace HttpWrapper
         void initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec);
         void accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo &info, int err)> callback);
         void getOpenOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec);
+        void getUserAssetHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(double btc)> callback);
         void createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, OrderData &req, function<void(OrderData& data, int err)> callback);
 
         void cancelOrder(uint64_t orderId, string symbol);
@@ -63,6 +64,7 @@ namespace HttpWrapper
         // 账户信息
         int GetAccountInfo(function<void(AccountInfo &info, int err)> callback);
         int GetOpenOrder(string symbol);
+        int GetUserAsset(function<void(double btc)> callback);
 
         // 创建订单
         int CreateOrder(OrderData& req, function<void(OrderData& data, int err)> callback);

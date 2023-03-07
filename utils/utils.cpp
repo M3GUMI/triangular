@@ -12,9 +12,12 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 
-void String2Double(const string &str, double &d) {
+double String2Double(const string &str) {
+    double d;
     istringstream s(str);
     s >> d;
+
+    return d;
 }
 
 uint64_t GetNowTime() {
@@ -64,7 +67,7 @@ string FormatDouble(double val) {
     return stream.str();
 }
 
-double FormatDoubleV2(double val) {
+double RoundDouble(double val) {
     double result = round(val*pow(10, 8)) / pow(10, 8);
     return result;
 }

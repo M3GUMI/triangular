@@ -6,7 +6,7 @@ namespace Pathfinder{
     }
     Graph::~Graph() = default;
 
-    void Graph::AddEdge(const string& from, const string& to, double originPrice, double quantity, bool isSell) {
+    void Graph::AddEdge(const string& from, const string& to, double originPrice, double quantity, double minNotional, bool isSell) {
         // 将边加入相应的节点的邻接表中
         if (not tokenToIndex.count(to)) {
             int index = nodes.size();
@@ -34,6 +34,7 @@ namespace Pathfinder{
             if (edge.from == fromIndex && edge.to == toIndex) {
                 edge.originPrice = originPrice;
                 edge.originQuantity = quantity;
+                edge.minNotional = minNotional;
                 edge.isSell = isSell;
                 if (isSell) {
                     edge.weight = -log(originPrice);
@@ -53,6 +54,7 @@ namespace Pathfinder{
         edge->to = toIndex;
         edge->originPrice = originPrice;
         edge->originQuantity = quantity;
+        edge->minNotional = minNotional;
         edge->isSell = isSell;
         if (isSell) {
             edge->weight = -log(originPrice);
@@ -118,7 +120,6 @@ namespace Pathfinder{
             item.BaseToken = indexToToken[edge.from];
             item.QuoteToken = indexToToken[edge.to];
             item.Side = define::SELL;
-
         } else {
             item.BaseToken = indexToToken[edge.to];
             item.QuoteToken = indexToToken[edge.from];
@@ -129,10 +130,10 @@ namespace Pathfinder{
         item.TimeInForce = strategy.TimeInForce;
         item.Price = edge.originPrice;
         item.Quantity = edge.originQuantity;
+        item.MinNotional = edge.minNotional;
 
         return item;
     };
-
 
     ArbitrageChance Graph::CalculateArbitrage(const string& name) {
         Strategy strategy{};
@@ -141,106 +142,7 @@ namespace Pathfinder{
             strategy.OrderType = define::LIMIT_MAKER;
             strategy.TimeInForce = define::GTC;
         } else {
-            strategy.Fee = 0;
-            // strategy.Fee = 0.0002;
-            strategy.OrderType = define::LIMIT;
-            strategy.TimeInForce = define::IOC;
-        }
-
-        vector<TransactionPathItem> path;
-        double minRate = 0;
-
-        // 枚举所有三角路径，判断是否存在套利机会。起点为稳定币
-        // 穷举起点出发的所有边组合，最终回到起点，是否可套利
-        for (const auto &baseToken: conf::BaseAssets) {
-            if (not tokenToIndex.count(baseToken.first)) {
-                continue;
-            };
-
-            int firstToken = tokenToIndex[baseToken.first]; // 起点token
-            auto firstEdges = nodes[firstToken]; // 起点出发边
-
-            for (auto &firstEdge: firstEdges) {
-                double firstWeight = firstEdge.weight; // 第一条边权重
-                int secondToken = firstEdge.to; // 第二token
-                auto secondEdges = nodes[secondToken]; // 第二token出发边
-                if (checkToken(secondToken)) {
-                    continue;
-                }
-
-                for (auto &secondEdge: secondEdges) {
-                    double secondWeight = secondEdge.weight; // 第二条边权重
-                    int endToken = secondEdge.to; // 第二条边目标token
-
-                    if (firstToken == endToken) {
-                        /*double profit = 1; // 验算利润率
-                        if (firstEdge.isSell) {
-                            profit = profit*firstEdge.originPrice;
-                        } else {
-                            profit = profit*(1/firstEdge.originPrice);
-                        }
-                        if (secondEdge.isSell) {
-                            profit = profit*secondEdge.originPrice;
-                        } else {
-                            profit = profit*(1/secondEdge.originPrice);
-                        }*/
-
-                        // 对数。乘法处理为加法
-                        // 负数。最长路径处理为最短路径
-                        double rate = firstWeight + secondWeight - 2 * log(1 - strategy.Fee);
-                        // spdlog::info("profit: {}, path: {}, {}, {}", to_string(profit), indexToToken[firstEdge.from], indexToToken[firstEdge.to], indexToToken[secondEdge.to]);
-                        if (rate < 0 && rate < minRate) {
-                            spdlog::info("rate: {}", rate);
-                            vector<TransactionPathItem> newPath;
-                            newPath.clear();
-                            newPath.push_back(formatTransactionPathItem(firstEdge, strategy));
-                            newPath.push_back(formatTransactionPathItem(secondEdge, strategy));
-                            adjustQuantities(newPath);
-
-                            if (newPath.front().Quantity >= conf::MinTriangularQuantity) {
-                                minRate = rate;
-                                path = newPath;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        ArbitrageChance chance{};
-        if (path.size() != 2) {
-            return chance;
-        }
-
-        double profit = 1; // 验算利润率
-        vector<string> info;
-        for (const auto& item:path) {
-            if (item.Side == define::SELL) {
-                profit = profit*item.Price*(1-strategy.Fee);
-            } else {
-                profit = profit*(1/item.Price)*(1-strategy.Fee);
-            }
-        }
-
-        if (profit <= 1) {
-            spdlog::error("func: CalculateArbitrage, err: path can not get money");
-            return chance;
-        }
-
-        chance.Profit = profit;
-        chance.Quantity = path.front().Quantity;
-        chance.Path = path;
-        return chance;
-    }
-
-    /*ArbitrageChance Graph::CalculateArbitrage(const string& name) {
-        Strategy strategy{};
-        if (name == "maker") {
-            strategy.Fee = 0;
-            strategy.OrderType = define::LIMIT_MAKER;
-            strategy.TimeInForce = define::GTC;
-        } else {
-            strategy.Fee = 0.0002;
+            strategy.Fee = 0.0004;
             strategy.OrderType = define::LIMIT;
             strategy.TimeInForce = define::IOC;
         }
@@ -289,6 +191,18 @@ namespace Pathfinder{
                                 newPath.push_back(formatTransactionPathItem(thirdEdge, strategy));
                                 adjustQuantities(newPath);
 
+                                bool lessMinNotional;
+                                for (TransactionPathItem &item:newPath) {
+                                    // 检查最小成交金额
+                                    if (item.MinNotional > item.GetNationalQuantity()) {
+                                        lessMinNotional = true;
+                                    }
+                                }
+
+                                if (lessMinNotional) {
+                                    continue;
+                                }
+
                                 if (newPath.front().Quantity >= conf::MinTriangularQuantity) {
                                     minRate = rate;
                                     path = newPath;
@@ -305,16 +219,7 @@ namespace Pathfinder{
             return chance;
         }
 
-        double profit = 1; // 验算利润率
-        vector<string> info;
-        for (const auto& item:path) {
-            if (item.Side == define::SELL) {
-                profit = profit*item.Price*(1-strategy.Fee);
-            } else {
-                profit = profit*(1/item.Price)*(1-strategy.Fee);
-            }
-        }
-
+        double profit = calProfit(strategy, path);
         if (profit <= 1) {
             spdlog::error("func: CalculateArbitrage, err: path can not get money");
             return chance;
@@ -324,7 +229,7 @@ namespace Pathfinder{
         chance.Quantity = path.front().Quantity;
         chance.Path = path;
         return chance;
-    }*/
+    }
 
     ArbitrageChance Graph::FindBestPath(string name, string start, string end, double quantity) {
         Strategy strategy{};
@@ -333,8 +238,7 @@ namespace Pathfinder{
             strategy.OrderType = define::LIMIT_MAKER;
             strategy.TimeInForce = define::GTC;
         } else {
-            strategy.Fee = 0;
-            // strategy.Fee = 0.0002;
+            strategy.Fee = 0.0004;
             strategy.OrderType = define::LIMIT;
             strategy.TimeInForce = define::IOC;
         }
@@ -352,16 +256,19 @@ namespace Pathfinder{
 
         auto pathPrice = data->second.front().Price;
         auto pathQuantity = data->second.front().Quantity;
+        double realQuantity = 0;
         if (data->second.front().Side == define::SELL) {
-            data->second.front().Quantity = quantity <= pathQuantity? quantity: pathQuantity;
+            spdlog::info("quantity: {}, pathQuantity: {}", quantity, pathQuantity);
+            realQuantity = quantity <= pathQuantity? quantity: pathQuantity;
         } else {
             quantity /= pathPrice; // 转换成baseToken数量
-            data->second.front().Quantity = quantity <= pathQuantity? quantity: pathQuantity;
+            spdlog::info("quantity: {}, pathQuantity: {}", quantity, pathQuantity);
+            realQuantity = quantity <= pathQuantity? quantity: pathQuantity;
         }
 
-        adjustQuantities(data->second);
-        chance.Profit = data->first;
-        chance.Quantity = data->second.front().Quantity;
+        data->second.front().Quantity = realQuantity;
+        chance.Profit = calProfit(strategy, data->second);
+        chance.Quantity = RoundDouble(realQuantity);
         chance.Path = data->second;
         return chance;
     }
@@ -375,6 +282,7 @@ namespace Pathfinder{
                 continue;
             }
             path.push_back(formatTransactionPathItem(edge, strategy));
+            adjustQuantities(path);
             return make_pair(edge.weight + log(1 - strategy.Fee), path);
         }
 
@@ -399,11 +307,29 @@ namespace Pathfinder{
 
                 if (secondEdge.to == end) {
                     double rate = firstWeight + secondWeight - 2 * log(1 - strategy.Fee);
-                    if (rate < 0 && rate < minRate) {
+                    if (rate < minRate) {
+                        vector<TransactionPathItem> newPath;
+                        newPath.clear();
+                        newPath.push_back(formatTransactionPathItem(firstEdge, strategy));
+                        newPath.push_back(formatTransactionPathItem(secondEdge, strategy));
+                        adjustQuantities(newPath);
+
+                        bool lessMinNotional;
+                        for (TransactionPathItem &item:newPath)
+                        {
+                            // 检查最小成交金额
+                            if (item.MinNotional > item.GetNationalQuantity())
+                            {
+                                lessMinNotional = true;
+                            }
+                        }
+
+                        if (lessMinNotional) {
+                            continue;
+                        }
+
                         minRate = rate;
-                        path.clear();
-                        path.push_back(formatTransactionPathItem(firstEdge, strategy));
-                        path.push_back(formatTransactionPathItem(secondEdge, strategy));
+                        path = newPath;
                     }
                 }
             }
@@ -454,5 +380,19 @@ namespace Pathfinder{
         }
 
         return false;
+    }
+
+    double Graph::calProfit(Strategy& strategy, vector<TransactionPathItem>& path)
+    {
+        double profit = 1; // 验算利润率
+        for (const auto& item:path) {
+            if (item.Side == define::SELL) {
+                profit = profit*item.Price*(1-strategy.Fee);
+            } else {
+                profit = profit*(1/item.Price)*(1-strategy.Fee);
+            }
+        }
+
+        return profit;
     }
 }

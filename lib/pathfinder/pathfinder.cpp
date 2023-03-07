@@ -22,15 +22,6 @@ namespace Pathfinder
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
         for (const auto &item: data) {
-            if (conf::EnableMock &&
-                (item.first != "BTCBUSD" && item.first != "ETHBUSD" && item.first != "ETHBTC" && item.first != "BUSDUSDT" &&
-                 item.first != "XRPBTC" && item.first != "FTTBUSD" && item.first != "XRPETH" &&
-                 item.first != "LTCBTC" && item.first != "LTCBUSD" && item.first != "LTCETH" &&
-                 item.first != "DGBBUSD" && item.first != "DOGEBUSD" && item.first != "XRPBUSD" && item.first != "RUNEBUSD" &&
-                 item.first != "MATICBTC" && item.first != "MATICBUSD" && item.first != "MATICETH")) {
-                continue;
-            }
-
             auto symbol = item.first;
             auto symbolData = item.second;
 
@@ -81,14 +72,19 @@ namespace Pathfinder
         }
     }
 
-    void Pathfinder::HuntingKing() {
-        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(50));
+    void Pathfinder::HuntingKing()
+    {
+        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
+                                                                              websocketpp::lib::asio::milliseconds(100));
         huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
 
-        auto chance = Graph::CalculateArbitrage("taker");
-        if (chance.Profit <= 1) {
+        auto time = GetNowTime();
+        auto chance = Graph::CalculateArbitrage("IocTriangular");
+        if (chance.Profit <= 1)
+        {
             return;
         }
+        spdlog::info("CalculateArbitrage time: {}ms", GetNowTime() - time);
 
         return this->subscriber(chance);
     }
@@ -103,13 +99,14 @@ namespace Pathfinder
         // Graph::AddEdge("ETH", "BUSD", FormatDoubleV2(0.025), 10, true);
         // Graph::AddEdge("BUSD", "ETH", FormatDoubleV2(0.026), 10, false;
 
+        auto symbolData = apiWrapper.GetSymbolData(data.FromToken, data.ToToken);
         if (!data.Bids.empty()) { // 买单挂出价，我方卖出价
             auto depth = data.Bids[0];
-            Graph::AddEdge(data.FromToken, data.ToToken, depth.Price, depth.Quantity, true);
+            Graph::AddEdge(data.FromToken, data.ToToken, depth.Price, depth.Quantity, symbolData.MinNotional, true);
         }
         if (!data.Asks.empty()) { // 卖单挂出价，我方买入价
             auto depth = data.Asks[0];
-            Graph::AddEdge(data.ToToken, data.FromToken, depth.Price, depth.Quantity, false);
+            Graph::AddEdge(data.ToToken, data.FromToken, depth.Price, depth.Quantity, symbolData.MinNotional, false);
         }
     }
 

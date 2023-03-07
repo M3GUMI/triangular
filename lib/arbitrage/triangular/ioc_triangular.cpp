@@ -8,7 +8,7 @@ namespace Arbitrage{
             CapitalPool::CapitalPool &pool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
     ) : TriangularArbitrage(pathfinder, pool, apiWrapper) {
-        this->strategy = "taker";
+        this->strategy = "IocTriangular";
     }
 
     IocTriangularArbitrage::~IocTriangularArbitrage() = default;
@@ -24,22 +24,29 @@ namespace Arbitrage{
             targetToken = firstStep.QuoteToken;
         }
 
-        if (auto err = capitalPool.LockAsset(targetToken, chance.Quantity, lockedQuantity); err > 0) {
+        double realQuantity = chance.Quantity;
+        if (firstStep.Side == define::BUY) {
+            realQuantity *= firstStep.Price;
+        }
+
+        if (auto err = capitalPool.LockAsset(targetToken, realQuantity, lockedQuantity); err > 0) {
             return err;
         }
 
         spdlog::info(
-                "IocTriangularArbitrage::Run, profit: {}, quantity: {}, path: {}",
+                "{}::Run, profit: {}, quantity: {}, path: {}",
+                this->strategy,
                 chance.Profit,
                 lockedQuantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
 
 
-        if (firstStep.Side == define::BUY) {
-            lockedQuantity /= firstStep.Price;
+        if (firstStep.Side == define::SELL) {
+            firstStep.Quantity = lockedQuantity;
+        } else {
+            firstStep.Quantity = lockedQuantity/firstStep.Price;
         }
 
-        firstStep.Quantity = lockedQuantity;
         this->TargetToken = targetToken;
         this->OriginQuantity = lockedQuantity;
         TriangularArbitrage::ExecuteTrans(firstStep);
@@ -48,12 +55,14 @@ namespace Arbitrage{
 
     void IocTriangularArbitrage::TransHandler(OrderData &data) {
         spdlog::info(
-                "IocTriangularArbitrage::Handler, base: {}, quote: {}, orderStatus: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
+                "{}::TransHandler, base: {}, quote: {}, orderStatus: {}, price: {}, executePrice: {}, unExecuteQuantity: {}, executeQuantity: {}, newQuantity: {}",
+                this->strategy,
                 data.BaseToken,
                 data.QuoteToken,
                 data.OrderStatus,
-                data.Quantity,
                 data.Price,
+                data.ExecutePrice,
+                data.GetUnExecuteQuantity(),
                 data.GetExecuteQuantity(),
                 data.GetNewQuantity()
         );
@@ -61,7 +70,6 @@ namespace Arbitrage{
         // 完全失败, 终止
         if (data.GetFromToken() == TargetToken && data.GetExecuteQuantity() == 0) {
             if(TriangularArbitrage::CheckFinish()) {
-                spdlog::info("!!!!!!!!!!!!finish");
                 return;
             }
         }
@@ -71,12 +79,14 @@ namespace Arbitrage{
             err = filledHandler(data);
         } else if (data.OrderStatus == define::PARTIALLY_FILLED) {
             err = partiallyFilledHandler(data);
+        } else if (data.OrderStatus == define::EXPIRED) {
+            err = expiredHandler(data);
         } else {
             return;
         }
 
         if (err > 0) {
-            spdlog::error("func: TransHandler, err: {}", WrapErr(err));
+            spdlog::error("{}::TransHandler, err: {}", this->strategy, WrapErr(err));
             return;
         }
     }
@@ -84,7 +94,7 @@ namespace Arbitrage{
     int IocTriangularArbitrage::filledHandler(OrderData &data) {
         // 抵达目标
         if (data.GetToToken() == this->TargetToken) {
-            FinalQuantity += data.GetNewQuantity();
+            this->FinalQuantity = this->FinalQuantity + data.GetNewQuantity();
             return 0;
         }
 
@@ -116,7 +126,15 @@ namespace Arbitrage{
                 return err;
             }
         } else {
-            FinalQuantity += data.GetNewQuantity();
+            this->FinalQuantity = this->FinalQuantity + data.GetNewQuantity();
+        }
+    }
+
+    int IocTriangularArbitrage::expiredHandler(OrderData &data) {
+        // 未成交部分重执行
+        auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, data.GetUnExecuteQuantity());
+        if (err > 0) {
+            return err;
         }
     }
 }

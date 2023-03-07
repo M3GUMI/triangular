@@ -59,9 +59,7 @@ namespace CapitalPool
                 if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional)
                 {
                     spdlog::error("func: RebalancePool, err: {}", WrapErr(err));
-                    return;
                 }
-                continue;
             }
         }
 
@@ -175,7 +173,7 @@ namespace CapitalPool
             order.Quantity = amount <= priceResp.SellQuantity? amount: priceResp.SellQuantity;
         } else {
             order.Price = priceResp.BuyPrice;
-            amount = FormatDoubleV2(amount/order.Price);
+            amount = RoundDouble(amount/order.Price);
             order.Quantity = amount <= priceResp.BuyQuantity? amount: priceResp.BuyQuantity;
         }
 
@@ -214,8 +212,10 @@ namespace CapitalPool
         lockedBalance[data.GetFromToken()] = false;
         vector<string> info;
         for (const auto &item: balancePool) {
-            info.push_back(item.first);
-            info.push_back(to_string(item.second));
+            if (not item.first.empty()) {
+                info.push_back(item.first);
+                info.push_back(to_string(item.second));
+            }
         }
         spdlog::info("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
     }
@@ -282,21 +282,20 @@ namespace CapitalPool
             return;
         }
 
+        double amount = 0;
         this->balancePool = {};
         for (const auto& asset : info.Balances)
         {
             if (asset.Free > 0) {
-                spdlog::debug("token: {}, free: {}", asset.Token, asset.Free);
-                /*if (asset.Token == "BUSD" || asset.Free > 20) {
-                    this->balancePool[asset.Token] = 20;
-                    continue;
-                }*/
+                if (asset.Token == "BUSD" || asset.Token == "USDT") {
+                    amount += asset.Free;
+                }
                 this->balancePool[asset.Token] = asset.Free;
             }
         }
 
         locked = false;
         // todo 格式化输出一下balancePool
-        spdlog::info("func: {}, msg: {}", "refreshAccountHandler", "refresh account success");
+        spdlog::info("func: refreshAccountHandler, amount: {}, msg: refresh account success", amount);
     }
 }

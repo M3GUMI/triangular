@@ -17,12 +17,17 @@ namespace Executor{
     }
 
     void Executor::arbitragePathHandler(Pathfinder::ArbitrageChance &chance) {
-        if (lock) {
+        if (this->lock) {
+            spdlog::debug("lock");
             return;
         }
 
+        if (!conf::EnableMock) {
+            apiWrapper.GetUserAsset(bind(&Executor::print, this, placeholders::_1));
+        }
+
         // todo 此处需要内存管理。需要增加套利任务结束，清除subscribe
-        lock = true;
+        this->lock = true;
         Arbitrage::TriangularArbitrage *iocTriangular = new Arbitrage::IocTriangularArbitrage(
                 pathfinder,
                 capitalPool,
@@ -30,13 +35,31 @@ namespace Executor{
         );
         iocTriangular->SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
         if (auto err = iocTriangular->Run(chance); err > 0) {
-            lock = false;
+            this->lock = false;
             return;
         }
     }
 
     void Executor::arbitrageFinishHandler() {
-        lock = false;
+        // this->lock = false;
         capitalPool.Refresh();
+        if (!conf::EnableMock) {
+            apiWrapper.GetUserAsset(bind(&Executor::print, this, placeholders::_1));
+        }
+    }
+
+    void Executor::print(double btc) {
+        auto symbolData = apiWrapper.GetSymbolData("BUSD", "BTC");
+        Pathfinder::GetExchangePriceReq priceReq{};
+        priceReq.BaseToken = symbolData.BaseToken;
+        priceReq.QuoteToken = symbolData.QuoteToken;
+        priceReq.OrderType = define::LIMIT;
+
+        Pathfinder::GetExchangePriceResp priceResp{};
+        if (auto err = pathfinder.GetExchangePrice(priceReq, priceResp); err > 0) {
+            return;
+        }
+
+        spdlog::info("busd: {}", btc*priceResp.SellPrice);
     }
 }

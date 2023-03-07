@@ -74,13 +74,11 @@ namespace WebsocketWrapper
         string status = msg.FindMember("X")->value.GetString(); // 订单状态
         auto symbolData = this->apiWrapper.GetSymbolData(symbol);
 
-        double price, quantity;
-        String2Double(msg.FindMember("p")->value.GetString(), price);
-        String2Double(msg.FindMember("q")->value.GetString(), quantity);
+        double price = String2Double(msg.FindMember("p")->value.GetString());
+        double quantity = String2Double(msg.FindMember("q")->value.GetString());
 
-        double executeQuantity, cummulativeQuoteQty;
-        String2Double(msg.FindMember("z")->value.GetString(), executeQuantity);
-        String2Double(msg.FindMember("Z")->value.GetString(), cummulativeQuoteQty);
+        double executeQuantity = String2Double(msg.FindMember("z")->value.GetString());
+        double cummulativeQuoteQty = String2Double(msg.FindMember("Z")->value.GetString());
 
         OrderData data;
         data.OrderId = apiWrapper.GetOrderId(clientOrderID);
@@ -92,8 +90,10 @@ namespace WebsocketWrapper
         data.BaseToken = symbolData.BaseToken;
         data.QuoteToken = symbolData.QuoteToken;
 
-        data.Price = price;
+        data.Price = price; // 使用内存中数据
         data.Quantity = quantity;
+
+        data.ExecutePrice = price;
         data.ExecuteQuantity = executeQuantity;
         data.CummulativeQuoteQuantity = cummulativeQuoteQty;
 

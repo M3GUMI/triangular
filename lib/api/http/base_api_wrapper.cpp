@@ -89,9 +89,10 @@ namespace HttpWrapper
     {
         if (conf::EnableMock)
         {
-            shared_ptr<HttpRespone> res;
-            ahttp::error_code ec;
-            return callback(res, ec);
+            mockTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
+                                                                                  websocketpp::lib::asio::milliseconds(10));
+            mockTimer->async_wait(bind(&BaseApiWrapper::mockCallback, this, callback));
+            return;
         }
 
         return makeRequest(req, callback);
@@ -131,6 +132,13 @@ namespace HttpWrapper
         httpRequest->Header = header;
         hclientPtr->Do(httpRequest, callback);
         spdlog::debug("func: MakeRequest, method: {}, data: {}, url: {}", method, data, whole_uri);
+    }
+
+    void BaseApiWrapper::mockCallback(function<void(shared_ptr<HttpRespone> res, const ahttp::error_code &ec)> callback)
+    {
+        shared_ptr<HttpRespone> res;
+        ahttp::error_code ec;
+        return callback(res, ec);
     }
 
     std::map<std::string, std::string> BaseApiWrapper::sign(std::map<std::string, std::string> &args, std::string &query, bool need_sign)

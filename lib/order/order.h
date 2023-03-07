@@ -14,7 +14,8 @@ struct OrderData {
     define::TimeInForce TimeInForce;
 
     define::OrderStatus OrderStatus; // 订单状态
-    double ExecuteQuantity = 0; // 已成交数量，经过一层sell、buy转换
+    double ExecutePrice = 0; // 成交价格 // todo market单的price为空，此处计算错误
+    double ExecuteQuantity = 0; // 已成交数量
     double CummulativeQuoteQuantity = 0; // 新token数量
 
     uint64_t UpdateTime = 0; // 最后一次更新实际
@@ -35,30 +36,36 @@ struct OrderData {
         }
     }
 
+    // 预期新币成交额
+    double GetNationalQuantity()
+    {
+        return RoundDouble(Price*Quantity);
+    }
 
     double GetUnExecuteQuantity()
     {
         if (Side == define::SELL) {
-            return FormatDoubleV2(Quantity - ExecuteQuantity);
+            return RoundDouble(Quantity - ExecuteQuantity);
         } else {
-            return FormatDoubleV2(Quantity*Price - CummulativeQuoteQuantity);
+            return RoundDouble(Quantity*ExecutePrice - CummulativeQuoteQuantity);
         }
     }
 
     double GetExecuteQuantity() {
         if (Side == define::SELL) {
-            return FormatDoubleV2(ExecuteQuantity);
+            return RoundDouble(ExecuteQuantity);
         } else {
-            return FormatDoubleV2(CummulativeQuoteQuantity);
+            return RoundDouble(CummulativeQuoteQuantity);
         }
     }
 
+    // 实际新币数量
     double GetNewQuantity()
     {
         if (Side == define::SELL) {
-            return FormatDoubleV2(CummulativeQuoteQuantity);
+            return RoundDouble(CummulativeQuoteQuantity);
         } else {
-            return FormatDoubleV2(CummulativeQuoteQuantity/Price);
+            return RoundDouble(CummulativeQuoteQuantity/ExecutePrice);
         }
     }
 };

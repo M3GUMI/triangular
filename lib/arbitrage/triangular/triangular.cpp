@@ -36,8 +36,8 @@ namespace Arbitrage{
             }
         }
 
-        spdlog::info("func: Finish, profit: {}, finalQuantity: {}, originQuantity: {}",
-                     this->FinalQuantity / this->OriginQuantity, this->FinalQuantity, this->OriginQuantity);
+        spdlog::info("{}::Finish, profit: {}, finalQuantity: {}, originQuantity: {}",
+                     this->strategy, this->FinalQuantity / this->OriginQuantity, this->FinalQuantity, this->OriginQuantity);
         finished = true;
         this->subscriber();
         return true;
@@ -70,13 +70,17 @@ namespace Arbitrage{
                         placeholders::_2
                 ));
         spdlog::info(
-                "func: ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, price: {}, quantity: {}",
+                "{}::ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, orderType: {}, price: {}, calPrice: {}, quantity: {}, minNational: {}",
+                this->strategy,
                 err,
                 path.BaseToken,
                 path.QuoteToken,
                 sideToString(path.Side),
+                orderTypeToString(path.OrderType),
                 path.Price,
-                path.Quantity
+                1/path.Price,
+                path.Quantity,
+                path.MinNotional
         );
 
         if (err == define::ErrorLessTicketSize || err == define::ErrorLessMinNotional) {
@@ -90,7 +94,9 @@ namespace Arbitrage{
         // 寻找新路径重试
         auto chance = pathfinder.FindBestPath(this->strategy, origin, end, quantity);
         spdlog::info(
-                "func: RevisePath, maxQuantity: {}, bestPath: {}",
+                "{}::RevisePath, profit: {}, quantity: {}, bestPath: {}",
+                this->strategy,
+                quantity*chance.Profit/this->OriginQuantity,
                 chance.FirstStep().Quantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
 
@@ -125,6 +131,7 @@ namespace Arbitrage{
         }
 
         order->OrderStatus = data.OrderStatus;
+        order->ExecutePrice = data.ExecutePrice;
         order->ExecuteQuantity = data.ExecuteQuantity;
         order->CummulativeQuoteQuantity = data.CummulativeQuoteQuantity;
         order->UpdateTime = data.UpdateTime;

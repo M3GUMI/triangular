@@ -67,16 +67,16 @@ namespace HttpWrapper
                     string filterType = filters[j].FindMember("filterType")->value.GetString();
                     if (filterType == "LOT_SIZE" && filters[j].HasMember("stepSize")) {
                         string stepSize = filters[j].FindMember("stepSize")->value.GetString();
-                        String2Double(stepSize, doubleStepSize);
+                        doubleStepSize = String2Double(stepSize);
                         if (doubleStepSize == 0) {
                             doubleStepSize = 1;
                         }
                     } else if (filterType == "PRICE_FILTER" && filters[j].HasMember("tickSize")) {
                         string ticketSize = filters[j].FindMember("tickSize")->value.GetString();
-                        String2Double(ticketSize, doubleTicketSize);
+                        doubleTicketSize = String2Double(ticketSize);
                     } else if (filterType == "MIN_NOTIONAL" && filters[j].HasMember("minNotional")) {
                         string minNotional = filters[j].FindMember("minNotional")->value.GetString();
-                        String2Double(minNotional, doubleMinNotional);
+                        doubleMinNotional = String2Double(minNotional);
                     }
                 }
             }
@@ -174,8 +174,8 @@ namespace HttpWrapper
         AccountInfo info;
         if (conf::EnableMock) {
             BalanceData data;
-            data.Token = "ETH";
-            data.Free = 100;
+            data.Token = "BUSD";
+            data.Free = 20;
             data.Locked = 0;
             info.Balances.push_back(data);
             spdlog::debug("func: {}, msg: {}", "GetAccountInfo", "mock account_info");
@@ -204,8 +204,8 @@ namespace HttpWrapper
 
             BalanceData data;
             data.Token = asset;
-            String2Double(free, data.Free);
-            String2Double(locked, data.Locked);
+            data.Free = String2Double(free);
+            data.Locked = String2Double(locked);
             info.Balances.push_back(data);
         }
 
@@ -232,6 +232,38 @@ namespace HttpWrapper
     void BinanceApiWrapper::getOpenOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
     {
         spdlog::info("orders: {}", res->payload());
+    }
+
+    int BinanceApiWrapper::GetUserAsset(function<void(double btc)> callback)
+    {
+        uint64_t now = time(NULL);
+
+        ApiRequest req;
+        req.args["timestamp"] = to_string(now * 1000);
+        req.args["needBtcValuation"] = "true";
+        req.method = "POST";
+        req.uri = "https://api.binance.com/sapi/v3/asset/getUserAsset";
+        req.data = "";
+        req.sign = true;
+        auto apiCallback = bind(&BinanceApiWrapper::getUserAssetHandler, this, ::_1, ::_2, callback);
+
+        this->MakeRequest(req, apiCallback);
+        return 0;
+    }
+
+    void BinanceApiWrapper::getUserAssetHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(double btc)> callback)
+    {
+        rapidjson::Document data;
+        data.Parse(res->payload().c_str());
+
+        double btcAsset = 0;
+        auto arr = data.GetArray();
+        for (int i = 0;i < arr.Size();i++) {
+            string asset = arr[i].FindMember("btcValuation")->value.GetString();
+            btcAsset += String2Double(asset);
+        }
+
+        callback(btcAsset);
     }
 
     int BinanceApiWrapper::CreateOrder(OrderData &req, function<void(OrderData& data, int err)> callback) {
@@ -261,26 +293,26 @@ namespace HttpWrapper
         string uri = "https://api.binance.com/api/v3/order";
 
         // ticketSize校验
-        double quantity = req.Quantity;
         auto symbolData = GetSymbolData(req.BaseToken, req.QuoteToken);
-        uint32_t tmp = quantity / symbolData.StepSize;
-        quantity = tmp * symbolData.StepSize;
+        uint32_t tmp = req.Quantity / symbolData.StepSize;
+        req.Quantity = tmp * symbolData.StepSize;
 
-        if (quantity == 0) {
+        if (req.Quantity == 0) {
             req.OrderStatus = define::EXPIRED;
             return define::ErrorLessTicketSize;
         }
 
-        if (quantity*req.Price < symbolData.MinNotional) {
+        if (req.GetNationalQuantity() < symbolData.MinNotional) {
             req.OrderStatus = define::EXPIRED;
-            return define::ErrorLessTicketSize;
+            return define::ErrorLessMinNotional;
         }
 
+        args["newOrderRespType"] = "RESULT";
         args["symbol"] = symbolData.Symbol;
         args["side"] = sideToString(req.Side);
         args["type"] = orderTypeToString(req.OrderType);
         args["timestamp"] = std::to_string(time(NULL) * 1000);
-        args["quantity"] =  FormatDouble(quantity);
+        args["quantity"] =  FormatDouble(req.Quantity);
 
         // 市价单 不能有下面这些参数
         if (req.OrderType != define::MARKET && req.OrderType != define::LIMIT_MAKER) {
@@ -293,7 +325,7 @@ namespace HttpWrapper
 
         spdlog::debug(
                 "func: CreateOrder, symbol: {}, price: {}, quantity: {}, side: {}, orderType: {}",
-                args["symbol"], args["price"], args["quantity"], args["side"], args["type"]
+                args["symbol"], req.Price, args["quantity"], args["side"], args["type"]
         );
         ApiRequest apiReq;
         apiReq.args = args;
@@ -321,12 +353,13 @@ namespace HttpWrapper
             data.OrderStatus = define::FILLED;
             data.Price = req.Price;
             data.Quantity = req.Quantity;
+            data.Side = req.Side;
+            data.OrderType = req.OrderType;
+            data.TimeInForce = req.TimeInForce;
 
-            if (req.Side == define::SELL) {
-                data.ExecuteQuantity = req.Quantity;
-            } else {
-                data.ExecuteQuantity = req.Quantity;
-            }
+            data.ExecutePrice = req.Price;
+            data.ExecuteQuantity = req.Quantity;
+            data.CummulativeQuoteQuantity = RoundDouble(req.Quantity*req.ExecutePrice);
 
             // 最大成交50
             if (data.ExecuteQuantity == 1) {
@@ -369,31 +402,31 @@ namespace HttpWrapper
             data.OrderStatus = define::NEW;
         } else {
             // taker下单
-            double price, quantity;
-            double executeQuantity, cummulativeQuoteQty;
-            String2Double(order["price"].GetString(), price);
-            String2Double(order["origQty"].GetString(), quantity);
-            String2Double(order["executedQty"].GetString(), executeQuantity);
-            String2Double(order["cummulativeQuoteQty"].GetString(), cummulativeQuoteQty);
+            double price = String2Double(order["price"].GetString());
+            double quantity = String2Double(order["origQty"].GetString());
+            double executeQuantity = String2Double(order["executedQty"].GetString());
+            double cummulativeQuoteQty = String2Double(order["cummulativeQuoteQty"].GetString());
 
             data.OrderStatus = stringToOrderStatus(order["status"].GetString());
             data.Side = stringToSide(order["side"].GetString());
 
-            data.Price = price;
+            // data.Price = price; 使用内存数据
             data.Quantity = quantity;
+
+            data.ExecutePrice = price;
             data.ExecuteQuantity = executeQuantity;
             data.CummulativeQuoteQuantity = cummulativeQuoteQty;
         }
 
         spdlog::debug(
-                "func: createOrderCallback, orderId: {}, status: {}, base: {}, quote: {}, side: {}, price: {}, originQuantity: {}, executeQuantity: {}",
+                "func: createOrderCallback, orderId: {}, status: {}, base: {}, quote: {}, side: {}, originQuantity: {}, executePrice: {}, executeQuantity: {}",
                 data.OrderId,
                 data.OrderStatus,
                 data.BaseToken,
                 data.QuoteToken,
                 data.Side,
-                data.Price,
                 data.Quantity,
+                data.ExecutePrice,
                 data.ExecuteQuantity
         );
         return callback(data, 0);
