@@ -1,4 +1,5 @@
 #include "conf.h"
+#include "utils/utils.h"
 
 namespace conf
 {
@@ -14,4 +15,9 @@ namespace conf
     map<string, double> BaseAssets = {
         {"BUSD", 30},
     };
+//    Config* initConfig()
+//    {
+//        readConfig();
+//        return getConfig();
+//    }
 }

@@ -10,7 +10,7 @@ namespace WebsocketWrapper
     {
     private:
         string listenKey = "";
-        vector<function<void(OrderData &data)>> orderSubscriber;
+        vector<function<void(OrderData &data, int err)>> orderSubscriber;
         HttpWrapper::BinanceApiWrapper &apiWrapper;
 
         void createListenKeyHandler(string listenKey, int err);
@@ -22,6 +22,6 @@ namespace WebsocketWrapper
         BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper, string hostname, string hostport);
         ~BinanceOrderWrapper();
 
-        void SubscribeOrder(function<void(OrderData& req)> handler);
+        void SubscribeOrder(function<void(OrderData& req, int err)> handler);
     };
 }
