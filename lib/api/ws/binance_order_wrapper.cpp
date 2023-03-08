@@ -14,7 +14,7 @@ namespace WebsocketWrapper
     {
     }
 
-    void BinanceOrderWrapper::SubscribeOrder(function<void(OrderData &req)> handler)
+    void BinanceOrderWrapper::SubscribeOrder(function<void(OrderData &req, int err)> handler)
     {
         this->orderSubscriber.push_back(handler);
     }
@@ -104,10 +104,10 @@ namespace WebsocketWrapper
                 symbol, side, data.Price, data.Quantity, data.GetExecuteQuantity(), data.GetNewQuantity()
         );
 
-        // 需要内存管理
+        // todo 需要内存管理
         for (auto func : this->orderSubscriber)
         {
-            func(data);
+            func(data, 0);
         }
     }
 }

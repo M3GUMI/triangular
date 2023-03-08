@@ -220,9 +220,9 @@ namespace Pathfinder{
         return chance;
     }
 
-    ArbitrageChance Graph::FindBestPath(const string& name, const string& origin, const string& end, double quantity) {
+    ArbitrageChance Graph::FindBestPath(FindBestPathReq& req) {
         Strategy strategy{};
-        if (name == "maker") {
+        if (req.Name == "maker") {
             strategy.Fee = 0;
             strategy.OrderType = define::LIMIT_MAKER;
             strategy.TimeInForce = define::GTC;
@@ -232,8 +232,8 @@ namespace Pathfinder{
             strategy.TimeInForce = define::IOC;
         }
 
-        int originToken = tokenToIndex[origin];
-        int endToken = tokenToIndex[end];
+        int originToken = tokenToIndex[req.Origin];
+        int endToken = tokenToIndex[req.End];
 
         double maxProfit = 0;
         vector<TransactionPathItem> resultPath{};
@@ -262,6 +262,7 @@ namespace Pathfinder{
         auto pathPrice = resultPath.front().Price;
         auto pathQuantity = resultPath.front().Quantity;
 
+        auto quantity = req.Quantity;
         if (resultPath.front().Side == define::BUY) {
             quantity /= pathPrice; // 转换成baseToken数量
         }

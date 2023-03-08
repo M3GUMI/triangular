@@ -37,6 +37,14 @@ namespace Pathfinder{
         };
     };
 
+    struct FindBestPathReq
+    {
+        string Name; // 策略名
+        string Origin; // 起点
+        string End; // 终点
+        double Quantity; // 数量
+    };
+
     struct GetExchangePriceReq
     {
         string BaseToken;
@@ -60,7 +68,7 @@ namespace Pathfinder{
 
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
         ArbitrageChance CalculateArbitrage(const string& strategy);
-        ArbitrageChance FindBestPath(const string& name, const string& origin, const string& end, double quantity);
+        ArbitrageChance FindBestPath(FindBestPathReq& req);
 
     protected:
         HttpWrapper::BinanceApiWrapper &apiWrapper;
