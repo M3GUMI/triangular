@@ -1,5 +1,7 @@
 #include <cfloat>
 #include "graph.h"
+#include <sys/timeb.h>
+#include <sys/time.h>
 
 namespace Pathfinder{
     Graph::Graph(HttpWrapper::BinanceApiWrapper &apiWrapper): apiWrapper(apiWrapper) {
@@ -79,7 +81,8 @@ namespace Pathfinder{
                     }
 
                     triangularMap[originIndex].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
-                    triangularMap[formatKey(originIndex, secondIndex)].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
+                    nodeTriangularMap[formatKey(originIndex, secondIndex)].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
+
                 }
             }
         }
@@ -129,13 +132,13 @@ namespace Pathfinder{
             node->UpdateBuy(depth.Price, depth.Quantity);
         }
 
-        spdlog::info("func: {}", "UpdateNode");
-
         auto chance = CalculateArbitrage("IocTriangular", baseIndex, quoteIndex);
         if (chance.Profit <= 1)
         {
             return;
         }
+
+        spdlog::info("func: {}, path found profit: {}", "UpdateNode", chance.Profit);
 
         return this->subscriber(chance);
     }
@@ -186,49 +189,50 @@ namespace Pathfinder{
         double maxProfit = 0;
         vector<TransactionPathItem> resultPath{};
 
+        struct timeval tv1, tv2;
+        gettimeofday(&tv1,NULL);
+
         // 三元环base到quote方向寻找套利机会
-        for (const auto& item: nodeTriangularMap[formatKey(baseIndex, quoteIndex)]){
-            for (int i = 0; i < item.second.size(); i++){
-                auto triangular = item.second[i];
-                double profit = calculateProfit(strategy, triangular);
-                if (profit <= 1 || profit <= maxProfit)
-                {
-                    continue;
-                }
-
-                auto path = formatPath(strategy, triangular);
-                adjustQuantities(path);
-                if (not checkPath(path))
-                {
-                    continue;
-                }
-
-                maxProfit = profit;
-                resultPath = path;
+        for (auto item: nodeTriangularMap[formatKey(baseIndex, quoteIndex)]){
+            spdlog::info("before calculate profit, ring:\{first: {}-> second: {}->third: {}\}", item[0], item[1], item[2]);
+            double profit = calculateProfit(strategy, item);
+            spdlog::info("after calculate profit, profit: {}, ring:\{first: {}-> second: {}->third: {}\}", profit, item[0], item[1], item[2]);
+            if (profit <= 1 || profit <= maxProfit)
+            {
+                continue;
             }
+            auto path = formatPath(strategy, item);
+            adjustQuantities(path);
+            if (not checkPath(path))
+            {
+                continue;
+            }
+
+            maxProfit = profit;
+            resultPath = path;
         }
 
         // 三元环quote到base方向找套利机会
-        for (const auto& item: nodeTriangularMap[formatKey(quoteIndex, baseIndex)]){
-            for (int i = 0; i < item.second.size(); i++){
-                auto triangular = item.second[i];
-                double profit = calculateProfit(strategy, triangular);
-                if (profit <= 1 || profit <= maxProfit)
-                {
-                    continue;
-                }
+        for (auto item: nodeTriangularMap[formatKey(quoteIndex, baseIndex)]){
+            double profit = calculateProfit(strategy, item);
+            if (profit <= 1 || profit <= maxProfit)
+            {
+                continue;
+            }
 
-                auto path = formatPath(strategy, triangular);
-                adjustQuantities(path);
-                if (not checkPath(path))
-                {
-                    continue;
-                }
-
-                maxProfit = profit;
-                resultPath = path;
+            auto path = formatPath(strategy, item);
+            adjustQuantities(path);
+            if (not checkPath(path))
+            {
+                continue;
             }
         }
+        gettimeofday(&tv2,NULL);
+
+        spdlog::info("func: {}, scan rings: {}, path time cost: {}us, max profit:{}", "CalculateArbitrage",
+                nodeTriangularMap[formatKey(baseIndex, quoteIndex)].size()+nodeTriangularMap[formatKey(quoteIndex, baseIndex)].size(),
+                tv2.tv_sec*1000000 + tv2.tv_usec - (tv1.tv_sec*1000000 + tv1.tv_usec),
+                maxProfit);
 
         ArbitrageChance chance{};
         if (resultPath.size() != 3) {
@@ -452,5 +456,10 @@ namespace Pathfinder{
                 }
             }
         }
+    }
+
+    void Graph::SubscribeArbitrage(function<void(ArbitrageChance &path)> handler)
+    {
+        this->subscriber = handler;
     }
 }

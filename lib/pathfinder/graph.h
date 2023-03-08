@@ -62,6 +62,7 @@ namespace Pathfinder{
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
         ArbitrageChance CalculateArbitrage(const string& name, int baseIndex, int quoteIndex);
         ArbitrageChance FindBestPath(const string& name, const string& origin, const string& end, double quantity);
+        void SubscribeArbitrage(function<void(ArbitrageChance& chance)> handler);      // 订阅套利机会推送
 
     protected:
         HttpWrapper::BinanceApiWrapper &apiWrapper;

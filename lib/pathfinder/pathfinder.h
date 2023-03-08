@@ -24,9 +24,5 @@ namespace Pathfinder
         Pathfinder(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& apiWrapper);
 
         ~Pathfinder();
-
-        void HuntingKing();
-
-        void SubscribeArbitrage(function<void(ArbitrageChance& chance)> handler);      // 订阅套利机会推送
     };
 }

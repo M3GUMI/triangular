@@ -11,7 +11,7 @@ namespace Executor
     class Executor
     {
     private:
-        Pathfinder::Graph& graph;
+        Pathfinder::Pathfinder &pathfinder;
         CapitalPool::CapitalPool& capitalPool;
         HttpWrapper::BinanceApiWrapper& apiWrapper;
 
@@ -23,7 +23,7 @@ namespace Executor
         void print(double btc);
 
     public:
-        Executor(Pathfinder::Graph& graph, CapitalPool::CapitalPool& capitalPool,
+        Executor(Pathfinder::Pathfinder &pathfinder, CapitalPool::CapitalPool& capitalPool,
                  HttpWrapper::BinanceApiWrapper& apiWrapper);
 
         ~Executor();
