@@ -49,7 +49,7 @@ namespace Arbitrage{
 
         this->TargetToken = targetToken;
         this->OriginQuantity = lockedQuantity;
-        TriangularArbitrage::ExecuteTrans(firstStep);
+        TriangularArbitrage::ExecuteTrans(0, firstStep);
         return 0;
     }
 
@@ -99,7 +99,7 @@ namespace Arbitrage{
         }
 
         return TriangularArbitrage::ReviseTrans(
-                data.GetToToken(), this->TargetToken,data.GetNewQuantity()
+                data.GetToToken(), this->TargetToken, 0, data.GetNewQuantity()
         );
     }
 
@@ -113,7 +113,7 @@ namespace Arbitrage{
             }
         } else if (define::NotStableCoin(data.GetFromToken())) {
             // 未成交部分重执行
-            auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, data.GetUnExecuteQuantity());
+            auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, 0, data.GetUnExecuteQuantity());
             if (err > 0) {
                 return err;
             }
@@ -121,7 +121,7 @@ namespace Arbitrage{
 
         if (data.GetToToken() != this->TargetToken) {
             // 已成交部分继续执行
-            auto err = this->ReviseTrans(data.GetToToken(), this->TargetToken, data.GetNewQuantity());
+            auto err = this->ReviseTrans(data.GetToToken(), this->TargetToken, 0, data.GetNewQuantity());
             if (err > 0) {
                 return err;
             }
@@ -132,7 +132,7 @@ namespace Arbitrage{
 
     int IocTriangularArbitrage::expiredHandler(OrderData &data) {
         // 未成交部分重执行
-        auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, data.GetUnExecuteQuantity());
+        auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, 0, data.GetUnExecuteQuantity());
         if (err > 0) {
             return err;
         }

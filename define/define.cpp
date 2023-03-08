@@ -4,10 +4,7 @@ namespace define
 {
     bool IsStableCoin(string coinName)
     {
-        if (coinName == "BUSD") {
-            return true;
-        }
-        /*if (coinName == "ETH")
+        if (coinName == "ETH")
         {
             return true;
         }
@@ -18,7 +15,7 @@ namespace define
         else if (coinName == "BTC")
         {
             return true;
-        }*/
+        }
 
         return false;
     }

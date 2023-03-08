@@ -120,16 +120,19 @@ namespace Pathfinder{
         }
     }
 
-    void Graph::UpdateNode(WebsocketWrapper::DepthData &data) {
+    void Graph::UpdateNode(WebsocketWrapper::DepthData &data)
+    {
         auto baseIndex = tokenToIndex[data.BaseToken];
         auto quoteIndex = tokenToIndex[data.QuoteToken];
 
         auto node = tradeNodeMap[formatKey(baseIndex, quoteIndex)];
-        if (not data.Bids.empty()) { // 买单挂出价，我方卖出价
+        if (not data.Bids.empty())
+        { // 买单挂出价，我方卖出价
             auto depth = data.Bids[0];
             node->UpdateSell(depth.Price, depth.Quantity);
         }
-        if (!data.Asks.empty()) { // 卖单挂出价，我方买入价
+        if (!data.Asks.empty())
+        { // 卖单挂出价，我方买入价
             auto depth = data.Asks[0];
             node->UpdateBuy(depth.Price, depth.Quantity);
         }
@@ -313,9 +316,9 @@ namespace Pathfinder{
 //        return chance;
 //    }
 
-    ArbitrageChance Graph::FindBestPath(const string& name, const string& origin, const string& end, double quantity) {
+    ArbitrageChance Graph::FindBestPath(FindBestPathReq& req) {
         Strategy strategy{};
-        if (name == "maker") {
+        if (req.Name == "maker") {
             strategy.Fee = 0;
             strategy.OrderType = define::LIMIT_MAKER;
             strategy.TimeInForce = define::GTC;
@@ -325,8 +328,8 @@ namespace Pathfinder{
             strategy.TimeInForce = define::IOC;
         }
 
-        int originToken = tokenToIndex[origin];
-        int endToken = tokenToIndex[end];
+        int originToken = tokenToIndex[req.Origin];
+        int endToken = tokenToIndex[req.End];
 
         double maxProfit = 0;
         vector<TransactionPathItem> resultPath{};
@@ -355,6 +358,7 @@ namespace Pathfinder{
         auto pathPrice = resultPath.front().Price;
         auto pathQuantity = resultPath.front().Quantity;
 
+        auto quantity = req.Quantity;
         if (resultPath.front().Side == define::BUY) {
             quantity /= pathPrice; // 转换成baseToken数量
         }

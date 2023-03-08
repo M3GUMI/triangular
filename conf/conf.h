@@ -1,6 +1,7 @@
 #pragma once
 #include <map>
 #include <string>
+#include <utils/utils.h>
 
 using namespace std;
 namespace conf
@@ -15,4 +16,6 @@ namespace conf
 
     extern string BaseAsset; // 最终稳定币
     extern map<string, double> BaseAssets; // 初始仓位
+
+//    Config* initConfig();
 }

@@ -1,4 +1,7 @@
 #include "triangular.h"
+#include "lib/api/http/binance_api_wrapper.h"
+
+
 
 namespace Arbitrage{
     TriangularArbitrage::TriangularArbitrage(
@@ -44,9 +47,10 @@ namespace Arbitrage{
         this->subscriber = callback;
     }
 
-    int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path) {
+    int TriangularArbitrage::ExecuteTrans(int phase, Pathfinder::TransactionPathItem &path) {
         auto order = new OrderData();
         order->OrderId = GenerateId();
+        order->Phase = phase;
         order->BaseToken = path.BaseToken;
         order->QuoteToken = path.QuoteToken;
         order->Side = path.Side;
@@ -86,9 +90,15 @@ namespace Arbitrage{
         return err;
     }
 
-    int TriangularArbitrage::ReviseTrans(string origin, string end, double quantity) {
+    int TriangularArbitrage::ReviseTrans(string origin, string end, int phase, double quantity) {
         // 寻找新路径重试
-        auto chance = pathfinder.FindBestPath(this->strategy, origin, end, quantity);
+        Pathfinder::FindBestPathReq req{};
+        req.Name = this->strategy;
+        req.Origin = origin;
+        req.End = end;
+        req.Quantity = quantity;
+
+        auto chance = pathfinder.FindBestPath(req);
         spdlog::info(
                 "{}::RevisePath, profit: {}, quantity: {}, bestPath: {}",
                 this->strategy,
@@ -96,7 +106,7 @@ namespace Arbitrage{
                 chance.FirstStep().Quantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
 
-        return ExecuteTrans(chance.FirstStep());
+        return ExecuteTrans(phase, chance.FirstStep());
     }
 
     void TriangularArbitrage::baseOrderHandler(OrderData &data, int err) {
@@ -106,7 +116,6 @@ namespace Arbitrage{
         }
 
         if (not orderMap.count(data.OrderId)) {
-            spdlog::error("func: baseOrderHandler, err: {}", "order not exist");
             return;
         }
 
@@ -139,4 +148,59 @@ namespace Arbitrage{
     void TriangularArbitrage::TransHandler(OrderData &orderData) {
         exit(EXIT_FAILURE);
     }
+
+
+    //执行挂单操作
+    int TriangularArbitrage::executeOrder(OrderData& orderData)
+    {
+            auto order = new OrderData();
+            order->OrderId = GenerateId();
+            order->BaseToken = orderData.BaseToken;
+            order->QuoteToken = orderData.QuoteToken;
+            order->Side = orderData.Side;
+            order->Price = orderData.Price;
+            order->Quantity = orderData.Quantity;
+            order->OrderType = orderData.OrderType;
+            order->TimeInForce = orderData.TimeInForce;
+            order->OrderStatus = define::INIT;
+            order->UpdateTime = GetNowTime();
+            orderMap[order->OrderId] = order;
+
+            auto err = apiWrapper.CreateOrder(
+                    *order,
+                    bind(
+                            &TriangularArbitrage::baseOrderHandler,
+                            this,
+                            placeholders::_1,
+                            placeholders::_2
+                    ));
+        double lockedQuantity;
+        if (auto err = capitalPool.LockAsset(orderData.BaseToken, orderData.Quantity, lockedQuantity); err > 0) {
+            return err;
+        }
+            spdlog::info(
+                    "func: ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, price: {}, quantity: {}",
+                    err,
+                    orderData.BaseToken,
+                    orderData.QuoteToken,
+                    sideToString(orderData.Side),
+                    orderData.Price,
+                    orderData.Quantity
+            );
+
+            if (err == define::ErrorLessTicketSize || err == define::ErrorLessMinNotional) {
+                return 0;
+            }
+
+            return err;
+    }
+
+    int TriangularArbitrage::cancelOrder(OrderData &orderData){
+        string token0 = orderData.BaseToken;
+        string token1 = orderData.QuoteToken;
+        string symbol = apiWrapper.GetSymbol(token0, token1);
+//        define::OrderSide = apiWrapper.GetSide(token0, token1);
+        apiWrapper.CancelOrder(orderData.OrderId);
+    }
+
 }

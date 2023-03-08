@@ -4,6 +4,8 @@
 
 struct OrderData {
     uint64_t OrderId = 0;
+    int Phase = 0;
+
     string BaseToken;
     string QuoteToken;
     double Price = 0;
