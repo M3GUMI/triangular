@@ -81,8 +81,10 @@ namespace Pathfinder{
                     }
 
                     triangularMap[originIndex].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
+                    // 方向1
                     nodeTriangularMap[formatKey(originIndex, secondIndex)].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
-
+                    // 方向2
+                    nodeTriangularMap[formatKey(originIndex, secondIndex)].emplace_back(vector<int>{originIndex, thirdIndex, secondIndex, originIndex});
                 }
             }
         }
@@ -193,14 +195,36 @@ namespace Pathfinder{
         gettimeofday(&tv1,NULL);
 
         // 三元环base到quote方向寻找套利机会
-        for (auto item: nodeTriangularMap[formatKey(baseIndex, quoteIndex)]){
-            spdlog::info("before calculate profit, ring:\{first: {}-> second: {}->third: {}\}", item[0], item[1], item[2]);
+//        for (auto item: nodeTriangularMap[formatKey(baseIndex, quoteIndex)]){
+//            spdlog::info("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item[0], item[1], item[2]);
+//            double profit = calculateProfit(strategy, item);
+//            spdlog::info("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
+//            if (profit <= 1 || profit <= maxProfit)
+//            {
+//                continue;
+//            }
+//            auto path = formatPath(strategy, item);
+//            adjustQuantities(path);
+//            if (not checkPath(path))
+//            {
+//                continue;
+//            }
+//
+//            maxProfit = profit;
+//            resultPath = path;
+//            spdlog::info("func: {}, update max profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
+//        }
+
+        // 三元环quote到base方向找套利机会
+        for (auto item: nodeTriangularMap[formatKey(quoteIndex, baseIndex)]){
+//            spdlog::info("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item[0], item[1], item[2]);
             double profit = calculateProfit(strategy, item);
-            spdlog::info("after calculate profit, profit: {}, ring:\{first: {}-> second: {}->third: {}\}", profit, item[0], item[1], item[2]);
+//            spdlog::info("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
             if (profit <= 1 || profit <= maxProfit)
             {
                 continue;
             }
+
             auto path = formatPath(strategy, item);
             adjustQuantities(path);
             if (not checkPath(path))
@@ -210,27 +234,13 @@ namespace Pathfinder{
 
             maxProfit = profit;
             resultPath = path;
-        }
-
-        // 三元环quote到base方向找套利机会
-        for (auto item: nodeTriangularMap[formatKey(quoteIndex, baseIndex)]){
-            double profit = calculateProfit(strategy, item);
-            if (profit <= 1 || profit <= maxProfit)
-            {
-                continue;
-            }
-
-            auto path = formatPath(strategy, item);
-            adjustQuantities(path);
-            if (not checkPath(path))
-            {
-                continue;
-            }
+            spdlog::info("func: {}, update max profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
         }
         gettimeofday(&tv2,NULL);
 
-        spdlog::info("func: {}, scan rings: {}, path time cost: {}us, max profit:{}", "CalculateArbitrage",
-                nodeTriangularMap[formatKey(baseIndex, quoteIndex)].size()+nodeTriangularMap[formatKey(quoteIndex, baseIndex)].size(),
+        spdlog::info("func: {}, scan first rings: {}, scan second rings: {}, path time cost: {}us, max profit: {}", "CalculateArbitrage",
+                nodeTriangularMap[formatKey(baseIndex, quoteIndex)].size(),
+                nodeTriangularMap[formatKey(quoteIndex, baseIndex)].size(),
                 tv2.tv_sec*1000000 + tv2.tv_usec - (tv1.tv_sec*1000000 + tv1.tv_usec),
                 maxProfit);
 
