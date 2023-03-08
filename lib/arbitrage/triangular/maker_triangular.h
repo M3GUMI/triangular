@@ -1,5 +1,6 @@
 #pragma once
 #include "triangular.h"
+#include "conf/strategy.h"
 #include "lib/api/ws/binance_order_wrapper.h"
 
 using namespace std;
