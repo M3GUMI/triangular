@@ -231,9 +231,9 @@ namespace Pathfinder{
         return chance;
     }
 
-    ArbitrageChance Graph::FindBestPath(string name, string start, string end, double quantity) {
+    ArbitrageChance Graph::FindBestPath(FindBestPathReq& req) {
         Strategy strategy{};
-        if (name == "maker") {
+        if (req.Name == "maker") {
             strategy.Fee = 0;
             strategy.OrderType = define::LIMIT_MAKER;
             strategy.TimeInForce = define::GTC;
@@ -243,8 +243,8 @@ namespace Pathfinder{
             strategy.TimeInForce = define::IOC;
         }
 
-        auto oneStepResult = bestOneStep(tokenToIndex[start], tokenToIndex[end], strategy);
-        auto twoStepResult = bestTwoStep(tokenToIndex[start], tokenToIndex[end], strategy);
+        auto oneStepResult = bestOneStep(tokenToIndex[req.Origin], tokenToIndex[req.End], strategy);
+        auto twoStepResult = bestTwoStep(tokenToIndex[req.Origin], tokenToIndex[req.End], strategy);
 
         ArbitrageChance chance{};
         pair<double, vector<TransactionPathItem>> *data;
@@ -256,6 +256,7 @@ namespace Pathfinder{
 
         auto pathPrice = data->second.front().Price;
         auto pathQuantity = data->second.front().Quantity;
+        auto quantity = req.Quantity;
         double realQuantity = 0;
         if (data->second.front().Side == define::SELL) {
             spdlog::info("quantity: {}, pathQuantity: {}", quantity, pathQuantity);

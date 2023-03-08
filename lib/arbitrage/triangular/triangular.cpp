@@ -47,9 +47,10 @@ namespace Arbitrage{
         this->subscriber = callback;
     }
 
-    int TriangularArbitrage::ExecuteTrans(Pathfinder::TransactionPathItem &path) {
+    int TriangularArbitrage::ExecuteTrans(int phase, Pathfinder::TransactionPathItem &path) {
         auto order = new OrderData();
         order->OrderId = GenerateId();
+        order->Phase = phase;
         order->BaseToken = path.BaseToken;
         order->QuoteToken = path.QuoteToken;
         order->Side = path.Side;
@@ -90,9 +91,15 @@ namespace Arbitrage{
         return err;
     }
 
-    int TriangularArbitrage::ReviseTrans(string origin, string end, double quantity) {
+    int TriangularArbitrage::ReviseTrans(string origin, string end, int phase, double quantity) {
         // 寻找新路径重试
-        auto chance = pathfinder.FindBestPath(this->strategy, origin, end, quantity);
+        Pathfinder::FindBestPathReq req{};
+        req.Name = this->strategy;
+        req.Origin = origin;
+        req.End = end;
+        req.Quantity = quantity;
+
+        auto chance = pathfinder.FindBestPath(req);
         spdlog::info(
                 "{}::RevisePath, profit: {}, quantity: {}, bestPath: {}",
                 this->strategy,
@@ -100,7 +107,7 @@ namespace Arbitrage{
                 chance.FirstStep().Quantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
 
-        return ExecuteTrans(chance.FirstStep());
+        return ExecuteTrans(phase, chance.FirstStep());
     }
 
     void TriangularArbitrage::baseOrderHandler(OrderData &data, int err) {
@@ -110,7 +117,6 @@ namespace Arbitrage{
         }
 
         if (not orderMap.count(data.OrderId)) {
-            spdlog::error("func: baseOrderHandler, err: {}", "order not exist");
             return;
         }
 

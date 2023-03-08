@@ -11,6 +11,8 @@ project(MoneyTriangular)
 set(ALL_FILES
         conf/conf.h
         conf/conf.cpp
+        conf/strategy.h
+        conf/strategy.cpp
         define/define.cpp
         define/define.h
         define/error.cpp
