@@ -14,7 +14,7 @@ namespace Pathfinder{
         indexToToken.clear();
         triangularMap.clear();
         bestPathMap.clear();
-        nodeTriangularMap.clear();
+        relatedTriangular.clear();
 
         // 初始化index
         int indexCount = 0;
@@ -80,11 +80,21 @@ namespace Pathfinder{
                         continue;
                     }
 
-                    triangularMap[originIndex].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
-                    // 方向1
-                    nodeTriangularMap[formatKey(originIndex, secondIndex)].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
-                    // 方向2
-                    nodeTriangularMap[formatKey(originIndex, secondIndex)].emplace_back(vector<int>{originIndex, thirdIndex, secondIndex, originIndex});
+                    vector<int> triangular1 = {originIndex, secondIndex, thirdIndex, originIndex};
+                    vector<int> triangular2 = {originIndex, thirdIndex, secondIndex, originIndex};
+                    triangularMap[originIndex].emplace_back(triangular1);
+                    for (int i = 0; i < triangular1.size() - 1; i++){
+                        u_int64_t key = formatKey(triangular1[i], triangular1[i + 1]);
+                        if (not relatedTriangular.count(key)){
+                            set<vector<int>> set{};
+                            set.insert(triangular1);
+                            set.insert(triangular2);
+                            relatedTriangular[key] = set;
+                        } else {
+                            relatedTriangular[key].insert(triangular1);
+                            relatedTriangular[key].insert(triangular2);
+                        }
+                    }
                 }
             }
         }
@@ -197,29 +207,8 @@ namespace Pathfinder{
         struct timeval tv1, tv2;
         gettimeofday(&tv1,NULL);
 
-        // 三元环base到quote方向寻找套利机会
-//        for (auto item: nodeTriangularMap[formatKey(baseIndex, quoteIndex)]){
-//            spdlog::info("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item[0], item[1], item[2]);
-//            double profit = calculateProfit(strategy, item);
-//            spdlog::info("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
-//            if (profit <= 1 || profit <= maxProfit)
-//            {
-//                continue;
-//            }
-//            auto path = formatPath(strategy, item);
-//            adjustQuantities(path);
-//            if (not checkPath(path))
-//            {
-//                continue;
-//            }
-//
-//            maxProfit = profit;
-//            resultPath = path;
-//            spdlog::info("func: {}, update max profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
-//        }
-
         // 三元环quote到base方向找套利机会
-        for (auto item: nodeTriangularMap[formatKey(quoteIndex, baseIndex)]){
+        for (auto item: relatedTriangular[formatKey(quoteIndex, baseIndex)]){
 //            spdlog::info("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item[0], item[1], item[2]);
             double profit = calculateProfit(strategy, item);
 //            spdlog::info("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
@@ -242,8 +231,8 @@ namespace Pathfinder{
         gettimeofday(&tv2,NULL);
 
         spdlog::info("func: {}, scan first rings: {}, scan second rings: {}, path time cost: {}us, max profit: {}", "CalculateArbitrage",
-                nodeTriangularMap[formatKey(baseIndex, quoteIndex)].size(),
-                nodeTriangularMap[formatKey(quoteIndex, baseIndex)].size(),
+                relatedTriangular[formatKey(baseIndex, quoteIndex)].size(),
+                relatedTriangular[formatKey(quoteIndex, baseIndex)].size(),
                 tv2.tv_sec*1000000 + tv2.tv_usec - (tv1.tv_sec*1000000 + tv1.tv_usec),
                 maxProfit);
 

@@ -63,7 +63,7 @@ namespace Pathfinder
         this->buyQuantity = quantity;
     }
 
-    TransactionPathItem Node::Format(Strategy& strategy, unordered_map<int, string>& indexToToken, int from, int to) {
+    TransactionPathItem Node::Format(Strategy& strategy, map<int, string>& indexToToken, int from, int to) {
         TransactionPathItem item{};
         item.BaseToken = indexToToken[baseIndex];
         item.QuoteToken = indexToToken[quoteIndex];
