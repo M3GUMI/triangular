@@ -187,17 +187,17 @@ namespace Pathfinder{
 
             // 首次插入最佳路径
             if (not bestPathMap.count(key)) {
-                bestPathMap[key] = {path, currentProfit};
+                bestPathMap[key] = {path->Steps, currentProfit};
                 updateNum++;
             }
             // 如果本路径本就是最优路径则更新profit
-            else if (path==bestPathMap[key].bestPath){
+            else if (path->Steps==bestPathMap[key].bestPath){
                 bestPathMap[key].profit = currentProfit;
                 updateNum++;
             }
             // 找到更优的路径
             else if (currentProfit > bestPathMap[key].profit){
-                bestPathMap[key] = {path, currentProfit};
+                bestPathMap[key] = {path->Steps, currentProfit};
                 updateNum++;
             }
         }
