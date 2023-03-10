@@ -5,6 +5,7 @@
 #include <functional>
 #include "lib/api/ws/binance_depth_wrapper.h"
 #include "graph.h"
+#include <cmath>
 
 using namespace std;
 namespace Pathfinder

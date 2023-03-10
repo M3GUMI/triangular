@@ -2,7 +2,7 @@
 
 namespace Pathfinder
 {
-    struct Strategy {
+    struct Strategy{
         double Fee;
         define::OrderType OrderType;
         define::TimeInForce TimeInForce;
