@@ -84,13 +84,7 @@ namespace Pathfinder{
 
                     for (int i = 0; i < steps.size() - 1; i++){
                         u_int64_t key = formatKey(steps[i], steps[i + 1]);
-                        if (not relatedTriangular.count(key)){
-                            set<Triangular*> set{};
-                            set.insert(triangular);
-                            relatedTriangular[key] = set;
-                        } else {
-                            relatedTriangular[key].insert(triangular);
-                        }
+                        relatedTriangular[key].emplace_back(triangular);
                     }
                 }
             }
@@ -130,11 +124,9 @@ namespace Pathfinder{
                             .Steps = vector<int>{originIndex, secondIndex, thirdIndex}
                     };
                     pathMap[formatKey(originIndex, thirdIndex)].emplace_back(twoPath);
-                    // if(not define::IsStableCoin(indexToToken[secondIndex]) && define::IsStableCoin(indexToToken[thirdIndex])){
-                    // 存储交易对价格波动会影响的路径，由于thirdIndex到originIndex都是稳定币所以不存它们之间的索引
+                    // 存储交易对价格波动会影响的路径
                     relatedPath[formatKey(originIndex, secondIndex)].insert(twoPath);
                     relatedPath[formatKey(secondIndex, thirdIndex)].insert(twoPath);
-                    // }
                 }
             }
         }
@@ -157,9 +149,10 @@ namespace Pathfinder{
             node->UpdateBuy(depth.Price, depth.Quantity);
         }
 
-        if (define::IsStableCoin(data.BaseToken) && not define::IsStableCoin(data.QuoteToken)){
+        if (define::IsStableCoin(data.BaseToken)){
             int updateNum = updateBestMap(tokenToIndex[data.QuoteToken], tokenToIndex[data.BaseToken]);
-        } else if (not define::IsStableCoin(data.BaseToken) && define::IsStableCoin(data.QuoteToken)) {
+        }
+        if (define::IsStableCoin(data.QuoteToken)) {
             int updateNum = updateBestMap(tokenToIndex[data.BaseToken], tokenToIndex[data.QuoteToken]);
         }
 
@@ -182,8 +175,11 @@ namespace Pathfinder{
                 return 0;
             }
 
-            u_int64_t key = formatKey(path->Steps[1], path->Steps[path->Steps.size()-1]);
+            u_int64_t key = formatKey(path->Steps[0], path->Steps[path->Steps.size()-1]);
             double currentProfit = calculateMakerPathProfit(path->Steps);
+            if (currentProfit == 0){
+                continue;
+            }
 
             // 首次插入最佳路径
             if (not bestPathMap.count(key)) {
@@ -202,17 +198,16 @@ namespace Pathfinder{
             }
         }
 
-
-        spdlog::info("func: {}, Stable Coin: {}, Unstable Coin: {}, Path Num: {}, Update Num: {}",
+        spdlog::info("func: {}, {}->{}, Path Num: {}, Update Num: {}",
                 "updateBestMap",
-                to,
                 from,
+                to,
                 relatedPath[formatKey(from, to)].size(),
                 updateNum);
         return updateNum;
     }
 
-    // 目前的特殊逻辑，之后该成通用逻辑
+    // 目前的特殊逻辑，之后改成通用逻辑
     double Graph::calculateMakerPathProfit(vector<int>& path){
         double currentProfit = 1; // 验算利润率
         for (int i = 0; i < path.size() - 1; i++)
@@ -221,10 +216,19 @@ namespace Pathfinder{
             auto to = path[i + 1];
 
             auto node = tradeNodeMap[formatKey(from, to)];
+            if (node == NULL){
+                return 0;
+            }
+
             currentProfit = currentProfit * node->GetParsePrice(from, to);
         }
 
-        currentProfit = currentProfit * (1-0.0004);
+        // 不倒过来算一次profit就会变得很奇怪
+        auto node = tradeNodeMap[formatKey(path[path.size()-1], path[0])];
+        if (node == NULL){
+            return 0;
+        }
+        currentProfit = currentProfit * node->GetParsePrice(path[path.size()-1], path[0]) * (1-0.0004);
         return currentProfit;
     }
 
@@ -278,7 +282,7 @@ namespace Pathfinder{
         gettimeofday(&tv1,NULL);
 
         for (auto item: relatedTriangular[formatKey(quoteIndex, baseIndex)]){
-//            spdlog::info("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item[0], item[1], item[2]);
+//            spdlog::info("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item->Steps[0], item->Steps[1], item->Steps[2]);
             double profit = calculateProfit(strategy, item->Steps);
 //            spdlog::info("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
             if (profit <= 1 || profit <= maxProfit)

@@ -111,7 +111,7 @@ namespace Pathfinder{
         map<int, vector<Triangular*>> triangularMap{}; // 存储所有key起点的三元环
         map<u_int64_t, vector<Path*>> pathMap{}; // 存储所有两点间路径，最长两步。key前32位代表起点，后32位代表终点
 
-        map<u_int64_t, set<Triangular*>> relatedTriangular{}; // 存储交易对对应的三元环
+        map<u_int64_t, vector<Triangular*>> relatedTriangular{}; // 存储交易对对应的三元环
         map<u_int64_t, set<Path*>> relatedPath{}; // 交易对印象路径的倒排索引
         map<u_int64_t, BestPath> bestPathMap{};
 
