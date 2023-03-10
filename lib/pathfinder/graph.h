@@ -96,11 +96,23 @@ namespace Pathfinder{
         map<string, int> tokenToIndex{};
         map<int, string> indexToToken{};
 
+        struct Triangular
+        {
+            vector<int> Steps;
+        };
+
+        struct Path
+        {
+            int StepCount = 0; // 步数
+            vector<int> Steps;
+        };
+
         map<u_int64_t, Node*> tradeNodeMap{}; // key为baseIndex+quoteIndex、quoteIndex+baseIndex两种类型
-        map<int, vector<vector<int>>> triangularMap{}; // 存储所有key起点的三元环
-        map<u_int64_t, vector<vector<int>>> pathMap{}; // 存储所有两点间路径，最长两步。key前32位代表起点，后32位代表终点
-        map<u_int64_t, set<vector<int>>> relatedTriangular{}; // 存储交易对对应的三元环
-        map<u_int64_t, set<vector<int>>> relatedPath{}; // 交易对印象路径的倒排索引
+        map<int, vector<Triangular*>> triangularMap{}; // 存储所有key起点的三元环
+        map<u_int64_t, vector<Path*>> pathMap{}; // 存储所有两点间路径，最长两步。key前32位代表起点，后32位代表终点
+
+        map<u_int64_t, set<Triangular*>> relatedTriangular{}; // 存储交易对对应的三元环
+        map<u_int64_t, set<Path*>> relatedPath{}; // 交易对印象路径的倒排索引
         map<u_int64_t, BestPath> bestPathMap{};
 
         vector<TransactionPathItem> formatPath(Strategy& strategy, vector<int>& path);

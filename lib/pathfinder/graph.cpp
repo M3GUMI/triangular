@@ -47,7 +47,6 @@ namespace Pathfinder{
         }
 
         // 存储所有三元环
-        int usdtIndex = tokenToIndex["USDT"];
         for (const auto &baseToken: conf::BaseAssets)
         {
             if (not tokenToIndex.count(baseToken.first))
@@ -77,24 +76,20 @@ namespace Pathfinder{
                         continue;
                     }
 
-                    if (secondIndex == usdtIndex || thirdIndex == usdtIndex) {
-                        // 摘掉usdt，路径一般执行不完
-                        continue;
-                    }
+                    auto triangular = new Triangular{
+                        .Steps = {originIndex, secondIndex, thirdIndex, originIndex}
+                    };
+                    auto steps = triangular->Steps;
+                    triangularMap[originIndex].emplace_back(triangular);
 
-                    vector<int> triangular1 = {originIndex, secondIndex, thirdIndex, originIndex};
-                    vector<int> triangular2 = {originIndex, thirdIndex, secondIndex, originIndex};
-                    triangularMap[originIndex].emplace_back(triangular1);
-                    for (int i = 0; i < triangular1.size() - 1; i++){
-                        u_int64_t key = formatKey(triangular1[i], triangular1[i + 1]);
+                    for (int i = 0; i < steps.size() - 1; i++){
+                        u_int64_t key = formatKey(steps[i], steps[i + 1]);
                         if (not relatedTriangular.count(key)){
-                            set<vector<int>> set{};
-                            set.insert(triangular1);
-                            set.insert(triangular2);
+                            set<Triangular*> set{};
+                            set.insert(triangular);
                             relatedTriangular[key] = set;
                         } else {
-                            relatedTriangular[key].insert(triangular1);
-                            relatedTriangular[key].insert(triangular2);
+                            relatedTriangular[key].insert(triangular);
                         }
                     }
                 }
@@ -114,7 +109,11 @@ namespace Pathfinder{
                 }
 
                 // 存储一步路径
-                pathMap[formatKey(originIndex, secondIndex)].emplace_back(vector<int>{originIndex, secondIndex});
+                auto onePath = new Path{
+                    .StepCount = 1,
+                    .Steps = vector<int>{originIndex, secondIndex}
+                };
+                pathMap[formatKey(originIndex, secondIndex)].emplace_back(onePath);
 
                 for (const auto& third : indexToToken)
                 {
@@ -126,11 +125,16 @@ namespace Pathfinder{
                     }
 
                     // 存储两步路径
-                    pathMap[formatKey(originIndex, thirdIndex)].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex});
-                    if(not define::IsStableCoin(indexToToken[secondIndex]) && define::IsStableCoin(indexToToken[thirdIndex])){
-                        // 存储交易对价格波动会影响的路径，由于thirdIndex到originIndex都是稳定币所以不存它们之间的索引
-                        relatedPath[formatKey(secondIndex, thirdIndex)].insert(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
-                    }
+                    auto twoPath = new Path{
+                            .StepCount = 2,
+                            .Steps = vector<int>{originIndex, secondIndex, thirdIndex}
+                    };
+                    pathMap[formatKey(originIndex, thirdIndex)].emplace_back(twoPath);
+                    // if(not define::IsStableCoin(indexToToken[secondIndex]) && define::IsStableCoin(indexToToken[thirdIndex])){
+                    // 存储交易对价格波动会影响的路径，由于thirdIndex到originIndex都是稳定币所以不存它们之间的索引
+                    relatedPath[formatKey(originIndex, secondIndex)].insert(twoPath);
+                    relatedPath[formatKey(secondIndex, thirdIndex)].insert(twoPath);
+                    // }
                 }
             }
         }
@@ -173,13 +177,13 @@ namespace Pathfinder{
     int Graph::updateBestMap(int from, int to){
         int updateNum = 0;
         for (auto path : relatedPath[formatKey(from, to)]){
-            if (path.size() < 2)
+            if (path->Steps.size() < 2)
             {
                 return 0;
             }
 
-            u_int64_t key = formatKey(path[1], path[path.size()-1]);
-            double currentProfit = calculateMakerPathProfit(path);
+            u_int64_t key = formatKey(path->Steps[1], path->Steps[path->Steps.size()-1]);
+            double currentProfit = calculateMakerPathProfit(path->Steps);
 
             // 首次插入最佳路径
             if (not bestPathMap.count(key)) {
@@ -275,14 +279,14 @@ namespace Pathfinder{
 
         for (auto item: relatedTriangular[formatKey(quoteIndex, baseIndex)]){
 //            spdlog::info("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item[0], item[1], item[2]);
-            double profit = calculateProfit(strategy, item);
+            double profit = calculateProfit(strategy, item->Steps);
 //            spdlog::info("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
             if (profit <= 1 || profit <= maxProfit)
             {
                 continue;
             }
 
-            auto path = formatPath(strategy, item);
+            auto path = formatPath(strategy, item->Steps);
             adjustQuantities(path);
             if (not checkPath(path))
             {
@@ -331,12 +335,12 @@ namespace Pathfinder{
         vector<TransactionPathItem> resultPath{};
         for (auto& item: pathMap[formatKey(originToken, endToken)])
         {
-            double profit = calculateProfit(strategy, item);
+            double profit = calculateProfit(strategy, item->Steps);
             if (profit <= maxProfit) {
                 continue;
             }
 
-            auto path = formatPath(strategy, item);
+            auto path = formatPath(strategy, item->Steps);
             adjustQuantities(path);
             if (not checkPath(path)) {
                 continue;
