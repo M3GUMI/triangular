@@ -49,7 +49,8 @@ namespace Arbitrage{
 
         this->TargetToken = targetToken;
         this->OriginQuantity = lockedQuantity;
-        TriangularArbitrage::ExecuteTrans(0, firstStep);
+        uint64_t orderId;
+        TriangularArbitrage::ExecuteTrans(orderId, 0, firstStep);
         return 0;
     }
 
@@ -98,9 +99,8 @@ namespace Arbitrage{
             return 0;
         }
 
-        return TriangularArbitrage::ReviseTrans(
-                data.GetToToken(), this->TargetToken, 0, data.GetNewQuantity()
-        );
+        uint64_t orderId;
+        return TriangularArbitrage::ReviseTrans(orderId, 0, data.GetToToken(), data.GetNewQuantity());
     }
 
     int IocTriangularArbitrage::partiallyFilledHandler(OrderData &data) {
@@ -113,7 +113,8 @@ namespace Arbitrage{
             }
         } else if (define::NotStableCoin(data.GetFromToken())) {
             // 未成交部分重执行
-            auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, 0, data.GetUnExecuteQuantity());
+            uint64_t orderId;
+            auto err = this->ReviseTrans(orderId, 0, data.GetFromToken(), data.GetUnExecuteQuantity());
             if (err > 0) {
                 return err;
             }
@@ -121,7 +122,8 @@ namespace Arbitrage{
 
         if (data.GetToToken() != this->TargetToken) {
             // 已成交部分继续执行
-            auto err = this->ReviseTrans(data.GetToToken(), this->TargetToken, 0, data.GetNewQuantity());
+            uint64_t orderId;
+            auto err = this->ReviseTrans(orderId, 0, data.GetToToken(), data.GetNewQuantity());
             if (err > 0) {
                 return err;
             }
@@ -132,7 +134,8 @@ namespace Arbitrage{
 
     int IocTriangularArbitrage::expiredHandler(OrderData &data) {
         // 未成交部分重执行
-        auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, 0, data.GetUnExecuteQuantity());
+        uint64_t orderId;
+        auto err = this->ReviseTrans(orderId, 0, data.GetFromToken(), data.GetUnExecuteQuantity());
         if (err > 0) {
             return err;
         }

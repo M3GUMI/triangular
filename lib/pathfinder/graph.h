@@ -8,6 +8,7 @@
 #include <functional>
 #include "lib/api/http/binance_api_wrapper.h"
 #include "lib/api/ws/binance_depth_wrapper.h"
+#include "conf/strategy.h"
 #include <unordered_map>
 #include "node.h"
 #include <set>
@@ -42,10 +43,11 @@ namespace Pathfinder{
 
     struct FindBestPathReq
     {
-        string Name; // 策略名
+        conf::Strategy Strategy; // 策略
         string Origin; // 起点
         string End; // 终点
         double Quantity; // 数量
+        int Phase = 0; // 阶段
     };
 
     struct GetExchangePriceReq
@@ -77,7 +79,7 @@ namespace Pathfinder{
         ~Graph();
 
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
-        ArbitrageChance CalculateArbitrage(const string& strategy, int baseIndex, int quoteIndex);
+        ArbitrageChance CalculateArbitrage(conf::Strategy& strategy, int baseIndex, int quoteIndex);
         ArbitrageChance FindBestPath(FindBestPathReq& req);
         void SubscribeArbitrage(function<void(ArbitrageChance& chance)> handler);      // 订阅套利机会推送
 
@@ -115,8 +117,8 @@ namespace Pathfinder{
         map<u_int64_t, set<Path*>> relatedPath{}; // 交易对印象路径的倒排索引
         map<u_int64_t, BestPath> bestPathMap{};
 
-        vector<TransactionPathItem> formatPath(Strategy& strategy, vector<int>& path);
-        double calculateProfit(Strategy& strategy, vector<int>& path);
+        vector<TransactionPathItem> formatPath(conf::Strategy& strategy, int phase, vector<int>& path);
+        double calculateProfit(conf::Strategy& strategy, int phase, vector<int>& path);
         bool checkPath(vector<TransactionPathItem>& path);
         int updateBestMap(int from, int to);
         double calculateMakerPathProfit(vector<int>& path);

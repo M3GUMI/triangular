@@ -11,7 +11,7 @@ namespace Arbitrage
     {
     public:
         MakerTriangularArbitrage(websocketpp::lib::asio::io_service& ioService,
-                                 WebsocketWrapper::BinanceOrderWrapper &orderWrapper,
+                                 WebsocketWrapper::BinanceOrderWrapper& orderWrapper,
                                  Pathfinder::Pathfinder& pathfinder,
                                  CapitalPool::CapitalPool& pool,
                                  HttpWrapper::BinanceApiWrapper& apiWrapper);
@@ -20,15 +20,18 @@ namespace Arbitrage
 
         int Run(Pathfinder::ArbitrageChance& chance);
 
-        void makerOrderChangeHandler(Pathfinder::TransactionPathItem& lastpath);//价格变化幅度不够大，撤单重挂单
+        void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单
         std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂單計時器
     private:
         websocketpp::lib::asio::io_service& ioService;
-        WebsocketWrapper::BinanceOrderWrapper &orderWrapper;
+        WebsocketWrapper::BinanceOrderWrapper& orderWrapper;
 
         void TransHandler(OrderData& orderData);
 
-        double threshold;
+        OrderData* PendingOrder = nullptr; // 提前挂单
+
+        double close = 0.1; // 撤单重挂阈值
+        double open = 0.2; // 挂单阈值
 
         int partiallyFilledHandler(OrderData& orderData);
     };

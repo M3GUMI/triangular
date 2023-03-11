@@ -156,7 +156,7 @@ namespace Pathfinder{
             int updateNum = updateBestMap(tokenToIndex[data.BaseToken], tokenToIndex[data.QuoteToken]);
         }
 
-        auto chance = CalculateArbitrage("IocTriangular", baseIndex, quoteIndex);
+        auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
         if (chance.Profit <= 1)
         {
             return;
@@ -263,18 +263,7 @@ namespace Pathfinder{
         return 0;
     }
 
-    ArbitrageChance Graph::CalculateArbitrage(const string& name, int baseIndex, int quoteIndex) {
-        Strategy strategy{};
-        if (name == "maker") {
-            strategy.Fee = 0;
-            strategy.OrderType = define::LIMIT_MAKER;
-            strategy.TimeInForce = define::GTC;
-        } else {
-            strategy.Fee = 0.0004;
-            strategy.OrderType = define::LIMIT;
-            strategy.TimeInForce = define::IOC;
-        }
-
+    ArbitrageChance Graph::CalculateArbitrage(conf::Strategy& strategy, int baseIndex, int quoteIndex) {
         double maxProfit = 0;
         vector<TransactionPathItem> resultPath{};
 
@@ -283,14 +272,14 @@ namespace Pathfinder{
 
         for (auto item: relatedTriangular[formatKey(quoteIndex, baseIndex)]){
 //            spdlog::info("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item->Steps[0], item->Steps[1], item->Steps[2]);
-            double profit = calculateProfit(strategy, item->Steps);
+            double profit = calculateProfit(strategy, 1, item->Steps);
 //            spdlog::info("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
             if (profit <= 1 || profit <= maxProfit)
             {
                 continue;
             }
 
-            auto path = formatPath(strategy, item->Steps);
+            auto path = formatPath(strategy, 1, item->Steps);
             adjustQuantities(path);
             if (not checkPath(path))
             {
@@ -321,17 +310,6 @@ namespace Pathfinder{
     }
 
     ArbitrageChance Graph::FindBestPath(FindBestPathReq& req) {
-        Strategy strategy{};
-        if (req.Name == "maker") {
-            strategy.Fee = 0;
-            strategy.OrderType = define::LIMIT_MAKER;
-            strategy.TimeInForce = define::GTC;
-        } else {
-            strategy.Fee = 0.0004;
-            strategy.OrderType = define::LIMIT;
-            strategy.TimeInForce = define::IOC;
-        }
-
         int originToken = tokenToIndex[req.Origin];
         int endToken = tokenToIndex[req.End];
 
@@ -339,12 +317,12 @@ namespace Pathfinder{
         vector<TransactionPathItem> resultPath{};
         for (auto& item: pathMap[formatKey(originToken, endToken)])
         {
-            double profit = calculateProfit(strategy, item->Steps);
+            double profit = calculateProfit(req.Strategy, req.Phase, item->Steps);
             if (profit <= maxProfit) {
                 continue;
             }
 
-            auto path = formatPath(strategy, item->Steps);
+            auto path = formatPath(req.Strategy, req.Phase, item->Steps);
             adjustQuantities(path);
             if (not checkPath(path)) {
                 continue;
@@ -375,7 +353,7 @@ namespace Pathfinder{
         return chance;
     }
 
-    vector<TransactionPathItem> Graph::formatPath(Strategy& strategy, vector<int>& path)
+    vector<TransactionPathItem> Graph::formatPath(conf::Strategy& strategy, int phase, vector<int>& path)
     {
         vector<TransactionPathItem> result;
         if (path.size() < 2)
@@ -389,7 +367,7 @@ namespace Pathfinder{
             auto to = path[i + 1];
 
             auto node = tradeNodeMap[formatKey(from, to)];
-            result.emplace_back(node->Format(strategy, indexToToken, from, to));
+            result.emplace_back(node->Format(strategy.GetStep(phase+i), indexToToken, from, to));
         }
 
         return result;
@@ -415,7 +393,7 @@ namespace Pathfinder{
         return true;
     }
 
-    double Graph::calculateProfit(Strategy& strategy, vector<int>& path)
+    double Graph::calculateProfit(conf::Strategy& strategy, int phase, vector<int>& path)
     {
         if (path.size() < 2)
         {
@@ -429,7 +407,7 @@ namespace Pathfinder{
             auto to = path[i + 1];
 
             auto node = tradeNodeMap[formatKey(from, to)];
-            profit = profit * node->GetParsePrice(from, to) * (1 - strategy.Fee);
+            profit = profit * node->GetParsePrice(from, to) * strategy.GetFee(phase);
         }
 
         return profit;

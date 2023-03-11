@@ -40,8 +40,8 @@ namespace Arbitrage{
         CapitalPool::CapitalPool &capitalPool;
         HttpWrapper::BinanceApiWrapper &apiWrapper;
 
-        int ExecuteTrans(int phase, Pathfinder::TransactionPathItem &path);
-        int ReviseTrans(string origin, string end, int phase, double quantity);
+        int ExecuteTrans(uint64_t& orderId, int phase, Pathfinder::TransactionPathItem &path);
+        int ReviseTrans(uint64_t& orderId, int phase, string origin, double quantity);
         bool CheckFinish();
 
         int executeOrder(OrderData &orderData);//挂出新订单

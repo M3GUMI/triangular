@@ -47,7 +47,7 @@ namespace Arbitrage{
         this->subscriber = callback;
     }
 
-    int TriangularArbitrage::ExecuteTrans(int phase, Pathfinder::TransactionPathItem &path) {
+    int TriangularArbitrage::ExecuteTrans(uint64_t& orderId, int phase, Pathfinder::TransactionPathItem &path) {
         auto order = new OrderData();
         order->OrderId = GenerateId();
         order->Phase = phase;
@@ -61,6 +61,7 @@ namespace Arbitrage{
         order->OrderStatus = define::INIT;
         order->UpdateTime = GetNowTime();
         orderMap[order->OrderId] = order;
+        orderId = order->OrderId;
 
         auto err = apiWrapper.CreateOrder(
                 *order,
@@ -90,13 +91,14 @@ namespace Arbitrage{
         return err;
     }
 
-    int TriangularArbitrage::ReviseTrans(string origin, string end, int phase, double quantity) {
+    int TriangularArbitrage::ReviseTrans(uint64_t& orderId, int phase, string origin, double quantity) {
         // 寻找新路径重试
         Pathfinder::FindBestPathReq req{};
-        req.Name = this->strategy;
+        req.Strategy = this->strategyV2;
         req.Origin = origin;
-        req.End = end;
+        req.End = this->TargetToken;
         req.Quantity = quantity;
+        req.Phase = phase;
 
         auto chance = pathfinder.FindBestPath(req);
         spdlog::info(
@@ -106,7 +108,7 @@ namespace Arbitrage{
                 chance.FirstStep().Quantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
 
-        return ExecuteTrans(phase, chance.FirstStep());
+        return ExecuteTrans(orderId, phase, chance.FirstStep());
     }
 
     void TriangularArbitrage::baseOrderHandler(OrderData &data, int err) {

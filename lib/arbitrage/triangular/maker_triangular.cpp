@@ -46,10 +46,11 @@ namespace Arbitrage{
         // todo 后续改成通用逻辑
         orderWrapper.SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
 
-        TriangularArbitrage::ExecuteTrans(1, firstStep);
+        uint64_t orderId;
+        TriangularArbitrage::ExecuteTrans(orderId, 1, firstStep);
 
         reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
-        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerOrderChangeHandler, this, firstStep));
+        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerOrderChangeHandler, this));
         return 0;
     }
 
@@ -82,8 +83,8 @@ namespace Arbitrage{
         {
             // todo 需要加参数，改为市价taker单，非稳定币到稳定币
             // todo 需要加参数，改为稳定币到稳定币gtc挂单
-            auto err = this->ReviseTrans(data.GetToToken(), this->TargetToken, data.Phase + 1,
-                                         data.GetExecuteQuantity());
+            uint64_t orderId;
+            auto err = this->ReviseTrans(orderId, data.Phase + 1, data.GetToToken(), data.GetExecuteQuantity());
             if (err > 0)
             {
                 spdlog::error("{}::TransHandler, err: {}", this->strategyV2.StrategyName, WrapErr(err));
@@ -120,7 +121,8 @@ namespace Arbitrage{
         }
         else if (!define::IsStableCoin(orderData.GetFromToken()) || orderData.GetUnExecuteQuantity() > 0)
         {
-            auto err = this->ReviseTrans(orderData.GetFromToken(), this->TargetToken, 0, orderData.GetUnExecuteQuantity());
+            uint64_t orderId;
+            auto err = this->ReviseTrans(orderId, 0, orderData.GetFromToken(), orderData.GetUnExecuteQuantity());
             if (err > 0)
             {
                 return err;
@@ -129,7 +131,8 @@ namespace Arbitrage{
         //第一步至第二步
         if (orderData.GetToToken() != this->TargetToken)
         {
-            auto err = this->ReviseTrans(orderData.GetToToken(), this->TargetToken, 0, orderData.GetNewQuantity());
+            uint64_t orderId;
+            auto err = this->ReviseTrans(orderId, 0, orderData.GetToToken(), orderData.GetNewQuantity());
             if (err > 0)
             {
                 return err;
@@ -142,56 +145,72 @@ namespace Arbitrage{
         }
     }
 
-    /*
-     * maker操作处理器
-     * */
     //价格变化幅度不够大，撤单重挂单
     //base是BUSD SIDE为BUY QUOTE放购入货币
-    void MakerTriangularArbitrage::makerOrderChangeHandler(Pathfinder::TransactionPathItem &lastPath){
+    void MakerTriangularArbitrage::makerOrderChangeHandler(){
+        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
+        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerOrderChangeHandler, this));
+
+        auto baseToken = this->PendingOrder->BaseToken;
+        auto quoteToken = this->PendingOrder->QuoteToken;
+        auto orderStatus = this->PendingOrder->OrderStatus;
+        auto price = this->PendingOrder->Price;
+
+        if (orderStatus == define::PARTIALLY_FILLED || orderStatus == define::FILLED)
+        {
+            return;
+        }
+
         Pathfinder::GetExchangePriceReq req;
-        string QuoteToken = apiWrapper.GetSymbolData(lastPath.BaseToken, lastPath.QuoteToken).QuoteToken;
-        string  BaseToken = apiWrapper.GetSymbolData(lastPath.BaseToken, lastPath.QuoteToken).BaseToken;
-        req.QuoteToken = QuoteToken;
-        req.BaseToken = BaseToken;
+        req.BaseToken = baseToken;
+        req.QuoteToken = quoteToken;
+        req.OrderType = this->PendingOrder->OrderType;
+
+        // 盘口价格
         Pathfinder::GetExchangePriceResp res;
         pathfinder.GetExchangePrice(req, res);
-        double nowPrice = res.BuyPrice;
-        double nowQuantity = res.BuyQuantity;
-        define::TimeInForce TimeInForce = define::GTC;
-        double lastPrice = lastPath.Price;
-        double priceSpread = nowPrice - lastPrice;
-        double newUpPrice, newDownPrice;
-        //判断是否为第一次发出订单
-        if(lastPath.Price == 0)
-        {
-            if ((priceSpread < 0 && threshold >= -priceSpread) || (priceSpread > 0 && threshold >= priceSpread))
-            {
-                newUpPrice = nowPrice + threshold;
-                newDownPrice = nowPrice + threshold;
-            }
-            else
-            {
-                //超过阈值但未交易
-                spdlog::info("MakerTriangularArbitrage::  order{}->{} can be finish but not,lockcedPrice = {},threshold ={}, buyPrice = {}", lastPath.QuoteToken,
-                             lastPath.BaseToken, lastPath.Price, threshold, res.BuyPrice);
-            }
-        }
-        else
-        {
-            newUpPrice = nowPrice + threshold;
-            newDownPrice = nowPrice + threshold;
-        }
-        Pathfinder::TransactionPathItem path;
 
-        path.BaseToken = lastPath.BaseToken;
-        path.QuoteToken = lastPath.QuoteToken;
-        path.TimeInForce = TimeInForce;
-        path.Price = newDownPrice;
-        path.Quantity = nowQuantity;
-        path.OrderType = define::LIMIT_MAKER;
-        path.Side = define::BUY;
-        //构建新订单完毕
-        //挂出新单
-        ExecuteTrans(0, path);
-    };
+        bool needReOrder = false;
+        define::OrderSide newSide = define::SELL;
+        double newPrice = 0;
+        double newQuantity = 0;
+
+        if (req.BaseToken == "BUSD") {
+            if (res.SellPrice*(1+this->close) < price) {
+                // 盘口低于期望价格，撤单重挂
+                needReOrder = true;
+                newSide = define::SELL;
+                newPrice = res.SellPrice*(1+this->open);
+                newQuantity = 20; // todo 固定20刀
+            }
+        } else {
+            if (res.BuyPrice*(1-this->close) > price) {
+                // 盘口高于期望价格，撤单重挂
+                needReOrder = true;
+                newSide = define::BUY;
+                newPrice = res.BuyPrice*(1-this->open);
+                newQuantity = RoundDouble(20 / newPrice); // todo 固定20刀
+            }
+        }
+
+        if (needReOrder) {
+            // 取消旧单
+            apiWrapper.CancelOrder(this->PendingOrder->OrderId);
+
+            Pathfinder::TransactionPathItem path{
+                    .BaseToken = baseToken,
+                    .QuoteToken = quoteToken,
+                    .Side = newSide,
+                    .OrderType = define::LIMIT_MAKER,
+                    .TimeInForce = define::GTC,
+                    .Price = newPrice,
+                    .Quantity = newQuantity
+            };
+
+            //挂出新单
+            uint64_t orderId = 0;
+            ExecuteTrans(orderId, 1, path);
+            this->PendingOrder = orderMap[orderId];
+        }
+    }
 }
