@@ -198,7 +198,7 @@ namespace Pathfinder{
             }
         }
 
-        spdlog::info("func: {}, {}->{}, Path Num: {}, Update Num: {}",
+        spdlog::debug("func: {}, {}->{}, Path Num: {}, Update Num: {}",
                 "updateBestMap",
                 from,
                 to,
@@ -303,7 +303,7 @@ namespace Pathfinder{
         }
         gettimeofday(&tv2,NULL);
 
-        spdlog::info("func: {}, scan rings: {}, path time cost: {}us, max profit: {}",
+        spdlog::debug("func: {}, scan rings: {}, path time cost: {}us, max profit: {}",
                 "CalculateArbitrage",
                 relatedTriangular[formatKey(quoteIndex, baseIndex)].size(),
                 tv2.tv_sec*1000000 + tv2.tv_usec - (tv1.tv_sec*1000000 + tv1.tv_usec),
