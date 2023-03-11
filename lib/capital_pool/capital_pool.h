@@ -29,7 +29,7 @@ namespace CapitalPool
         CapitalPool(websocketpp::lib::asio::io_service &ioService, Pathfinder::Pathfinder &pathfinder, HttpWrapper::BinanceApiWrapper &api);
         ~CapitalPool();
 
-        void RebalancePool(map<string, HttpWrapper::BinanceSymbolData> &data); // 重平衡资金池
+        void RebalancePool(vector<HttpWrapper::BinanceSymbolData> &data); // 重平衡资金池
 
         int LockAsset(const string& token, double amount, double& lockAmount); // 资金抽出资金池
         int FreeAsset(const string& token, double amount); // 释放资金回到资金池

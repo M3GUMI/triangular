@@ -9,31 +9,25 @@
 using namespace std;
 namespace Pathfinder
 {
-	struct RevisePathReq
-	{
-		string Origin;
-		string End;
-		double Quantity = 0;
-        RevisePathReq(string o, string e, double q): Origin(o), End(e), Quantity(q) {}
-	};
-
-    class Pathfinder: public Graph {
+    class Pathfinder : public Graph
+    {
     private:
-        function<void(ArbitrageChance &chance)> subscriber = nullptr;
-        websocketpp::lib::asio::io_service &ioService;
+        function<void(ArbitrageChance& chance)> subscriber = nullptr;
+        websocketpp::lib::asio::io_service& ioService;
 
-        map<string, WebsocketWrapper::BinanceDepthWrapper *> depthSocketMap; // depth连接管理
+        map<string, WebsocketWrapper::BinanceDepthWrapper*> depthSocketMap; // depth连接管理
         std::shared_ptr<websocketpp::lib::asio::steady_timer> scanDepthTimer; // depth检查计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> huntingTimer; // 寻找套利计时器
 
-        void symbolReadyHandler(map<string, HttpWrapper::BinanceSymbolData> &data); // symbol数据就绪
-        void depthDataHandler(WebsocketWrapper::DepthData &data);                    // 接收depth数据处理
-        void scanDepthSocket();                                                     // 检查socket连接有效性
+        void symbolReadyHandler(vector<HttpWrapper::BinanceSymbolData>& data); // symbol数据就绪
+        void scanDepthSocket(); // 检查socket连接有效性
     public:
-        Pathfinder(websocketpp::lib::asio::io_service &ioService, HttpWrapper::BinanceApiWrapper &apiWrapper);
+        Pathfinder(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& apiWrapper);
+
         ~Pathfinder();
 
         void HuntingKing();
-        void SubscribeArbitrage(function<void(ArbitrageChance &chance)> handler);      // 订阅套利机会推送
+
+        void SubscribeArbitrage(function<void(ArbitrageChance& chance)> handler);      // 订阅套利机会推送
     };
 }

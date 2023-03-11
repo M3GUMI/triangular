@@ -28,6 +28,22 @@ uint64_t GetNowTime() {
     return ms.count();
 }
 
+uint64_t GetMicroTime() {
+    std::chrono::microseconds micro = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch()
+    );
+
+    return micro.count();
+}
+
+uint64_t GetNanoTime() {
+    std::chrono::nanoseconds nano = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch()
+    );
+
+    return nano.count();
+}
+
 uint32_t autoIncr = 0; // 自增id
 
 uint64_t GenerateId() {
@@ -71,6 +87,15 @@ double RoundDouble(double val) {
     double result = round(val*pow(10, 8)) / pow(10, 8);
     return result;
 }
+
+double Min(double val0, double val1) {
+    if (val0 > val1) {
+        return val1;
+    } else {
+        return val0;
+    }
+}
+
 //
 //void readConfig(){
 //    // 读取文件内容

@@ -43,21 +43,21 @@ namespace WebsocketWrapper
 
         DepthData data;
         auto symbolData = this->apiWrapper.GetSymbolData(symbol);
-        data.FromToken = symbolData.BaseToken;
-        data.ToToken = symbolData.QuoteToken;
+        data.BaseToken = symbolData.BaseToken;
+        data.QuoteToken = symbolData.QuoteToken;
         data.UpdateTime = GetNowTime();
 
-        DepthItem askData;
+        DepthItem askData{};
         askData.Price = String2Double(depthInfoJson["a"].GetString());
         askData.Quantity = String2Double(depthInfoJson["A"].GetString());
         data.Asks.push_back(askData);
 
-        DepthItem bidData;
+        DepthItem bidData{};
         bidData.Price = String2Double(depthInfoJson["b"].GetString());
         bidData.Quantity = String2Double(depthInfoJson["B"].GetString());
         data.Bids.push_back(bidData);
 
-        for (auto func : this->depthSubscriber)
+        for (const auto& func : this->depthSubscriber)
         {
             func(data);
         }

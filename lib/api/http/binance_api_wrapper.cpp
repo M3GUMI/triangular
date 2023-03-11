@@ -26,7 +26,7 @@ namespace HttpWrapper
         MakeRequest(req, bind(&BinanceApiWrapper::initBinanceSymbolCallback, this, placeholders::_1, placeholders::_2), true);
     }
 
-    void BinanceApiWrapper::SubscribeSymbolReady(function<void(map<string, BinanceSymbolData> &data)> callback)
+    void BinanceApiWrapper::SubscribeSymbolReady(function<void(vector<BinanceSymbolData> &data)> callback)
     {
         this->symbolReadySubscriber.push_back(callback);
     }
@@ -45,6 +45,7 @@ namespace HttpWrapper
             return;
         }
 
+        vector<BinanceSymbolData> symbolData;
         const auto &symbols = exchangeInfoJson["symbols"];
         for (unsigned i = 0; i < symbols.Size(); i++)
         {
@@ -89,6 +90,7 @@ namespace HttpWrapper
             data.TicketSize = doubleTicketSize;
             data.MinNotional = doubleMinNotional;
 
+            symbolData.push_back(data);
             symbolMap[baseAsset + quoteAsset] = data;
             symbolMap[quoteAsset + baseAsset] = data;
             baseCoins.insert(baseAsset);
@@ -98,11 +100,11 @@ namespace HttpWrapper
         spdlog::info("func: {}, msg: {}", "InitBinanceSymbol", "load symbol data success");
         for (auto func : this->symbolReadySubscriber)
         {
-            func(symbolMap);
+            func(symbolData);
         }
     }
 
-    BinanceSymbolData& BinanceApiWrapper::GetSymbolData(std::string token0, std::string token1)
+    BinanceSymbolData& BinanceApiWrapper::GetSymbolData(const std::string& token0, const std::string& token1)
     {
         auto symbol = toUpper(token0 + token1);
         if (symbolMap.count(symbol) != 1)
@@ -114,7 +116,7 @@ namespace HttpWrapper
         return symbolMap[symbol];
     }
 
-    BinanceSymbolData& BinanceApiWrapper::GetSymbolData(std::string symbol)
+    BinanceSymbolData& BinanceApiWrapper::GetSymbolData(const std::string& symbol)
     {
         if (symbolMap.count(toUpper(symbol)) != 1)
         {
@@ -125,7 +127,7 @@ namespace HttpWrapper
         return symbolMap[symbol];
     }
 
-    string BinanceApiWrapper::GetSymbol(std::string token0, std::string token1)
+    string BinanceApiWrapper::GetSymbol(const std::string& token0, const std::string& token1)
     {
         auto symbol = toUpper(token0 + token1);
         if (symbolMap.count(symbol) != 1)
@@ -138,7 +140,7 @@ namespace HttpWrapper
         return data.Symbol;
     }
 
-    define::OrderSide BinanceApiWrapper::GetSide(std::string token0, std::string token1)
+    define::OrderSide BinanceApiWrapper::GetSide(const std::string& token0, const std::string& token1)
     {
         auto symbol = toUpper(token0 + token1);
         if (symbolMap.count(symbol) != 1)

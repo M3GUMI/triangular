@@ -2,7 +2,6 @@
 #include <sstream>
 #include "maker_triangular.h"
 #include "utils/utils.h"
-#include "conf/strategy.h"
 #include "lib/pathfinder/graph.h"
 
 using namespace boost::asio;

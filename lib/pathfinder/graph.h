@@ -6,93 +6,12 @@
 #include <cmath>
 #include <limits>
 #include "lib/api/http/binance_api_wrapper.h"
-#include "utils/utils.h"
+#include "lib/api/ws/binance_depth_wrapper.h"
+#include <unordered_map>
+#include "node.h"
 
 using namespace std;
 namespace Pathfinder{
-    // 套利路径项
-    struct TransactionPathItem
-    {
-        string BaseToken;
-        string QuoteToken;
-        define::OrderSide Side;
-        define::OrderType OrderType;
-        define::TimeInForce TimeInForce;
-        double Price = 0;
-        double Quantity = 0;
-        double MinNotional = 0;
-
-        // 预期新币成交额
-        double GetNationalQuantity()
-        {
-            return RoundDouble(Price*Quantity);
-        }
-
-        double GetParsePrice()
-        {
-            if (Side == define::SELL)
-            {
-                return RoundDouble(Price);
-            }
-            else
-            {
-                return RoundDouble(1 / Price);
-            }
-        }
-
-        double GetParseQuantity()
-        {
-            if (Side == define::SELL)
-            {
-                return RoundDouble(Quantity);
-            }
-            else
-            {
-                return RoundDouble(Quantity * Price);
-            }
-        }
-
-        double GetPrice()
-        {
-            return RoundDouble(Price);
-        }
-
-        double GetQuantity()
-        {
-            return RoundDouble(Quantity);
-        }
-
-        string GetFromToken()
-        {
-            if (Side == define::SELL)
-            {
-                return BaseToken;
-            }
-            else
-            {
-                return QuoteToken;
-            }
-        }
-
-        string GetToToken()
-        {
-            if (Side == define::SELL)
-            {
-                return QuoteToken;
-            }
-            else
-            {
-                return BaseToken;
-            }
-        }
-    };
-
-    struct Strategy {
-        double Fee;
-        define::OrderType OrderType;
-        define::TimeInForce TimeInForce;
-    };
-
     struct ArbitrageChance
     {
         double Profit = 0; // 套利利润率。最佳路径计算利润率
@@ -128,8 +47,8 @@ namespace Pathfinder{
 
     struct GetExchangePriceReq
     {
-        string BaseToken = "";
-        string QuoteToken = "";
+        string BaseToken;
+        string QuoteToken;
         define::OrderType OrderType;
     };
 
@@ -141,43 +60,39 @@ namespace Pathfinder{
         double BuyQuantity = 0; // 可买入的数量
     };
 
-    // 定义一个边的结构体，用于表示两个节点之间的边
-    struct Edge {
-        int from = 0;   // 起点
-        int to = 0;     // 终点
-        double weight = 0;  //  权重
-        double weightQuantity = 0;  // 转换后数量 todo 现在只存了第一档
-        double originPrice = 0;  // 原始价格
-        double originQuantity = 0;  // 原始数量
-        double minNotional = 0;  // 最小成交数量
-        bool isSell = true;  // 是否为卖出
-    };
-
     // 定义一个图的类
     class Graph {
     public:
         Graph(HttpWrapper::BinanceApiWrapper &apiWrapper);
         ~Graph();
 
-        void AddEdge(const string& from, const string& to, double originPrice, double quantity, double minNotional, bool isFrom);
         int GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp); // 路径修正
-
-        ArbitrageChance FindBestPath(FindBestPathReq& req);
         ArbitrageChance CalculateArbitrage(const string& strategy);
+        ArbitrageChance FindBestPath(FindBestPathReq& req);
 
     protected:
         HttpWrapper::BinanceApiWrapper &apiWrapper;
+
+        void Init(vector<HttpWrapper::BinanceSymbolData> &data);
+
+        void UpdateNode(WebsocketWrapper::DepthData& data);
+
     private:
-        map<string, int> tokenToIndex;
-        map<int, string> indexToToken;
+        // 套利计算分组，一次只算500个环。取值为0-499、500-999、1000-1499、1500-1999、2000-2113
+        int indexStart = 0;
+        int groupSize = 500;
 
-        vector<vector<Edge>> nodes; // 存储图中所有的节点及其邻接表
-        TransactionPathItem formatTransactionPathItem(Edge& edge, Strategy& strategy);
+        unordered_map<string, int> tokenToIndex{};
+        unordered_map<int, string> indexToToken{};
+
+        unordered_map<u_int64_t, Node*> tradeNodeMap{}; // key为baseIndex+quoteIndex、quoteIndex+baseIndex两种类型
+        unordered_map<int, vector<vector<int>>> triangularMap{}; // 存储所有key起点的三元环
+        unordered_map<u_int64_t, vector<vector<int>>> bestPathMap{}; // 存储所有两点间路径，最长两步。key前32位代表起点，后32位代表终点
+
+        vector<TransactionPathItem> formatPath(Strategy& strategy, vector<int>& path);
+        double calculateProfit(Strategy& strategy, vector<int>& path);
+        bool checkPath(vector<TransactionPathItem>& path);
+        static u_int64_t formatKey(int from, int to);
         static void adjustQuantities(vector<TransactionPathItem>& items);
-        pair<double, vector<TransactionPathItem>> bestOneStep(int start, int end, Strategy& strategy);
-        pair<double, vector<TransactionPathItem>> bestTwoStep(int start, int end, Strategy& strategy);
-
-        bool checkToken(int token);
-        double calProfit(Strategy &strategy, vector<TransactionPathItem> &path);
     };
 }

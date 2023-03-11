@@ -6,105 +6,153 @@ namespace Pathfinder{
     }
     Graph::~Graph() = default;
 
-    void Graph::AddEdge(const string& from, const string& to, double originPrice, double quantity, double minNotional, bool isSell) {
-        // 将边加入相应的节点的邻接表中
-        if (not tokenToIndex.count(to)) {
-            int index = nodes.size();
-            tokenToIndex[to] = index;
-            indexToToken[index] = to;
+    void Graph::Init(vector<HttpWrapper::BinanceSymbolData> &data)
+    {
+        tokenToIndex.clear();
+        indexToToken.clear();
+        triangularMap.clear();
+        bestPathMap.clear();
 
-            auto edge = new vector<Edge>;
-            nodes.push_back(*edge);
-        }
+        // 初始化index
+        int indexCount = 0;
+        for (auto& item : data)
+        {
+            if (not tokenToIndex.count(item.BaseToken)) {
+                tokenToIndex[item.BaseToken] = indexCount;
+                indexToToken[indexCount] = item.BaseToken;
+                indexCount++;
+            }
 
-        if (not tokenToIndex.count(from)) {
-            int index = nodes.size();
-            tokenToIndex[from] = index;
-            indexToToken[index] = from;
-
-            auto edge = new vector<Edge>;
-            nodes.push_back(*edge);
-        }
-
-        int fromIndex = tokenToIndex[from];
-        int toIndex = tokenToIndex[to];
-
-        // 边已存在,更新
-        for (auto &edge: nodes[fromIndex]) {
-            if (edge.from == fromIndex && edge.to == toIndex) {
-                edge.originPrice = originPrice;
-                edge.originQuantity = quantity;
-                edge.minNotional = minNotional;
-                edge.isSell = isSell;
-                if (isSell) {
-                    edge.weight = -log(originPrice);
-                    edge.weightQuantity = quantity;
-                } else {
-                    edge.weight = log(originPrice);
-                    edge.weightQuantity = quantity/originPrice;
-                }
-
-                return;
+            if (not tokenToIndex.count(item.QuoteToken)) {
+                tokenToIndex[item.QuoteToken] = indexCount;
+                indexToToken[indexCount] = item.QuoteToken;
+                indexCount++;
             }
         }
 
-        // 边不存在, 添加
-        auto edge = new Edge();
-        edge->from = fromIndex;
-        edge->to = toIndex;
-        edge->originPrice = originPrice;
-        edge->originQuantity = quantity;
-        edge->minNotional = minNotional;
-        edge->isSell = isSell;
-        if (isSell) {
-            edge->weight = -log(originPrice);
-            edge->weightQuantity = quantity;
-        } else {
-            edge->weight = log(originPrice);
-            edge->weightQuantity = quantity/originPrice;
+        // 初始化交易节点
+        for (auto& item : data)
+        {
+            auto baseIndex = tokenToIndex[item.BaseToken];
+            auto quoteIndex = tokenToIndex[item.QuoteToken];
+
+            auto tradeNode = new Node(baseIndex, quoteIndex);
+            this->tradeNodeMap[formatKey(baseIndex, quoteIndex)] = tradeNode;
+            this->tradeNodeMap[formatKey(quoteIndex, baseIndex)] = tradeNode;
         }
 
-        nodes[fromIndex].push_back(*edge);
+        // 存储所有三元环
+        int usdtIndex = tokenToIndex["USDT"];
+        for (const auto &baseToken: conf::BaseAssets)
+        {
+            if (not tokenToIndex.count(baseToken.first))
+            {
+                spdlog::error("func: Graph::init, msg: baseAsset not exist");
+                continue;
+            };
+
+            auto originIndex = tokenToIndex[baseToken.first]; // 起点token
+            for (const auto& second : indexToToken)
+            {
+                auto secondIndex = second.first; // 第一个点
+                if (not tradeNodeMap.count(formatKey(originIndex, secondIndex))) {
+                    // 第一条边不存在
+                    continue;
+                }
+
+                for (const auto& third : indexToToken)
+                {
+                    auto thirdIndex = third.first; // 第二个点
+                    if (not tradeNodeMap.count(formatKey(secondIndex, thirdIndex))) {
+                        // 第二条边不存在
+                        continue;
+                    }
+                    if (not tradeNodeMap.count(formatKey(thirdIndex, originIndex))) {
+                        // 第三条边不存在
+                        continue;
+                    }
+
+                    if (secondIndex == usdtIndex || thirdIndex == usdtIndex) {
+                        // 摘掉usdt，路径一般执行不完
+                        continue;
+                    }
+
+                    triangularMap[originIndex].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
+                }
+            }
+        }
+
+        // 存储所有一步、两步路径
+        for (const auto& origin : indexToToken)
+        {
+            auto originIndex = origin.first; // 起点
+            for (const auto& second : indexToToken)
+            {
+                auto secondIndex = second.first; // 第二个点
+                if (not tradeNodeMap.count(formatKey(originIndex, secondIndex))) {
+                    // 第一条边不存在
+                    continue;
+                }
+
+                // 存储一步路径
+                bestPathMap[formatKey(originIndex, secondIndex)].emplace_back(vector<int>{originIndex, secondIndex});
+
+                for (const auto& third : indexToToken)
+                {
+                    auto thirdIndex = third.first; // 第三个点
+                    if (not tradeNodeMap.count(formatKey(secondIndex, thirdIndex)))
+                    {
+                        // 第二条边不存在
+                        continue;
+                    }
+
+                    // 存储两步路径
+                    bestPathMap[formatKey(originIndex, thirdIndex)].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex});
+                }
+            }
+        }
+    }
+
+    void Graph::UpdateNode(WebsocketWrapper::DepthData &data)
+    {
+        auto baseIndex = tokenToIndex[data.BaseToken];
+        auto quoteIndex = tokenToIndex[data.QuoteToken];
+
+        auto node = tradeNodeMap[formatKey(baseIndex, quoteIndex)];
+        if (not data.Bids.empty())
+        { // 买单挂出价，我方卖出价
+            auto depth = data.Bids[0];
+            node->UpdateSell(depth.Price, depth.Quantity);
+        }
+        if (!data.Asks.empty())
+        { // 卖单挂出价，我方买入价
+            auto depth = data.Asks[0];
+            node->UpdateBuy(depth.Price, depth.Quantity);
+        }
     }
 
     int Graph::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
     {
-        // 获取负权图中价格
-        resp.SellPrice = 0;
-        resp.BuyPrice = 0;
-
         if (not tokenToIndex.count(req.BaseToken) || not tokenToIndex.count(req.QuoteToken)) {
             return define::ErrorGraphNotReady;
         }
 
-        auto symbolData = apiWrapper.GetSymbolData(req.BaseToken, req.QuoteToken);
         int baseIndex = tokenToIndex[req.BaseToken];
         int quoteIndex = tokenToIndex[req.QuoteToken];
 
-        // todo edge存储方式优化一下，以下逻辑需要调整
-        for(auto edge:nodes[baseIndex]) {
-            // 我方可卖出价格
-            if (edge.from==baseIndex && edge.to == quoteIndex) { // 盘口卖出价格，己方
-                resp.SellPrice = edge.originPrice;
-                resp.SellQuantity = edge.originQuantity;
+        auto node = tradeNodeMap[formatKey(baseIndex, quoteIndex)];
+        resp.SellPrice = node->GetOriginPrice(baseIndex, quoteIndex);
+        resp.SellQuantity = node->GetQuantity(baseIndex, quoteIndex);
+        resp.BuyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
+        resp.BuyQuantity = node->GetQuantity(quoteIndex, baseIndex);
 
-                // maker不可下单到对手盘
-                if (req.OrderType == define::LIMIT_MAKER) {
-                    resp.SellPrice = resp.SellPrice + symbolData.TicketSize;
-                }
-            }
+        // maker不可下单到对手盘
+        auto symbolData = apiWrapper.GetSymbolData(req.BaseToken, req.QuoteToken);
+        if (req.OrderType == define::LIMIT_MAKER) {
+            resp.SellPrice = resp.SellPrice + symbolData.TicketSize;
         }
-
-        for(auto edge:nodes[quoteIndex]) {
-            // 我方可买入价格
-            if (edge.to==baseIndex && edge.from == quoteIndex) { // 盘口卖出价格，己方
-                resp.BuyPrice = edge.originPrice;
-                resp.BuyQuantity = edge.originQuantity;
-                // maker不可下单到对手盘
-                if (req.OrderType == define::LIMIT_MAKER) {
-                    resp.BuyPrice = resp.BuyPrice - symbolData.TicketSize;
-                }
-            }
+        if (req.OrderType == define::LIMIT_MAKER) {
+            resp.BuyPrice = resp.BuyPrice - symbolData.TicketSize;
         }
 
         if (resp.SellPrice == 0 || resp.BuyPrice == 0) {
@@ -113,27 +161,6 @@ namespace Pathfinder{
 
         return 0;
     }
-
-    TransactionPathItem Graph::formatTransactionPathItem(Edge& edge, Strategy& strategy) {
-        TransactionPathItem item{};
-        if (edge.isSell) {
-            item.BaseToken = indexToToken[edge.from];
-            item.QuoteToken = indexToToken[edge.to];
-            item.Side = define::SELL;
-        } else {
-            item.BaseToken = indexToToken[edge.to];
-            item.QuoteToken = indexToToken[edge.from];
-            item.Side = define::BUY;
-        }
-
-        item.OrderType = strategy.OrderType;
-        item.TimeInForce = strategy.TimeInForce;
-        item.Price = edge.originPrice;
-        item.Quantity = edge.originQuantity;
-        item.MinNotional = edge.minNotional;
-
-        return item;
-    };
 
     ArbitrageChance Graph::CalculateArbitrage(const string& name) {
         Strategy strategy{};
@@ -147,87 +174,49 @@ namespace Pathfinder{
             strategy.TimeInForce = define::IOC;
         }
 
-        vector<TransactionPathItem> path;
-        double minRate = 0;
+        double maxProfit = 0;
+        vector<TransactionPathItem> resultPath{};
+        for (const auto& item: triangularMap)
+        {
+            indexStart += groupSize;
+            if (indexStart > item.second.size()) {
+                indexStart = 0;
+            }
 
-        // 枚举所有三角路径，判断是否存在套利机会。起点为稳定币
-        // 穷举起点出发的所有边组合，最终回到起点，是否可套利
-        for (const auto &baseToken: conf::BaseAssets) {
-            if (not tokenToIndex.count(baseToken.first)) {
-                continue;
-            };
+            int indexEnd = indexStart+groupSize;
+            if (indexEnd > item.second.size()) {
+                indexEnd = int(item.second.size());
+            }
 
-            int firstToken = tokenToIndex[baseToken.first]; // 起点token
-            auto firstEdges = nodes[firstToken]; // 起点出发边
-
-            for (auto &firstEdge: firstEdges) {
-                double firstWeight = firstEdge.weight; // 第一条边权重
-                int secondToken = firstEdge.to; // 第二token
-                auto secondEdges = nodes[secondToken]; // 第二token出发边
-                if (checkToken(secondToken)) {
+            for (int i = indexStart; i < indexEnd; i++)
+            {
+                auto triangular = item.second[i];
+                double profit = calculateProfit(strategy, triangular);
+                if (profit <= 1 || profit <= maxProfit)
+                {
                     continue;
                 }
 
-                for (auto &secondEdge: secondEdges) {
-                    double secondWeight = secondEdge.weight; // 第二条边权重
-                    int thirdToken = secondEdge.to; // 第三token
-                    auto thirdEdges = nodes[thirdToken]; // 第三token出发边
-                    if (checkToken(thirdToken)) {
-                        continue;
-                    }
-
-                    for (auto &thirdEdge: thirdEdges) {
-                        double thirdWeight = thirdEdge.weight; // 第三条边权重
-                        int endToken = thirdEdge.to; // 第三条边目标token
-                        if (firstToken == endToken) {
-                            // 对数。乘法处理为加法
-                            // 负数。最长路径处理为最短路径
-                            double rate = firstWeight + secondWeight + thirdWeight - 3 * log(1 - strategy.Fee);
-                            if (rate < 0 && rate < minRate) {
-                                vector<TransactionPathItem> newPath;
-                                newPath.clear();
-                                newPath.push_back(formatTransactionPathItem(firstEdge, strategy));
-                                newPath.push_back(formatTransactionPathItem(secondEdge, strategy));
-                                newPath.push_back(formatTransactionPathItem(thirdEdge, strategy));
-                                adjustQuantities(newPath);
-
-                                bool lessMinNotional;
-                                for (TransactionPathItem &item:newPath) {
-                                    // 检查最小成交金额
-                                    if (item.MinNotional > item.GetNationalQuantity()) {
-                                        lessMinNotional = true;
-                                    }
-                                }
-
-                                if (lessMinNotional) {
-                                    continue;
-                                }
-
-                                if (newPath.front().Quantity >= conf::MinTriangularQuantity) {
-                                    minRate = rate;
-                                    path = newPath;
-                                }
-                            }
-                        }
-                    }
+                auto path = formatPath(strategy, triangular);
+                adjustQuantities(path);
+                if (not checkPath(path))
+                {
+                    continue;
                 }
+
+                maxProfit = profit;
+                resultPath = path;
             }
         }
 
         ArbitrageChance chance{};
-        if (path.size() != 3) {
+        if (resultPath.size() != 3) {
             return chance;
         }
 
-        double profit = calProfit(strategy, path);
-        if (profit <= 1) {
-            spdlog::error("func: CalculateArbitrage, err: path can not get money");
-            return chance;
-        }
-
-        chance.Profit = profit;
-        chance.Quantity = path.front().Quantity;
-        chance.Path = path;
+        chance.Profit = maxProfit;
+        chance.Quantity = resultPath.front().Quantity;
+        chance.Path = resultPath;
         return chance;
     }
 
@@ -243,100 +232,113 @@ namespace Pathfinder{
             strategy.TimeInForce = define::IOC;
         }
 
-        auto oneStepResult = bestOneStep(tokenToIndex[req.Origin], tokenToIndex[req.End], strategy);
-        auto twoStepResult = bestTwoStep(tokenToIndex[req.Origin], tokenToIndex[req.End], strategy);
+        int originToken = tokenToIndex[req.Origin];
+        int endToken = tokenToIndex[req.End];
+
+        double maxProfit = 0;
+        vector<TransactionPathItem> resultPath{};
+        for (auto& item: bestPathMap[formatKey(originToken, endToken)])
+        {
+            double profit = calculateProfit(strategy, item);
+            if (profit <= maxProfit) {
+                continue;
+            }
+
+            auto path = formatPath(strategy, item);
+            adjustQuantities(path);
+            if (not checkPath(path)) {
+                continue;
+            }
+
+            maxProfit = profit;
+            resultPath = path;
+        }
 
         ArbitrageChance chance{};
-        pair<double, vector<TransactionPathItem>> *data;
-        if (twoStepResult.first < oneStepResult.first) {
-            data = &twoStepResult;
-        } else {
-            data = &oneStepResult;
+        if (resultPath.empty()) {
+            return chance;
         }
 
-        auto pathPrice = data->second.front().Price;
-        auto pathQuantity = data->second.front().Quantity;
+        auto pathPrice = resultPath.front().Price;
+        auto pathQuantity = resultPath.front().Quantity;
+
         auto quantity = req.Quantity;
-        double realQuantity = 0;
-        if (data->second.front().Side == define::SELL) {
-            spdlog::info("quantity: {}, pathQuantity: {}", quantity, pathQuantity);
-            realQuantity = quantity <= pathQuantity? quantity: pathQuantity;
-        } else {
+        if (resultPath.front().Side == define::BUY) {
             quantity /= pathPrice; // 转换成baseToken数量
-            spdlog::info("quantity: {}, pathQuantity: {}", quantity, pathQuantity);
-            realQuantity = quantity <= pathQuantity? quantity: pathQuantity;
         }
+        double realQuantity = RoundDouble(Min(quantity, pathQuantity));
 
-        data->second.front().Quantity = realQuantity;
-        chance.Profit = calProfit(strategy, data->second);
-        chance.Quantity = RoundDouble(realQuantity);
-        chance.Path = data->second;
+        resultPath.front().Quantity = realQuantity;
+        chance.Profit = maxProfit;
+        chance.Quantity = realQuantity;
+        chance.Path = resultPath;
         return chance;
     }
 
-    // 走一步
-    pair<double, vector<TransactionPathItem>> Graph::bestOneStep(int start, int end, Strategy& strategy) {
-        vector<TransactionPathItem> path;
-        auto edges = nodes[start]; // 起点出发边
-        for (auto &edge: edges) {
-            if (edge.to != end) {
-                continue;
-            }
-            path.push_back(formatTransactionPathItem(edge, strategy));
-            adjustQuantities(path);
-            return make_pair(edge.weight + log(1 - strategy.Fee), path);
+    vector<TransactionPathItem> Graph::formatPath(Strategy& strategy, vector<int>& path)
+    {
+        vector<TransactionPathItem> result;
+        if (path.size() < 2)
+        {
+            return result;
         }
 
-        return make_pair(DBL_MAX, path);
+        for (int i = 0; i < path.size() - 1; i++)
+        {
+            auto from = path[i];
+            auto to = path[i + 1];
+
+            auto node = tradeNodeMap[formatKey(from, to)];
+            result.emplace_back(node->Format(strategy, indexToToken, from, to));
+        }
+
+        return result;
     }
 
-    // 走两步
-    pair<double, vector<TransactionPathItem>> Graph::bestTwoStep(int start, int end, Strategy& strategy) {
-        vector<TransactionPathItem> path;
-        double minRate = DBL_MAX;
-
-        for (auto &firstEdge: nodes[start]) {
-            double firstWeight = firstEdge.weight; // 第一条边权重
-            int secondToken = firstEdge.to; // 第二token
-            auto secondEdges = nodes[secondToken]; // 第二token出发边
-            if (checkToken(secondToken)) {
-                continue;
-            }
-
-            for (auto &secondEdge: secondEdges) {
-                double secondWeight = secondEdge.weight; // 第二条边权重
-
-                if (secondEdge.to == end) {
-                    double rate = firstWeight + secondWeight - 2 * log(1 - strategy.Fee);
-                    if (rate < minRate) {
-                        vector<TransactionPathItem> newPath;
-                        newPath.clear();
-                        newPath.push_back(formatTransactionPathItem(firstEdge, strategy));
-                        newPath.push_back(formatTransactionPathItem(secondEdge, strategy));
-                        adjustQuantities(newPath);
-
-                        bool lessMinNotional;
-                        for (TransactionPathItem &item:newPath)
-                        {
-                            // 检查最小成交金额
-                            if (item.MinNotional > item.GetNationalQuantity())
-                            {
-                                lessMinNotional = true;
-                            }
-                        }
-
-                        if (lessMinNotional) {
-                            continue;
-                        }
-
-                        minRate = rate;
-                        path = newPath;
-                    }
-                }
+    bool Graph::checkPath(vector<TransactionPathItem>& path)
+    {
+        for (TransactionPathItem& item : path)
+        {
+            // 检查最小成交金额
+            auto symbolData = apiWrapper.GetSymbolData(item.BaseToken, item.QuoteToken);
+            if (symbolData.MinNotional > item.GetNationalQuantity())
+            {
+                return false;
             }
         }
 
-        return make_pair(minRate, path);
+        if (path.front().Quantity < conf::MinTriangularQuantity)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    double Graph::calculateProfit(Strategy& strategy, vector<int>& path)
+    {
+        if (path.size() < 2)
+        {
+            return 0;
+        }
+
+        double profit = 1; // 验算利润率
+        for (int i = 0; i < path.size() - 1; i++)
+        {
+            auto from = path[i];
+            auto to = path[i + 1];
+
+            auto node = tradeNodeMap[formatKey(from, to)];
+            profit = profit * node->GetParsePrice(from, to) * (1 - strategy.Fee);
+        }
+
+        return profit;
+    }
+
+    u_int64_t Graph::formatKey(int from, int to)
+    {
+        u_int64_t result = u_int64_t(from) << 32 | to;
+        return result;
     }
 
     void Graph::adjustQuantities(vector<TransactionPathItem>& items) {
@@ -372,28 +374,5 @@ namespace Pathfinder{
                 }
             }
         }
-    }
-
-    // 摘掉usdt
-    bool Graph::checkToken(int token) {
-        if (token == tokenToIndex["USDT"]) {
-            return true;
-        }
-
-        return false;
-    }
-
-    double Graph::calProfit(Strategy& strategy, vector<TransactionPathItem>& path)
-    {
-        double profit = 1; // 验算利润率
-        for (const auto& item:path) {
-            if (item.Side == define::SELL) {
-                profit = profit*item.Price*(1-strategy.Fee);
-            } else {
-                profit = profit*(1/item.Price)*(1-strategy.Fee);
-            }
-        }
-
-        return profit;
     }
 }

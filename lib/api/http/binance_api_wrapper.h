@@ -36,7 +36,7 @@ namespace HttpWrapper
     {
     private:
         map<string, BinanceSymbolData> symbolMap;
-        vector<function<void(map<string, BinanceSymbolData> &data)>> symbolReadySubscriber;
+        vector<function<void(vector<BinanceSymbolData> &data)>> symbolReadySubscriber;
 
         void initBinanceSymbolCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec);
         void accountInfoHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(AccountInfo &info, int err)> callback);
@@ -55,11 +55,11 @@ namespace HttpWrapper
 
         // 交易对
         void InitBinanceSymbol();
-        void SubscribeSymbolReady(function<void(map<string, BinanceSymbolData> &data)> callback);
-        BinanceSymbolData &GetSymbolData(std::string token0, std::string token1);
-        BinanceSymbolData &GetSymbolData(std::string symbol);
-        string GetSymbol(std::string token0, std::string token1);
-        define::OrderSide GetSide(std::string token0, std::string token1);
+        void SubscribeSymbolReady(function<void(vector<BinanceSymbolData> &data)> callback);
+        BinanceSymbolData &GetSymbolData(const std::string &token0, const std::string& token1);
+        BinanceSymbolData &GetSymbolData(const std::string& symbol);
+        string GetSymbol(const std::string& token0, const std::string& token1);
+        define::OrderSide GetSide(const std::string &token0, const std::string& token1);
 
         // 账户信息
         int GetAccountInfo(function<void(AccountInfo &info, int err)> callback);
