@@ -37,7 +37,7 @@ namespace Arbitrage{
         }
 
         spdlog::info("{}::Finish, profit: {}, finalQuantity: {}, originQuantity: {}",
-                     this->strategy, this->FinalQuantity / this->OriginQuantity, this->FinalQuantity, this->OriginQuantity);
+                     this->strategy.StrategyName, this->FinalQuantity / this->OriginQuantity, this->FinalQuantity, this->OriginQuantity);
         finished = true;
         this->subscriber();
         return true;
@@ -55,7 +55,7 @@ namespace Arbitrage{
         order->QuoteToken = path.QuoteToken;
         order->Side = path.Side;
         order->Price = path.Price;
-        order->Quantity = path.Quantity;
+        order->Quantity = path.Quantity; // todo 这里的数量可能和最终数量不一致
         order->OrderType = path.OrderType;
         order->TimeInForce = path.TimeInForce;
         order->OrderStatus = define::INIT;
@@ -72,17 +72,22 @@ namespace Arbitrage{
                         placeholders::_2
                 ));
         spdlog::info(
-                "{}::ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, orderType: {}, price: {}, calPrice: {}, quantity: {}",
-                this->strategy,
-                err,
+                "{}::ExecuteTrans, base: {}, quote: {}, side: {}, orderType: {}, price: {}, quantity: {}",
+                this->strategy.StrategyName,
                 path.BaseToken,
                 path.QuoteToken,
                 sideToString(path.Side),
                 orderTypeToString(path.OrderType),
                 path.Price,
-                1/path.Price,
                 path.Quantity
         );
+        if (err > 0) {
+            spdlog::info(
+                    "{}::ExecuteTrans, err: {}",
+                    this->strategy.StrategyName,
+                    WrapErr(err)
+            );
+        }
 
         if (err == define::ErrorLessTicketSize || err == define::ErrorLessMinNotional) {
             return 0;
@@ -94,7 +99,7 @@ namespace Arbitrage{
     int TriangularArbitrage::ReviseTrans(uint64_t& orderId, int phase, string origin, double quantity) {
         // 寻找新路径重试
         Pathfinder::FindBestPathReq req{};
-        req.Strategy = this->strategyV2;
+        req.Strategy = this->strategy;
         req.Origin = origin;
         req.End = this->TargetToken;
         req.Quantity = quantity;
@@ -103,7 +108,7 @@ namespace Arbitrage{
         auto chance = pathfinder.FindBestPath(req);
         spdlog::info(
                 "{}::RevisePath, profit: {}, quantity: {}, bestPath: {}",
-                this->strategy,
+                this->strategy.StrategyName,
                 quantity*chance.Profit/this->OriginQuantity,
                 chance.FirstStep().Quantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
@@ -137,6 +142,8 @@ namespace Arbitrage{
             }
         }
 
+        order->Quantity = data.Quantity;
+
         order->OrderStatus = data.OrderStatus;
         order->ExecutePrice = data.ExecutePrice;
         order->ExecuteQuantity = data.ExecuteQuantity;
@@ -150,59 +157,4 @@ namespace Arbitrage{
     void TriangularArbitrage::TransHandler(OrderData &orderData) {
         exit(EXIT_FAILURE);
     }
-
-
-    //执行挂单操作
-    int TriangularArbitrage::executeOrder(OrderData& orderData)
-    {
-            auto order = new OrderData();
-            order->OrderId = GenerateId();
-            order->BaseToken = orderData.BaseToken;
-            order->QuoteToken = orderData.QuoteToken;
-            order->Side = orderData.Side;
-            order->Price = orderData.Price;
-            order->Quantity = orderData.Quantity;
-            order->OrderType = orderData.OrderType;
-            order->TimeInForce = orderData.TimeInForce;
-            order->OrderStatus = define::INIT;
-            order->UpdateTime = GetNowTime();
-            orderMap[order->OrderId] = order;
-
-            auto err = apiWrapper.CreateOrder(
-                    *order,
-                    bind(
-                            &TriangularArbitrage::baseOrderHandler,
-                            this,
-                            placeholders::_1,
-                            placeholders::_2
-                    ));
-        double lockedQuantity;
-        if (auto err = capitalPool.LockAsset(orderData.BaseToken, orderData.Quantity, lockedQuantity); err > 0) {
-            return err;
-        }
-            spdlog::info(
-                    "func: ExecuteTrans, err: {}, base: {}, quote: {}, side: {}, price: {}, quantity: {}",
-                    err,
-                    orderData.BaseToken,
-                    orderData.QuoteToken,
-                    sideToString(orderData.Side),
-                    orderData.Price,
-                    orderData.Quantity
-            );
-
-            if (err == define::ErrorLessTicketSize || err == define::ErrorLessMinNotional) {
-                return 0;
-            }
-
-            return err;
-    }
-
-    int TriangularArbitrage::cancelOrder(OrderData &orderData){
-        string token0 = orderData.BaseToken;
-        string token1 = orderData.QuoteToken;
-        string symbol = apiWrapper.GetSymbol(token0, token1);
-//        define::OrderSide = apiWrapper.GetSide(token0, token1);
-        apiWrapper.CancelOrder(orderData.OrderId);
-    }
-
 }

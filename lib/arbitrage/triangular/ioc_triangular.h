@@ -13,7 +13,7 @@ namespace Arbitrage{
         );
         ~IocTriangularArbitrage();
 
-        int Run(Pathfinder::ArbitrageChance &chance) override;
+        int Run(Pathfinder::ArbitrageChance &chance);
 
     private:
         void TransHandler(OrderData &orderData) override;

@@ -198,12 +198,12 @@ namespace Pathfinder{
             }
         }
 
-        spdlog::debug("func: {}, {}->{}, Path Num: {}, Update Num: {}",
+        /*spdlog::debug("func: {}, {}->{}, Path Num: {}, Update Num: {}",
                 "updateBestMap",
                 from,
                 to,
                 relatedPath[formatKey(from, to)].size(),
-                updateNum);
+                updateNum);*/
         return updateNum;
     }
 
@@ -292,11 +292,11 @@ namespace Pathfinder{
         }
         gettimeofday(&tv2,NULL);
 
-        spdlog::debug("func: {}, scan rings: {}, path time cost: {}us, max profit: {}",
+        /*spdlog::debug("func: {}, scan rings: {}, path time cost: {}us, max profit: {}",
                 "CalculateArbitrage",
                 relatedTriangular[formatKey(quoteIndex, baseIndex)].size(),
                 tv2.tv_sec*1000000 + tv2.tv_usec - (tv1.tv_sec*1000000 + tv1.tv_usec),
-                maxProfit);
+                maxProfit);*/
 
         ArbitrageChance chance{};
         if (resultPath.size() != 3) {

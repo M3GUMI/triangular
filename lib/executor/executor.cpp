@@ -1,22 +1,55 @@
 #include <functional>
 #include "utils/utils.h"
 #include "lib/arbitrage/triangular/ioc_triangular.h"
+#include "lib/arbitrage/triangular/maker_triangular.h"
 #include "executor.h"
 
 using namespace std;
 namespace Executor{
     Executor::Executor(
+            websocketpp::lib::asio::io_service& ioService,
+            WebsocketWrapper::BinanceOrderWrapper& orderWrapper,
             Pathfinder::Pathfinder &pathfinder,
             CapitalPool::CapitalPool &capitalPool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
-    ) : pathfinder(pathfinder), capitalPool(capitalPool), apiWrapper(apiWrapper) {
+    ) : ioService(ioService), orderWrapper(orderWrapper), pathfinder(pathfinder), capitalPool(capitalPool), apiWrapper(apiWrapper) {
         pathfinder.SubscribeArbitrage((bind(&Executor::arbitragePathHandler, this, placeholders::_1)));
     }
 
     Executor::~Executor() {
     }
 
+    void Executor::Init() {
+        checkTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
+        checkTimer->async_wait(bind(&Executor::initMaker, this));
+    }
+
+    void Executor::initMaker()
+    {
+        checkTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
+                                                                            websocketpp::lib::asio::milliseconds(
+                                                                                    5 * 1000));
+        checkTimer->async_wait(bind(&Executor::initMaker, this));
+
+        if (this->lock) {
+            // spdlog::debug("lock");
+            return;
+        }
+
+        auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
+                ioService, orderWrapper, pathfinder, capitalPool, apiWrapper
+        );
+        auto err = makerTriangular->Run("FXS", "BUSD");
+        if (err > 0)
+        {
+            return;
+        }
+
+        this->lock = true;
+    }
+
     void Executor::arbitragePathHandler(Pathfinder::ArbitrageChance &chance) {
+        return;
         if (this->lock) {
             spdlog::debug("lock");
             return;

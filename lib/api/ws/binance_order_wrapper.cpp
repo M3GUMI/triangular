@@ -28,7 +28,8 @@ namespace WebsocketWrapper
             WebsocketWrapper::Connect("/"+listenKey, msg, bind(&BinanceOrderWrapper::msgHandler, this, placeholders::_1, placeholders::_2));
             keepListenKeyHandler(false);
         } else {
-            apiWrapper.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
+            // todo 不能一直发请求，ip会被ban
+            // apiWrapper.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
         }
     }
 
@@ -51,7 +52,6 @@ namespace WebsocketWrapper
 
         if (not msgInfoJson.HasMember("e"))
         {
-            spdlog::error("func: {}, err: {}", "msgHandler", WrapErr(define::ErrorInvalidResp));
             return;
         }
 

@@ -8,7 +8,8 @@ namespace Arbitrage{
             CapitalPool::CapitalPool &pool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
     ) : TriangularArbitrage(pathfinder, pool, apiWrapper) {
-        this->strategy = "IocTriangular";
+        // todo 要改
+        this->strategy = conf::MakerTriangular;
     }
 
     IocTriangularArbitrage::~IocTriangularArbitrage() = default;
@@ -35,7 +36,7 @@ namespace Arbitrage{
 
         spdlog::info(
                 "{}::Run, profit: {}, quantity: {}, path: {}",
-                this->strategy,
+                this->strategy.StrategyName,
                 chance.Profit,
                 lockedQuantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
@@ -57,7 +58,7 @@ namespace Arbitrage{
     void IocTriangularArbitrage::TransHandler(OrderData &data) {
         spdlog::info(
                 "{}::TransHandler, base: {}, quote: {}, orderStatus: {}, price: {}, executePrice: {}, unExecuteQuantity: {}, executeQuantity: {}, newQuantity: {}",
-                this->strategy,
+                this->strategy.StrategyName,
                 data.BaseToken,
                 data.QuoteToken,
                 data.OrderStatus,
@@ -87,7 +88,7 @@ namespace Arbitrage{
         }
 
         if (err > 0) {
-            spdlog::error("{}::TransHandler, err: {}", this->strategy, WrapErr(err));
+            spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             return;
         }
     }

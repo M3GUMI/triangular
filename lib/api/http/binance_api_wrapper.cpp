@@ -487,6 +487,10 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::cancelOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, std::string ori_symbol)
     {
+        if (conf::EnableMock) {
+            return;
+        }
+
         if (auto checkResult = this->CheckRespWithCode(res); checkResult.Err > 0)
         {
             if (checkResult.Code == -2011 && checkResult.Msg == "Unknown order sent.") {
@@ -527,6 +531,10 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::createListkeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(string listenKey, int err)> callback)
     {
+        if (conf::EnableMock) {
+            return callback("mock", 0);
+        }
+
         if (auto err = this->CheckResp(res); err > 0)
         {
             spdlog::error("func: createListkeyCallback, err: {}, resp: {}", WrapErr(err), res->payload());
