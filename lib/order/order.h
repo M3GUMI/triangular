@@ -22,6 +22,18 @@ struct OrderData {
 
     uint64_t UpdateTime = 0; // 最后一次更新实际
 
+    double GetParsePrice()
+    {
+        if (Side == define::SELL)
+        {
+            return RoundDouble(Price);
+        }
+        else
+        {
+            return RoundDouble(1 / Price);
+        }
+    }
+
     string GetFromToken() {
         if (Side == define::SELL) {
             return BaseToken;

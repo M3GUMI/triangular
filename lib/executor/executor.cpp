@@ -36,6 +36,8 @@ namespace Executor{
             return;
         }
 
+        apiWrapper.CancelOrderSymbol("FXS", "BUSD");
+
         auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
                 ioService, orderWrapper, pathfinder, capitalPool, apiWrapper
         );
@@ -44,6 +46,7 @@ namespace Executor{
         {
             return;
         }
+        makerTriangular->SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
 
         this->lock = true;
     }

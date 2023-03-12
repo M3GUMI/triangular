@@ -227,7 +227,7 @@ namespace HttpWrapper
         req.sign = true;
         auto apiCallback = bind(&BinanceApiWrapper::getOpenOrderCallback, this, ::_1, ::_2);
 
-        this->MakeRequest(req, apiCallback);
+        this->MakeRequest(req, apiCallback, true);
         return 0;
     }
 
