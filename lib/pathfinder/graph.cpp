@@ -315,7 +315,7 @@ namespace Pathfinder{
 
         double maxProfit = 0;
         vector<TransactionPathItem> resultPath{};
-        auto item = bestPathMap[formatPath(originToken, endToken)];
+        auto item = bestPathMap[formatKey(originToken, endToken)];
         resultPath = formatPath(req.Strategy, req.Phase, item.bestPath);
 
         ArbitrageChance chance{};

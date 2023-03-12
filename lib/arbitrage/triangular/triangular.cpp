@@ -154,7 +154,7 @@ namespace Arbitrage{
         order->UpdateTime = data.UpdateTime;
 
         TransHandler(*order);
-        TriangularArbitrage::CheckFinish();
+        // TriangularArbitrage::CheckFinish();
     }
 
     void TriangularArbitrage::TransHandler(OrderData &orderData) {
