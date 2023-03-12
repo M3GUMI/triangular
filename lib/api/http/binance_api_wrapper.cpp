@@ -296,8 +296,12 @@ namespace HttpWrapper
 
         // ticketSize校验
         auto symbolData = GetSymbolData(req.BaseToken, req.QuoteToken);
-        uint32_t tmp = req.Quantity / symbolData.StepSize;
-        req.Quantity = tmp * symbolData.StepSize;
+        uint32_t tmpPrice = req.Price / symbolData.TicketSize;
+        req.Price = tmpPrice * symbolData.TicketSize;
+
+        // stepSize校验
+        uint32_t tmpQuantity = req.Quantity / symbolData.StepSize;
+        req.Quantity = tmpQuantity * symbolData.StepSize;
 
         if (req.Quantity == 0) {
             req.OrderStatus = define::EXPIRED;
@@ -309,7 +313,9 @@ namespace HttpWrapper
             return define::ErrorLessMinNotional;
         }
 
-        args["newOrderRespType"] = "RESULT";
+        if (req.OrderType == define::LIMIT && req.TimeInForce == define::IOC) {
+            args["newOrderRespType"] = "RESULT";
+        }
         args["symbol"] = symbolData.Symbol;
         args["side"] = sideToString(req.Side);
         args["type"] = orderTypeToString(req.OrderType);
@@ -383,7 +389,6 @@ namespace HttpWrapper
             return callback(data, checkResult.Err);
         }
 
-        spdlog::debug("func: createOrderCallback, res: {}", res->payload());
         rapidjson::Document order;
         order.Parse(res->payload().c_str());
 
