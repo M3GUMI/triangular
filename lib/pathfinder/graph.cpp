@@ -167,32 +167,33 @@ namespace Pathfinder{
         return this->subscriber(chance);*/
     }
 
-    int Graph::updateBestMap(int from, int to){
+    int Graph::updateBestMap(int from, int to)
+    {
         int updateNum = 0;
-        for (auto path : relatedPath[formatKey(from, to)]){
-            if (path->Steps.size() < 2)
-            {
-                return 0;
-            }
-
-            u_int64_t key = formatKey(path->Steps[0], path->Steps[path->Steps.size()-1]);
+        for (auto path : relatedPath[formatKey(from, to)])
+        {
+            u_int64_t key = formatKey(path->Steps[0], path->Steps[path->Steps.size() - 1]);
             double currentProfit = calculateMakerPathProfit(path->Steps);
-            if (currentProfit == 0){
+            if (currentProfit == 0)
+            {
                 continue;
             }
 
             // 首次插入最佳路径
-            if (not bestPathMap.count(key)) {
+            if (not bestPathMap.count(key))
+            {
                 bestPathMap[key] = {path->Steps, currentProfit};
                 updateNum++;
             }
-            // 如果本路径本就是最优路径则更新profit
-            else if (path->Steps==bestPathMap[key].bestPath){
+                // 如果本路径本就是最优路径则更新profit
+            else if (path->Steps == bestPathMap[key].bestPath)
+            {
                 bestPathMap[key].profit = currentProfit;
                 updateNum++;
             }
-            // 找到更优的路径
-            else if (currentProfit > bestPathMap[key].profit){
+                // 找到更优的路径
+            else if (currentProfit > bestPathMap[key].profit)
+            {
                 bestPathMap[key] = {path->Steps, currentProfit};
                 updateNum++;
             }
