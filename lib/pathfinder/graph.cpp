@@ -271,9 +271,9 @@ namespace Pathfinder{
         gettimeofday(&tv1,NULL);
 
         for (auto item: relatedTriangular[formatKey(quoteIndex, baseIndex)]){
-//            spdlog::info("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item->Steps[0], item->Steps[1], item->Steps[2]);
+//            spdlog::debug("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item->Steps[0], item->Steps[1], item->Steps[2]);
             double profit = calculateProfit(strategy, 1, item->Steps);
-//            spdlog::info("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
+//            spdlog::debug("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
             if (profit <= 1 || profit <= maxProfit)
             {
                 continue;
@@ -315,25 +315,16 @@ namespace Pathfinder{
 
         double maxProfit = 0;
         vector<TransactionPathItem> resultPath{};
-        for (auto& item: pathMap[formatKey(originToken, endToken)])
-        {
-            double profit = calculateProfit(req.Strategy, req.Phase, item->Steps);
-            if (profit <= maxProfit) {
-                continue;
-            }
-
-            auto path = formatPath(req.Strategy, req.Phase, item->Steps);
-            adjustQuantities(path);
-            if (not checkPath(path)) {
-                continue;
-            }
-
-            maxProfit = profit;
-            resultPath = path;
-        }
+        auto item = bestPathMap[formatPath(originToken, endToken)];
+        resultPath = formatPath(req.Strategy, req.Phase, item.bestPath);
 
         ArbitrageChance chance{};
         if (resultPath.empty()) {
+            return chance;
+        }
+        adjustQuantities(resultPath);
+
+        if (not checkPath(resultPath)){
             return chance;
         }
 

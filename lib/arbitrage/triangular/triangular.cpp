@@ -106,12 +106,12 @@ namespace Arbitrage{
         req.Phase = phase;
 
         auto chance = pathfinder.FindBestPath(req);
-        spdlog::info(
-                "{}::RevisePath, profit: {}, quantity: {}, bestPath: {}",
-                this->strategy.StrategyName,
-                quantity*chance.Profit/this->OriginQuantity,
-                chance.FirstStep().Quantity,
-                spdlog::fmt_lib::join(chance.Format(), ","));
+//        spdlog::info(
+//                "{}::RevisePath, profit: {}, quantity: {}, bestPath: {}",
+//                this->strategy.StrategyName,
+//                quantity*chance.Profit/this->OriginQuantity,
+//                chance.FirstStep().Quantity,
+//                spdlog::fmt_lib::join(chance.Format(), ","));
 
         return ExecuteTrans(orderId, phase, chance.FirstStep());
     }
