@@ -9,11 +9,11 @@ namespace conf
     string SecretKey = "";
 
     double MaxTriangularQuantity = 60;
-    double MinTriangularQuantity = 15;
+    double MinTriangularQuantity = 20;
 
     string BaseAsset = "BUSD";
     map<string, double> BaseAssets = {
-        {"BUSD", 30},
+        {"BUSD", 10},
     };
     map<u_int64_t, double> HandlingFeeMap = {
             {formatKey(define::LIMIT_MAKER, define::GTC), 0},

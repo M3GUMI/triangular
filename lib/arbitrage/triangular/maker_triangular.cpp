@@ -28,8 +28,9 @@ namespace Arbitrage{
 
         spdlog::info("MakerTriangularArbitrage::Run, symbol: {}", base+quote);
 
-        this->TargetToken = "BUSD";
         this->OriginQuantity = lockedQuantity;
+        this->TargetToken = "BUSD";
+        this->currentPhase = 1;
         this->baseToken = base;
         this->quoteToken = quote;
 
@@ -47,7 +48,7 @@ namespace Arbitrage{
                 this->strategy.StrategyName,
                 data.BaseToken,
                 data.QuoteToken,
-                data.Side,
+                sideToString(data.Side),
                 data.OrderStatus,
                 data.Quantity,
                 data.Price,
@@ -65,12 +66,20 @@ namespace Arbitrage{
             FinalQuantity += data.GetNewQuantity();
         }
 
-        if (data.Phase == 1 || data.Phase == 2)
+
+        if (data.Phase == 1)
+        {
+            takerHandler(data);
+            return;
+        }
+
+        if (data.Phase == 2)
         {
             // todo 需要加参数，改为市价taker单，非稳定币到稳定币
             // todo 需要加参数，改为稳定币到稳定币gtc挂单
             uint64_t orderId;
-            auto err = this->ReviseTrans(orderId, data.Phase + 1, data.GetToToken(), data.GetExecuteQuantity());
+            this->currentPhase = 3;
+            auto err = this->ReviseTrans(orderId, data.Phase + 1, data.GetToToken(), data.GetNewQuantity());
             if (err > 0)
             {
                 spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
@@ -80,9 +89,24 @@ namespace Arbitrage{
 
         if (data.Phase == 3)
         {
+            this->currentPhase = this->currentPhase + 1;
             CheckFinish();
             return;
         }
+    }
+
+    int MakerTriangularArbitrage::takerHandler(OrderData &data)
+    {
+        uint64_t orderId;
+        this->currentPhase = 2;
+        auto err = this->ReviseTrans(orderId, 2, data.GetToToken(), data.GetNewQuantity());
+        if (err > 0)
+        {
+            spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
+            // reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(20));
+            // reorderTimer->async_wait(bind(&MakerTriangularArbitrage::takerHandler, this, data));
+        }
+        return 0;
     }
 
     int MakerTriangularArbitrage::partiallyFilledHandler(OrderData &orderData)
@@ -134,9 +158,6 @@ namespace Arbitrage{
     //价格变化幅度不够大，撤单重挂单
     //base是BUSD SIDE为BUY QUOTE放购入货币
     void MakerTriangularArbitrage::makerOrderChangeHandler(){
-        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1 * 1000));
-        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerOrderChangeHandler, this));
-
         if (this->PendingOrder != nullptr)
         {
             auto orderStatus = this->PendingOrder->OrderStatus;
@@ -145,6 +166,9 @@ namespace Arbitrage{
                 return;
             }
         }
+
+        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1 * 1000));
+        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerOrderChangeHandler, this));
 
         Pathfinder::GetExchangePriceReq req;
         req.BaseToken = this->baseToken;

@@ -19,20 +19,26 @@ namespace Arbitrage
         ~MakerTriangularArbitrage();
 
         int Run(string baseToken, string quoteToken);
+
     private:
         websocketpp::lib::asio::io_service& ioService;
         WebsocketWrapper::BinanceOrderWrapper& orderWrapper;
 
         OrderData* PendingOrder = nullptr; // 提前挂单
+        int currentPhase = 0;
         string baseToken;
         string quoteToken;
 
         double close = 0.1; // 撤单重挂阈值
         double open = 0.2; // 挂单阈值
 
-        std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂單計時器
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂单计时器
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> retryTimer;//市价吃单计时器
+
         void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单
         int partiallyFilledHandler(OrderData& orderData);
+        int takerHandler(OrderData &orderData);
+
         void TransHandler(OrderData& orderData) override;
     };
 }

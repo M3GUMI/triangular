@@ -361,7 +361,7 @@ namespace HttpWrapper
 
             data.ExecutePrice = req.Price;
             data.ExecuteQuantity = req.Quantity;
-            data.CummulativeQuoteQuantity = RoundDouble(req.Quantity*req.ExecutePrice);
+            data.CummulativeQuoteQuantity = RoundDouble(data.Quantity*data.ExecutePrice);
 
             // 最大成交50
             if (data.ExecuteQuantity == 1) {
