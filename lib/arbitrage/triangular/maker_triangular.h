@@ -29,16 +29,17 @@ namespace Arbitrage
         string baseToken;
         string quoteToken;
 
-        double close = 0.1; // 撤单重挂阈值
-        double open = 0.2; // 挂单阈值
+        double close = 0.2; // 撤单重挂阈值
+        double open = 0.1; // 挂单阈值
 
         std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> retryTimer;//市价吃单计时器
 
         void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单
-        int partiallyFilledHandler(OrderData& orderData);
-        int takerHandler(OrderData &orderData);
+        int partiallyFilledHandler(OrderData& data);
+        void takerHandler(OrderData &data);
+        void makerHandler(OrderData &data);
 
-        void TransHandler(OrderData& orderData) override;
+        void TransHandler(OrderData& data) override;
     };
 }

@@ -39,7 +39,9 @@ namespace Arbitrage{
         spdlog::info("{}::Finish, profit: {}, finalQuantity: {}, originQuantity: {}",
                      this->strategy.StrategyName, this->FinalQuantity / this->OriginQuantity, this->FinalQuantity, this->OriginQuantity);
         finished = true;
-        this->subscriber();
+        if (this->subscriber != nullptr) {
+            this->subscriber();
+        }
         return true;
     }
 
@@ -72,10 +74,9 @@ namespace Arbitrage{
                         placeholders::_2
                 ));
         spdlog::info(
-                "{}::ExecuteTrans, base: {}, quote: {}, side: {}, orderType: {}, price: {}, quantity: {}",
+                "{}::ExecuteTrans, symbol: {}, side: {}, orderType: {}, price: {}, quantity: {}",
                 this->strategy.StrategyName,
-                path.BaseToken,
-                path.QuoteToken,
+                path.BaseToken+path.QuoteToken,
                 sideToString(path.Side),
                 orderTypeToString(path.OrderType),
                 path.Price,
@@ -142,7 +143,9 @@ namespace Arbitrage{
             }
         }
 
-        order->Quantity = data.Quantity;
+        if (data.Quantity > 0) {
+            order->Quantity = data.Quantity;
+        }
 
         order->OrderStatus = data.OrderStatus;
         order->ExecutePrice = data.ExecutePrice;

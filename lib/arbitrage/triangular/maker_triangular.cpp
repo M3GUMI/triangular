@@ -26,7 +26,7 @@ namespace Arbitrage{
             return err;
         }
 
-        spdlog::info("MakerTriangularArbitrage::Run, symbol: {}", base+quote);
+        spdlog::info("{}::Run, symbol: {}", this->strategy.StrategyName, base+quote);
 
         this->OriginQuantity = lockedQuantity;
         this->TargetToken = "BUSD";
@@ -44,11 +44,11 @@ namespace Arbitrage{
     void MakerTriangularArbitrage::TransHandler(OrderData &data)
     {
         spdlog::info(
-                "{}::TransHandler, base: {}, quote: {}, side: {}, status: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
+                "{}::TransHandler, symbol: {}, side: {}, phase: {}, status: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
                 this->strategy.StrategyName,
-                data.BaseToken,
-                data.QuoteToken,
+                data.BaseToken+data.QuoteToken,
                 sideToString(data.Side),
+                data.Phase,
                 data.OrderStatus,
                 data.Quantity,
                 data.Price,
@@ -66,25 +66,14 @@ namespace Arbitrage{
             FinalQuantity += data.GetNewQuantity();
         }
 
-
         if (data.Phase == 1)
         {
-            takerHandler(data);
-            return;
+            return takerHandler(data);
         }
 
         if (data.Phase == 2)
         {
-            // todo 需要加参数，改为市价taker单，非稳定币到稳定币
-            // todo 需要加参数，改为稳定币到稳定币gtc挂单
-            uint64_t orderId;
-            this->currentPhase = 3;
-            auto err = this->ReviseTrans(orderId, data.Phase + 1, data.GetToToken(), data.GetNewQuantity());
-            if (err > 0)
-            {
-                spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
-            }
-            return;
+            return makerHandler(data);
         }
 
         if (data.Phase == 3)
@@ -95,18 +84,52 @@ namespace Arbitrage{
         }
     }
 
-    int MakerTriangularArbitrage::takerHandler(OrderData &data)
+    void MakerTriangularArbitrage::takerHandler(OrderData &data)
     {
+        int newPhase = 2;
+        // 寻找新路径重试
+        Pathfinder::FindBestPathReq req{};
+        req.Strategy = this->strategy;
+        req.Origin = data.GetToToken();
+        req.End = this->TargetToken;
+        req.Quantity = data.GetNewQuantity();
+        req.Phase = newPhase;
+
+        auto chance = pathfinder.FindBestPath(req);
+        auto realProfit = data.GetParsePrice()*chance.Profit;
+        if (realProfit > 1) {
+            spdlog::info("!!!!path: {}", spdlog::fmt_lib::join(chance.Format(), ","));
+
+            uint64_t orderId;
+            auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
+            if (err > 0) {
+                spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
+            }
+
+            this->currentPhase = newPhase;
+        } else {
+            reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(20));
+            reorderTimer->async_wait(bind(&MakerTriangularArbitrage::takerHandler, this, data));
+        }
+    }
+
+    void MakerTriangularArbitrage::makerHandler(OrderData &data)
+    {
+        if (data.GetToToken() == this->TargetToken) {
+            CheckFinish();
+            return;
+        }
+
+        int newPhase = 3;
+
         uint64_t orderId;
-        this->currentPhase = 2;
-        auto err = this->ReviseTrans(orderId, 2, data.GetToToken(), data.GetNewQuantity());
+        auto err = this->ReviseTrans(orderId, newPhase, data.GetToToken(), data.GetNewQuantity());
         if (err > 0)
         {
             spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
-            // reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(20));
-            // reorderTimer->async_wait(bind(&MakerTriangularArbitrage::takerHandler, this, data));
+            return;
         }
-        return 0;
+        this->currentPhase = newPhase;
     }
 
     int MakerTriangularArbitrage::partiallyFilledHandler(OrderData &orderData)

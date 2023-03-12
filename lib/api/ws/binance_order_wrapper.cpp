@@ -100,8 +100,8 @@ namespace WebsocketWrapper
         data.UpdateTime = updateTime;
 
         spdlog::debug(
-                "func: executionReportHandler, symbol: {}, side: {}, price: {}, quantity: {}, executeQuantity: {}, newQuantity: {}",
-                symbol, side, data.Price, data.Quantity, data.GetExecuteQuantity(), data.GetNewQuantity()
+                "func: executionReportHandler, symbol: {}, side: {}, status: {], price: {}, quantity: {}, executeQuantity: {}, newQuantity: {}",
+                symbol, side, data.OrderStatus, data.Price, data.Quantity, data.GetExecuteQuantity(), data.GetNewQuantity()
         );
 
         // todo 需要内存管理

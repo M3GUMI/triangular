@@ -156,7 +156,7 @@ namespace Pathfinder{
             int updateNum = updateBestMap(tokenToIndex[data.BaseToken], tokenToIndex[data.QuoteToken]);
         }
 
-        auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
+        /*auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
         if (chance.Profit <= 1)
         {
             return;
@@ -164,7 +164,7 @@ namespace Pathfinder{
 
         spdlog::info("func: {}, path found profit: {}", "UpdateNode", chance.Profit);
 
-        return this->subscriber(chance);
+        return this->subscriber(chance);*/
     }
 
     int Graph::updateBestMap(int from, int to){

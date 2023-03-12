@@ -22,7 +22,8 @@ namespace Pathfinder
         for (const auto &symbolData: data) {
             auto symbol = symbolData.Symbol;
             if (conf::EnableMock &&
-                (symbol != "FXSBUSD" && symbol != "FXSUSDT" && symbol != "BUSDUSDT")){
+                (symbol != "FXSBUSD" && symbol != "FXSUSDT" && symbol != "BUSDUSDT" &&
+                 symbol != "FXSBTC" && symbol != "BTCBUSD")){
                 continue;
             }
 
@@ -67,5 +68,16 @@ namespace Pathfinder
         if (initNum > 0 || failNum > 0) {
             spdlog::info("func: {}, init: {}, connected: {}, reconnect: {}", "scanDepthSocket", initNum, succNum, failNum);
         }
+
+        if (this->depthSocketMap.size() - succNum <= 10 && this->depthReadySubscriber != nullptr)
+        {
+            this->depthReadySubscriber();
+            this->depthReadySubscriber = nullptr;
+        }
+    }
+
+    void Pathfinder::SubscribeDepthReady(function<void()> callback)
+    {
+        this->depthReadySubscriber = callback;
     }
 }

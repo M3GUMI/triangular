@@ -14,10 +14,10 @@ namespace Executor{
             HttpWrapper::BinanceApiWrapper &apiWrapper
     ) : ioService(ioService), orderWrapper(orderWrapper), pathfinder(pathfinder), capitalPool(capitalPool), apiWrapper(apiWrapper) {
         pathfinder.SubscribeArbitrage((bind(&Executor::arbitragePathHandler, this, placeholders::_1)));
+        pathfinder.SubscribeDepthReady(bind(&Executor::Init, this));
     }
 
-    Executor::~Executor() {
-    }
+    Executor::~Executor() = default;
 
     void Executor::Init() {
         checkTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
@@ -28,13 +28,16 @@ namespace Executor{
     {
         checkTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
                                                                             websocketpp::lib::asio::milliseconds(
-                                                                                    5 * 1000));
+                                                                                    10 * 1000));
         checkTimer->async_wait(bind(&Executor::initMaker, this));
 
         if (this->lock) {
-            // spdlog::debug("lock");
+            spdlog::debug("lock");
             return;
         }
+        this->lock = true;
+
+        apiWrapper.CancelOrderSymbol("FXS", "BUSD");
 
         auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
                 ioService, orderWrapper, pathfinder, capitalPool, apiWrapper
@@ -44,8 +47,7 @@ namespace Executor{
         {
             return;
         }
-
-        this->lock = true;
+        makerTriangular->SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
     }
 
     void Executor::arbitragePathHandler(Pathfinder::ArbitrageChance &chance) {

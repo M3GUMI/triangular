@@ -13,7 +13,8 @@ int main() {
     CapitalPool::CapitalPool capitalPool(ioService, pathfinder, apiWrapper);
     Executor::Executor executor(ioService, orderWrapper, pathfinder, capitalPool, apiWrapper);
 
-    executor.Init();
+    apiWrapper.GetOpenOrder("FXSBUSD");
+
     apiWrapper.InitBinanceSymbol();
     ioService.run();
 
