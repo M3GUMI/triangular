@@ -143,7 +143,9 @@ namespace Arbitrage{
             }
         }
 
-        order->Quantity = data.Quantity;
+        if (data.Quantity > 0) {
+            order->Quantity = data.Quantity;
+        }
 
         order->OrderStatus = data.OrderStatus;
         order->ExecutePrice = data.ExecutePrice;
