@@ -19,6 +19,7 @@ namespace makerMock
     protected:
 
         MakerMock(
+                websocketpp::lib::asio::io_service& ioService,
                 Pathfinder::Pathfinder &pathfinder,
                 Arbitrage::TriangularArbitrage triangular
                 );
@@ -33,8 +34,13 @@ namespace makerMock
         map<uint64_t, OrderData*> mockOrderMap;
         Arbitrage::TriangularArbitrage &triangular;
         Pathfinder::Pathfinder &pathfinder;
+        websocketpp::lib::asio::io_service& ioService;
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> priceControlTimer;//价格控制计时器
+        double upDownRaise = 0.005;//价格变化阈值
+        bool EnablePriceController = false;
         void tradeNodeHandler(map<u_int64_t, Pathfinder::Node*> tradeNodeMap);
         void mockTrader(map<u_int64_t, Pathfinder::Node*> tradeNodeMap, map<uint64_t, OrderData*> mockOrderMap);
+        void priceController(map<u_int64_t, Pathfinder::Node*> tradeNodeMap);
         void initMock();
     private:
 

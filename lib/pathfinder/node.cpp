@@ -1,5 +1,6 @@
 #include "define/define.h"
 #include "node.h"
+#include "lib/arbitrage/triangular/maker_mock.h"
 
 namespace Pathfinder
 {
@@ -80,4 +81,23 @@ namespace Pathfinder
 
         return item;
     };
+
+    void Node::mockSetOriginPrice(int fromIndex, int toIndex, double price){
+
+        if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
+        {
+            this->sellPrice = price;
+        }
+
+        if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
+        {
+            this->buyPrice = price;
+        }
+    }
+    vector<int> Node::mockGetIndexs(){
+        vector<int> indexs;
+        indexs[0] = baseIndex;
+        indexs[1] = quoteIndex;
+        return indexs;
+    }
 }

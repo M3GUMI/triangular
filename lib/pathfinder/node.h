@@ -97,6 +97,10 @@ namespace Pathfinder
 
         double UpdateBuy(double price, double quantity);
 
+        void mockSetOriginPrice(int fromIndex, int toIndex, double price);
+
+        vector<int> mockGetIndexs();
+
         TransactionPathItem Format(conf::Step& step, map<int, string>& indexToToken, int from, int to);
 
     private:
