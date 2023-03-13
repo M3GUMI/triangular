@@ -12,7 +12,9 @@ namespace makerMock{
             Pathfinder::Pathfinder &pathfinder,
             Arbitrage::TriangularArbitrage triangular)
     : triangular(triangular),pathfinder(pathfinder)
-    {}
+    {
+        pathfinder.SubscribeMock((bind(&MakerMock::tradeNodeHandler, this, placeholders::_1)));
+    }
 
 
     MakerMock::~MakerMock()  = default;
@@ -21,7 +23,7 @@ namespace makerMock{
     void MakerMock::tradeNodeHandler(map<u_int64_t, Pathfinder::Node*> tradeNodeMap){
         mockTradeNodeMap = tradeNodeMap;
         mockOrderMap = triangular.getOrderMap();
-        mockTrader(mockTradeNodeMap, mockOrderMap);
+        mockTrader(mockTradeNodeMap, mockOZXarderMap);
     };
 
     void MakerMock::mockTrader(map<u_int64_t, Pathfinder::Node*> mockTradeNodeMap, map<uint64_t, OrderData*> mockOrderMap){

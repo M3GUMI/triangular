@@ -466,4 +466,8 @@ namespace Pathfinder{
     {
         this->subscriber = handler;
     }
+
+    void Graph::SubscribeMock(function<void(map<u_int64_t, Pathfinder::Node*> tradeNodeMap)> handler){
+        this->mockSubscriber = handler;
+    }
 }

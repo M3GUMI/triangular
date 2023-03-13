@@ -76,6 +76,7 @@ namespace Pathfinder{
     class Graph {
     public:
         function<void(ArbitrageChance& chance)> subscriber = nullptr;
+        function<void(map<u_int64_t, Pathfinder::Node*> tradeNodeMap)> mockSubscriber = nullptr;
         Graph(HttpWrapper::BinanceApiWrapper &apiWrapper);
         ~Graph();
 
@@ -83,6 +84,7 @@ namespace Pathfinder{
         ArbitrageChance CalculateArbitrage(conf::Strategy& strategy, int baseIndex, int quoteIndex);
         ArbitrageChance FindBestPath(FindBestPathReq& req);
         void SubscribeArbitrage(function<void(ArbitrageChance& chance)> handler);      // 订阅套利机会推送
+        void SubscribeMock(function<void(map<u_int64_t, Pathfinder::Node*> tradeNodeMap)> handler);
         map<string, int> tokenToIndex{};
         map<int, string> indexToToken{};
 
