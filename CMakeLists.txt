@@ -70,7 +70,7 @@ set(ALL_FILES
         utils/utils.cpp
         utils/utils.h
         lib/order/order.h
-        lib/order/order.cpp)
+        lib/order/order.cpp lib/arbitrage/triangular/maker_mock.h lib/arbitrage/triangular/maker_mock.cpp)
 
 add_executable(MoneyTriangular ${ALL_FILES})
 

@@ -83,6 +83,8 @@ namespace Pathfinder{
         ArbitrageChance CalculateArbitrage(conf::Strategy& strategy, int baseIndex, int quoteIndex);
         ArbitrageChance FindBestPath(FindBestPathReq& req);
         void SubscribeArbitrage(function<void(ArbitrageChance& chance)> handler);      // 订阅套利机会推送
+        map<string, int> tokenToIndex{};
+        map<int, string> indexToToken{};
 
     protected:
         HttpWrapper::BinanceApiWrapper &apiWrapper;
@@ -96,8 +98,7 @@ namespace Pathfinder{
         int indexStart = 0;
         int groupSize = 500;
 
-        map<string, int> tokenToIndex{};
-        map<int, string> indexToToken{};
+
 
         struct Triangular
         {

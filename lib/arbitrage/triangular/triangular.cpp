@@ -160,4 +160,12 @@ namespace Arbitrage{
     void TriangularArbitrage::TransHandler(OrderData &orderData) {
         exit(EXIT_FAILURE);
     }
+
+    map<uint64_t, OrderData*> TriangularArbitrage::getOrderMap(){
+        return orderMap;
+    }
+    void TriangularArbitrage::setOrderMap(map<uint64_t, OrderData*> newOrderMap){
+        orderMap = newOrderMap;
+    }
+
 }
