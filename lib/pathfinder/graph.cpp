@@ -183,31 +183,27 @@ namespace Pathfinder{
             }
             // 如果本路径本就是最优路径则更新profit
             else {
-                list<BestPath>::iterator p1;
+                list<BestPath>::iterator p;
                 auto bestPaths = bestPathMap[key];
-                bool found = false;
 
-                // 如果当前路径已被记录就只更新profit
-                for(p1=bestPaths.begin(); p1 != bestPaths.end(); p1++){
-                    if (path->Steps==p1->bestPath){
-                        found = true;
-                        p1->profit = currentProfit;
-                        updateNum++;
+                // 如果当前路径已被记录就删除，之后重新插入
+                for(p = bestPaths.begin(); p != bestPaths.end(); p++){
+                    if (path->Steps == p->bestPath){
+                        bestPaths.erase(p);
                         break;
                     }
                 }
 
-                // 如果未被记录就在尾部插入
-                if (not found) {
-                    bestPaths.push_back({path->Steps, currentProfit});
-                    newNum++;
+                // 插入路径
+                for(p = bestPaths.begin(); p != bestPaths.end(); p++) {
+                    if (p->profit < currentProfit) {
+                        bestPaths.insert(p, {path->Steps, currentProfit});
+                    }
+                }
+                if (p == bestPaths.end()) {
+                    bestPaths.insert(p, {path->Steps, currentProfit});
                 }
             }
-
-            // 排序所有路径的profit
-            bestPathMap[key].sort([](const BestPath& a, const BestPath& b){
-                return a.profit > b.profit;
-            });
         }
 
         /*spdlog::debug("func: {}, {}->{}, Path Num: {}, New Num: {}, Update Num: {}",
