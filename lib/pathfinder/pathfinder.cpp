@@ -22,8 +22,8 @@ namespace Pathfinder
         for (const auto &symbolData: data) {
             auto symbol = symbolData.Symbol;
             if (conf::EnableMock &&
-                (symbol != "FXSBUSD" && symbol != "FXSUSDT" && symbol != "BUSDUSDT" &&
-                 symbol != "FXSBTC" && symbol != "BTCBUSD")){
+                (symbol != "XRPBUSD" && symbol != "XRPUSDT" && symbol != "BUSDUSDT" &&
+                 symbol != "XRPBTC" && symbol != "BTCBUSD")){
                 continue;
             }
 

@@ -37,12 +37,12 @@ namespace Executor{
         }
         this->lock = true;
 
-        apiWrapper.CancelOrderSymbol("FXS", "BUSD");
+        apiWrapper.CancelOrderSymbol("XRP", "BUSD");
 
         auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
                 ioService, orderWrapper, pathfinder, capitalPool, apiWrapper
         );
-        auto err = makerTriangular->Run("FXS", "BUSD");
+        auto err = makerTriangular->Run("XRP", "BUSD");
         if (err > 0)
         {
             return;
