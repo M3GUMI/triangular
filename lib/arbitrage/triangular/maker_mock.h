@@ -6,11 +6,10 @@
 #include "define/define.h"
 #include "conf/strategy.h"
 
-
 using namespace std;
 using namespace Arbitrage;
 
-namespace makerMock
+namespace MakerMock
 {
     class MakerMock {
 

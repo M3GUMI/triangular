@@ -258,4 +258,50 @@ namespace Arbitrage{
             this->PendingOrder = orderMap[orderId];
         }
     }
+
+    void MakerTriangularArbitrage::mockTrader(const string& base, string quote, double buyPrice, double sellPrice) {
+        if (!conf::EnableMock) {
+            return;
+        }
+
+        for (auto& item:orderMap) {
+            auto orderId = item.first;
+            auto order = item.second;
+
+            if (base != order->BaseToken || quote != order->QuoteToken) {
+                continue;
+            }
+
+            if (order->OrderStatus != define::INIT && order->OrderStatus != define::NEW) {
+                continue;
+            }
+
+            bool execute = false;
+            if (order->Side == define::SELL && order->Price < buyPrice) {
+                execute = true;
+            } else if (order->Side == define::BUY && order->Price > sellPrice) {
+                execute = true;
+            }
+
+            if (execute) {
+                double cummulativeQuantity = 0;
+                if (order->Side == define::SELL) {
+                    cummulativeQuantity = RoundDouble(order->Price*order->Quantity);
+                } else if (order->Side == define::BUY) {
+                    cummulativeQuantity = order->Quantity;
+                }
+
+                auto data = OrderData{
+                        .OrderId = orderId,
+                        .OrderStatus = define::FILLED,
+                        .ExecutePrice = order->Price,
+                        .ExecuteQuantity = order->Quantity,
+                        .CummulativeQuoteQuantity = cummulativeQuantity,
+                        .UpdateTime = GetNowTime()
+                };
+
+                this->baseOrderHandler(data, 0);
+            }
+        }
+    }
 }

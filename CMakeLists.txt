@@ -43,6 +43,8 @@ set(ALL_FILES
         lib/arbitrage/triangular/ioc_triangular.cpp
         lib/arbitrage/triangular/maker_triangular.cpp
         lib/arbitrage/triangular/maker_triangular.h
+        lib/arbitrage/triangular/maker_mock.h
+        lib/arbitrage/triangular/maker_mock.cpp
         lib/capital_pool/capital_pool.cpp
         lib/capital_pool/capital_pool.h
         lib/executor/executor.cpp
@@ -70,7 +72,7 @@ set(ALL_FILES
         utils/utils.cpp
         utils/utils.h
         lib/order/order.h
-        lib/order/order.cpp lib/arbitrage/triangular/maker_mock.h lib/arbitrage/triangular/maker_mock.cpp)
+        lib/order/order.cpp)
 
 add_executable(MoneyTriangular ${ALL_FILES})
 

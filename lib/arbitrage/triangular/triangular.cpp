@@ -56,12 +56,20 @@ namespace Arbitrage{
         order->BaseToken = path.BaseToken;
         order->QuoteToken = path.QuoteToken;
         order->Side = path.Side;
-        order->Price = path.Price;
-        order->Quantity = path.Quantity; // todo 这里的数量可能和最终数量不一致
         order->OrderType = path.OrderType;
         order->TimeInForce = path.TimeInForce;
         order->OrderStatus = define::INIT;
         order->UpdateTime = GetNowTime();
+
+        // ticketSize校验
+        auto symbolData = apiWrapper.GetSymbolData(path.BaseToken, path.QuoteToken);
+        uint32_t tmpPrice = path.Price / symbolData.TicketSize;
+        order->Price = tmpPrice * symbolData.TicketSize;
+
+        // stepSize校验
+        uint32_t tmpQuantity = path.Quantity / symbolData.StepSize;
+        order->Quantity = tmpQuantity * symbolData.StepSize;
+
         orderMap[order->OrderId] = order;
         orderId = order->OrderId;
 

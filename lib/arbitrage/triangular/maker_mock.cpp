@@ -7,13 +7,13 @@ using namespace boost::asio;
 using namespace std;
 using namespace Arbitrage;
 
-namespace makerMock{
+namespace MakerMock{
 
     MakerMock::MakerMock(
             websocketpp::lib::asio::io_service& ioService,
             Pathfinder::Pathfinder &pathfinder,
             Arbitrage::TriangularArbitrage triangular)
-    : triangular(triangular),pathfinder(pathfinder), ioService(ioService)
+            : triangular(triangular),pathfinder(pathfinder), ioService(ioService)
     {}
 
 
@@ -131,8 +131,5 @@ namespace makerMock{
             priceControlTimer->async_wait(bind(&MakerMock::priceController, this, tradeNodeMap));
         }
     }
-    void MakerMock::initMock(){
-
-    };
 }
 
