@@ -168,13 +168,8 @@ namespace Pathfinder{
     }
 
     int Graph::updateBestMap(int from, int to){
-        int updateNum = 0;
+        int updateNum = 0, newNum = 0;
         for (auto path : relatedPath[formatKey(from, to)]){
-            if (path->Steps.size() < 2)
-            {
-                return 0;
-            }
-
             u_int64_t key = formatKey(path->Steps[0], path->Steps[path->Steps.size()-1]);
             double currentProfit = calculateMakerPathProfit(path->Steps);
             if (currentProfit == 0){
@@ -183,26 +178,44 @@ namespace Pathfinder{
 
             // 首次插入最佳路径
             if (not bestPathMap.count(key)) {
-                bestPathMap[key] = {path->Steps, currentProfit};
-                updateNum++;
+                bestPathMap[key].push_back({path->Steps, currentProfit});
+                newNum++;
             }
             // 如果本路径本就是最优路径则更新profit
-            else if (path->Steps==bestPathMap[key].bestPath){
-                bestPathMap[key].profit = currentProfit;
-                updateNum++;
+            else {
+                list<BestPath>::iterator p1;
+                auto bestPaths = bestPathMap[key];
+                bool found = false;
+
+                // 如果当前路径已被记录就只更新profit
+                for(p1=bestPaths.begin(); p1 != bestPaths.end(); p1++){
+                    if (path->Steps==p1->bestPath){
+                        found = true;
+                        p1->profit = currentProfit;
+                        updateNum++;
+                        break;
+                    }
+                }
+
+                // 如果未被记录就在尾部插入
+                if (not found) {
+                    bestPaths.push_back({path->Steps, currentProfit});
+                    newNum++;
+                }
             }
-            // 找到更优的路径
-            else if (currentProfit > bestPathMap[key].profit){
-                bestPathMap[key] = {path->Steps, currentProfit};
-                updateNum++;
-            }
+
+            // 排序所有路径的profit
+            bestPathMap[key].sort([](const BestPath& a, const BestPath& b){
+                return a.profit > b.profit;
+            });
         }
 
-        /*spdlog::debug("func: {}, {}->{}, Path Num: {}, Update Num: {}",
+        /*spdlog::debug("func: {}, {}->{}, Path Num: {}, New Num: {}, Update Num: {}",
                 "updateBestMap",
                 from,
                 to,
                 relatedPath[formatKey(from, to)].size(),
+                newNum,
                 updateNum);*/
         return updateNum;
     }
@@ -315,16 +328,24 @@ namespace Pathfinder{
 
         double maxProfit = 0;
         vector<TransactionPathItem> resultPath{};
-        auto item = bestPathMap[formatKey(originToken, endToken)];
-        resultPath = formatPath(req.Strategy, req.Phase, item.bestPath);
-
         ArbitrageChance chance{};
-        if (resultPath.empty()) {
-            return chance;
+        auto item = bestPathMap[formatKey(originToken, endToken)];
+        list<BestPath>::iterator p1;
+        for (p1 = item.begin(); p1 != item.end(); p1++) {
+            resultPath = formatPath(req.Strategy, req.Phase, p1->bestPath);
+            if (resultPath.empty()) {
+                continue;
+            }
+            adjustQuantities(resultPath);
+            if (not checkPath(resultPath)) {
+                continue;
+            }
+            // 找到利润率最大的有效路径
+            break;
         }
-        adjustQuantities(resultPath);
 
-        if (not checkPath(resultPath)){
+        // 找完了都没找到有效路径
+        if (p1 == item.end()){
             return chance;
         }
 

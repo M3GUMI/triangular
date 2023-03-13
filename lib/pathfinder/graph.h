@@ -13,6 +13,7 @@
 #include "node.h"
 #include <set>
 #include <string>
+#include <list>
 
 using namespace std;
 namespace Pathfinder{
@@ -115,7 +116,7 @@ namespace Pathfinder{
 
         map<u_int64_t, vector<Triangular*>> relatedTriangular{}; // 存储交易对对应的三元环
         map<u_int64_t, set<Path*>> relatedPath{}; // 交易对印象路径的倒排索引
-        map<u_int64_t, BestPath> bestPathMap{};
+        map<u_int64_t, list<BestPath>> bestPathMap{};
 
         vector<TransactionPathItem> formatPath(conf::Strategy& strategy, int phase, vector<int>& path);
         double calculateProfit(conf::Strategy& strategy, int phase, vector<int>& path);
