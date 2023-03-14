@@ -107,6 +107,7 @@ namespace Arbitrage{
 
         auto chance = pathfinder.FindBestPath(req);
         auto realProfit = data.GetParsePrice()*chance.Profit;
+        spdlog::info("realProfit: {}, find_path: {}", realProfit, spdlog::fmt_lib::join(chance.Format(), ","));
         if (realProfit > 1) {
             uint64_t orderId;
             auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
