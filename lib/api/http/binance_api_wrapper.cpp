@@ -375,6 +375,10 @@ namespace HttpWrapper
                 data.OrderStatus = define::PARTIALLY_FILLED;
             }
 
+            if (data.OrderType == define::LIMIT_MAKER) {
+                data.OrderStatus = define::NEW;
+            }
+
             spdlog::debug("func: {}, msg: {}", "createOrderCallback", "mock create_order");
             return callback(data, 0);
         }
