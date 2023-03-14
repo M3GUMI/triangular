@@ -100,7 +100,7 @@ namespace WebsocketWrapper
         data.UpdateTime = updateTime;
 
         spdlog::debug(
-                "func: executionReportHandler, symbol: {}, side: {}, status: {], price: {}, quantity: {}, executeQuantity: {}, newQuantity: {}",
+                "func: executionReportHandler, symbol: {}, side: {}, status: {}, price: {}, quantity: {}, executeQuantity: {}, newQuantity: {}",
                 symbol, side, data.OrderStatus, data.Price, data.Quantity, data.GetExecuteQuantity(), data.GetNewQuantity()
         );
 

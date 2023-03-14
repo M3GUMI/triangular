@@ -239,13 +239,7 @@ namespace Pathfinder{
 
             currentProfit = currentProfit * node->GetParsePrice(from, to);
         }
-
-        // 不倒过来算一次profit就会变得很奇怪
-        auto node = tradeNodeMap[formatKey(path[path.size()-1], path[0])];
-        if (node == NULL){
-            return 0;
-        }
-        currentProfit = currentProfit * node->GetParsePrice(path[path.size()-1], path[0]) * (1-0.0004);
+        currentProfit = currentProfit*(1-0.0004);
         return currentProfit;
     }
 
@@ -330,9 +324,8 @@ namespace Pathfinder{
         int originToken = tokenToIndex[req.Origin];
         int endToken = tokenToIndex[req.End];
 
-        double maxProfit = 0;
+        double profit = 0;
         vector<TransactionPathItem> resultPath{};
-        ArbitrageChance chance{};
         auto item = bestPathMap[formatKey(originToken, endToken)];
         list<BestPath>::iterator p1;
         for (p1 = item.begin(); p1 != item.end(); p1++) {
@@ -345,10 +338,12 @@ namespace Pathfinder{
                 continue;
             }
             // 找到利润率最大的有效路径
+            profit = p1->profit;
             break;
         }
 
         // 找完了都没找到有效路径
+        ArbitrageChance chance{};
         if (p1 == item.end()){
             return chance;
         }
@@ -363,7 +358,7 @@ namespace Pathfinder{
         double realQuantity = RoundDouble(Min(quantity, pathQuantity));
 
         resultPath.front().Quantity = realQuantity;
-        chance.Profit = maxProfit;
+        chance.Profit = profit;
         chance.Quantity = realQuantity;
         chance.Path = resultPath;
         return chance;
