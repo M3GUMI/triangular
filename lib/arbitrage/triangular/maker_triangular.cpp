@@ -16,7 +16,14 @@ namespace Arbitrage{
     ) : ioService(ioService), orderWrapper(orderWrapper), TriangularArbitrage(pathfinder, pool, apiWrapper)
     {
         this->strategy = conf::MakerTriangular;
-        pathfinder.SubscribeMock((bind(&MakerTriangularArbitrage::mockTrader, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)));
+        pathfinder.SubscribeMock((bind(
+                &MakerTriangularArbitrage::mockTrader,
+                this,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                std::placeholders::_3,
+                std::placeholders::_4
+                )));
     }
 
     MakerTriangularArbitrage::~MakerTriangularArbitrage() = default;
@@ -261,6 +268,13 @@ namespace Arbitrage{
     }
 
     void MakerTriangularArbitrage::mockTrader(const string& base, string quote, double buyPrice, double sellPrice) {
+        spdlog::info("func: {}, base: {}, quote: {}, buyPrice: {}, sellPrice: {}",
+                "mockTrader",
+                base,
+                quote,
+                buyPrice,
+                sellPrice
+                );
         if (!conf::EnableMock) {
             return;
         }

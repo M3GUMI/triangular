@@ -156,7 +156,7 @@ namespace Pathfinder{
             int updateNum = updateBestMap(tokenToIndex[data.BaseToken], tokenToIndex[data.QuoteToken]);
         }
 
-        if (not conf::EnableMock)
+        if (not conf::EnableMock || this->mockSubscriber == nullptr)
             return;
 
         // 触发mock
