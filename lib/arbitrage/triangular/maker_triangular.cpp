@@ -268,13 +268,6 @@ namespace Arbitrage{
     }
 
     void MakerTriangularArbitrage::mockTrader(const string& base, string quote, double buyPrice, double sellPrice) {
-        spdlog::info("func: {}, base: {}, quote: {}, buyPrice: {}, sellPrice: {}",
-                "mockTrader",
-                base,
-                quote,
-                buyPrice,
-                sellPrice
-                );
         if (!conf::EnableMock) {
             return;
         }
