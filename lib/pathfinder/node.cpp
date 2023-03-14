@@ -1,5 +1,4 @@
 #include "define/define.h"
-#include "node.h"
 #include "lib/arbitrage/triangular/maker_mock.h"
 
 namespace Pathfinder

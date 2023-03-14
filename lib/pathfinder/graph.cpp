@@ -156,6 +156,14 @@ namespace Pathfinder{
             int updateNum = updateBestMap(tokenToIndex[data.BaseToken], tokenToIndex[data.QuoteToken]);
         }
 
+        if (not conf::EnableMock)
+            return;
+
+        // 触发mock
+        double sellPrice = node->GetOriginPrice(baseIndex, quoteIndex);
+        double buyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
+        this->mockSubscriber(data.BaseToken, data.QuoteToken, buyPrice, sellPrice);
+
         /*auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
         if (chance.Profit <= 1)
         {
@@ -467,7 +475,7 @@ namespace Pathfinder{
         this->subscriber = handler;
     }
 
-    void Graph::SubscribeMock(function<void(map<u_int64_t, Pathfinder::Node*> tradeNodeMap)> handler){
+    void Graph::SubscribeMock(function<void(const string& base, string quote, double buyPrice, double sellPrice)> handler){
         this->mockSubscriber = handler;
     }
 }

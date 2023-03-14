@@ -2,6 +2,7 @@
 #include "triangular.h"
 #include "conf/strategy.h"
 #include "lib/api/ws/binance_order_wrapper.h"
+#include <functional>
 
 using namespace std;
 namespace Arbitrage
@@ -35,7 +36,7 @@ namespace Arbitrage
         std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> retryTimer;//市价吃单计时器
 
-        void mockTrader(const string& baseToken, string quoteToken, double buyPrice, double sellPrice);
+        void mockTrader(const string& base, string quote, double buyPrice, double sellPrice);
 
         void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单
         int partiallyFilledHandler(OrderData& data);

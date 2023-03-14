@@ -16,6 +16,7 @@ namespace Arbitrage{
     ) : ioService(ioService), orderWrapper(orderWrapper), TriangularArbitrage(pathfinder, pool, apiWrapper)
     {
         this->strategy = conf::MakerTriangular;
+        pathfinder.SubscribeMock((bind(&MakerTriangularArbitrage::mockTrader, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)));
     }
 
     MakerTriangularArbitrage::~MakerTriangularArbitrage() = default;
