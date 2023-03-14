@@ -1,3 +1,4 @@
+#pragma once
 #include "conf/strategy.h"
 #include "utils/utils.h"
 
