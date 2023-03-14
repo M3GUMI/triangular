@@ -12,29 +12,40 @@ namespace Pathfinder
 
 	Pathfinder::~Pathfinder() = default;
 
-	void Pathfinder::symbolReadyHandler(vector<HttpWrapper::BinanceSymbolData> &data) {
+	void Pathfinder::symbolReadyHandler(vector<HttpWrapper::BinanceSymbolData> &data)
+    {
         // 每秒检测连接情况 todo 需要增加depth有效性检测，有可能连接存在但数据为空
-        scanDepthTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1000));
+        scanDepthTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
+                                                                                websocketpp::lib::asio::milliseconds(
+                                                                                        1000));
         scanDepthTimer->async_wait(bind(&Pathfinder::scanDepthSocket, this));
 
         Graph::Init(data);
 
-        for (const auto &symbolData: data) {
+        for (const auto& symbolData : data)
+        {
             auto symbol = symbolData.Symbol;
-            if (conf::EnableMock &&
-                (symbol != "XRPBUSD" && symbol != "XRPUSDT" && symbol != "BUSDUSDT" &&
-                 symbol != "XRPBTC" && symbol != "BTCBUSD")){
+            if (conf::EnableMock && symbol != "XRPBUSD" &&
+                symbol != "XRPBTC" && symbol != "XRPETH" && symbol != "XRPBNB" && symbol != "XRPUSDC" &&
+                symbol != "XRPUSDT" &&
+                symbol != "BTCBUSD" && symbol != "ETHBUSD" && symbol != "BUSDBNB" && symbol != "USDCBUSD" &&
+                symbol != "BUSDUSDT")
+            {
                 continue;
             }
 
-            depthSocketMap[symbol] = new WebsocketWrapper::BinanceDepthWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
-            if (auto err = (*depthSocketMap[symbol]).Connect(symbol); err > 0) {
+            depthSocketMap[symbol] = new WebsocketWrapper::BinanceDepthWrapper(ioService, apiWrapper,
+                                                                               "stream.binance.com", "9443");
+            if (auto err = (*depthSocketMap[symbol]).Connect(symbol); err > 0)
+            {
                 spdlog::error("func: {}, symbol: {}, err: {}", "symbolReadyHandler", symbol, WrapErr((err)));
-            } else {
+            }
+            else
+            {
                 (*depthSocketMap[symbol]).SubscribeDepth(bind(&Pathfinder::UpdateNode, this, placeholders::_1));
             }
         }
-	}
+    }
 
     void Pathfinder::scanDepthSocket() {
         auto initNum = 0, succNum = 0, failNum = 0;
