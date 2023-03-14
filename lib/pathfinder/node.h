@@ -1,13 +1,9 @@
+#pragma once
+#include "conf/strategy.h"
 #include "utils/utils.h"
 
 namespace Pathfinder
 {
-    struct Strategy {
-        double Fee;
-        define::OrderType OrderType;
-        define::TimeInForce TimeInForce;
-    };
-
     // 套利路径项
     struct TransactionPathItem
     {
@@ -102,7 +98,11 @@ namespace Pathfinder
 
         double UpdateBuy(double price, double quantity);
 
-        TransactionPathItem Format(Strategy& strategy, unordered_map<int, string>& indexToToken, int from, int to);
+        void mockSetOriginPrice(int fromIndex, int toIndex, double price);
+
+        vector<int> mockGetIndexs();
+
+        TransactionPathItem Format(conf::Step& step, map<int, string>& indexToToken, int from, int to);
 
     private:
         int baseIndex = 0;   // baseToken序号

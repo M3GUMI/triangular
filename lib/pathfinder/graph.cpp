@@ -1,5 +1,7 @@
 #include <cfloat>
 #include "graph.h"
+#include <sys/timeb.h>
+#include <sys/time.h>
 
 namespace Pathfinder{
     Graph::Graph(HttpWrapper::BinanceApiWrapper &apiWrapper): apiWrapper(apiWrapper) {
@@ -11,6 +13,9 @@ namespace Pathfinder{
         tokenToIndex.clear();
         indexToToken.clear();
         triangularMap.clear();
+        pathMap.clear();
+        relatedTriangular.clear();
+        relatedPath.clear();
         bestPathMap.clear();
 
         // 初始化index
@@ -42,7 +47,6 @@ namespace Pathfinder{
         }
 
         // 存储所有三元环
-        int usdtIndex = tokenToIndex["USDT"];
         for (const auto &baseToken: conf::BaseAssets)
         {
             if (not tokenToIndex.count(baseToken.first))
@@ -72,12 +76,16 @@ namespace Pathfinder{
                         continue;
                     }
 
-                    if (secondIndex == usdtIndex || thirdIndex == usdtIndex) {
-                        // 摘掉usdt，路径一般执行不完
-                        continue;
-                    }
+                    auto triangular = new Triangular{
+                        .Steps = {originIndex, secondIndex, thirdIndex, originIndex}
+                    };
+                    auto steps = triangular->Steps;
+                    triangularMap[originIndex].emplace_back(triangular);
 
-                    triangularMap[originIndex].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex, originIndex});
+                    for (int i = 0; i < steps.size() - 1; i++){
+                        u_int64_t key = formatKey(steps[i], steps[i + 1]);
+                        relatedTriangular[key].emplace_back(triangular);
+                    }
                 }
             }
         }
@@ -95,7 +103,11 @@ namespace Pathfinder{
                 }
 
                 // 存储一步路径
-                bestPathMap[formatKey(originIndex, secondIndex)].emplace_back(vector<int>{originIndex, secondIndex});
+                auto onePath = new Path{
+                    .StepCount = 1,
+                    .Steps = vector<int>{originIndex, secondIndex}
+                };
+                pathMap[formatKey(originIndex, secondIndex)].emplace_back(onePath);
 
                 for (const auto& third : indexToToken)
                 {
@@ -107,7 +119,14 @@ namespace Pathfinder{
                     }
 
                     // 存储两步路径
-                    bestPathMap[formatKey(originIndex, thirdIndex)].emplace_back(vector<int>{originIndex, secondIndex, thirdIndex});
+                    auto twoPath = new Path{
+                            .StepCount = 2,
+                            .Steps = vector<int>{originIndex, secondIndex, thirdIndex}
+                    };
+                    pathMap[formatKey(originIndex, thirdIndex)].emplace_back(twoPath);
+                    // 存储交易对价格波动会影响的路径
+                    relatedPath[formatKey(originIndex, secondIndex)].insert(twoPath);
+                    relatedPath[formatKey(secondIndex, thirdIndex)].insert(twoPath);
                 }
             }
         }
@@ -129,6 +148,105 @@ namespace Pathfinder{
             auto depth = data.Asks[0];
             node->UpdateBuy(depth.Price, depth.Quantity);
         }
+
+        if (define::IsStableCoin(data.BaseToken)){
+            int updateNum = updateBestMap(tokenToIndex[data.QuoteToken], tokenToIndex[data.BaseToken]);
+        }
+        if (define::IsStableCoin(data.QuoteToken)) {
+            int updateNum = updateBestMap(tokenToIndex[data.BaseToken], tokenToIndex[data.QuoteToken]);
+        }
+
+        if (not conf::EnableMock)
+            return;
+
+        // 触发mock
+        double sellPrice = node->GetOriginPrice(baseIndex, quoteIndex);
+        double buyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
+        this->mockSubscriber(data.BaseToken, data.QuoteToken, buyPrice, sellPrice);
+
+        /*auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
+        if (chance.Profit <= 1)
+        {
+            return;
+        }
+
+        spdlog::info("func: {}, path found profit: {}", "UpdateNode", chance.Profit);
+
+        return this->subscriber(chance);*/
+    }
+
+    int Graph::updateBestMap(int from, int to){
+        int updateNum = 0, newNum = 0;
+        for (auto path : relatedPath[formatKey(from, to)]){
+            u_int64_t key = formatKey(path->Steps[0], path->Steps[path->Steps.size()-1]);
+            double currentProfit = calculateMakerPathProfit(path->Steps);
+            if (currentProfit == 0){
+                continue;
+            }
+
+            // 首次插入最佳路径
+            if (not bestPathMap.count(key)) {
+                bestPathMap[key].push_back({path->Steps, currentProfit});
+                newNum++;
+            }
+            // 如果本路径本就是最优路径则更新profit
+            else {
+                list<BestPath>::iterator p;
+                auto bestPaths = bestPathMap[key];
+
+                // 如果当前路径已被记录就删除，之后重新插入
+                for(p = bestPaths.begin(); p != bestPaths.end(); p++){
+                    if (path->Steps == p->bestPath){
+                        bestPaths.erase(p);
+                        break;
+                    }
+                }
+
+                // 插入路径
+                for(p = bestPaths.begin(); p != bestPaths.end(); p++) {
+                    if (p->profit < currentProfit) {
+                        bestPaths.insert(p, {path->Steps, currentProfit});
+                    }
+                }
+                if (p == bestPaths.end()) {
+                    bestPaths.insert(p, {path->Steps, currentProfit});
+                }
+            }
+        }
+
+        /*spdlog::debug("func: {}, {}->{}, Path Num: {}, New Num: {}, Update Num: {}",
+                "updateBestMap",
+                from,
+                to,
+                relatedPath[formatKey(from, to)].size(),
+                newNum,
+                updateNum);*/
+        return updateNum;
+    }
+
+    // 目前的特殊逻辑，之后改成通用逻辑
+    double Graph::calculateMakerPathProfit(vector<int>& path){
+        double currentProfit = 1; // 验算利润率
+        for (int i = 0; i < path.size() - 1; i++)
+        {
+            auto from = path[i];
+            auto to = path[i + 1];
+
+            auto node = tradeNodeMap[formatKey(from, to)];
+            if (node == NULL){
+                return 0;
+            }
+
+            currentProfit = currentProfit * node->GetParsePrice(from, to);
+        }
+
+        // 不倒过来算一次profit就会变得很奇怪
+        auto node = tradeNodeMap[formatKey(path[path.size()-1], path[0])];
+        if (node == NULL){
+            return 0;
+        }
+        currentProfit = currentProfit * node->GetParsePrice(path[path.size()-1], path[0]) * (1-0.0004);
+        return currentProfit;
     }
 
     int Graph::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
@@ -162,52 +280,40 @@ namespace Pathfinder{
         return 0;
     }
 
-    ArbitrageChance Graph::CalculateArbitrage(const string& name) {
-        Strategy strategy{};
-        if (name == "maker") {
-            strategy.Fee = 0;
-            strategy.OrderType = define::LIMIT_MAKER;
-            strategy.TimeInForce = define::GTC;
-        } else {
-            strategy.Fee = 0.0004;
-            strategy.OrderType = define::LIMIT;
-            strategy.TimeInForce = define::IOC;
-        }
-
+    ArbitrageChance Graph::CalculateArbitrage(conf::Strategy& strategy, int baseIndex, int quoteIndex) {
         double maxProfit = 0;
         vector<TransactionPathItem> resultPath{};
-        for (const auto& item: triangularMap)
-        {
-            indexStart += groupSize;
-            if (indexStart > item.second.size()) {
-                indexStart = 0;
-            }
 
-            int indexEnd = indexStart+groupSize;
-            if (indexEnd > item.second.size()) {
-                indexEnd = int(item.second.size());
-            }
+        struct timeval tv1, tv2;
+        gettimeofday(&tv1,NULL);
 
-            for (int i = indexStart; i < indexEnd; i++)
+        for (auto item: relatedTriangular[formatKey(quoteIndex, baseIndex)]){
+//            spdlog::debug("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item->Steps[0], item->Steps[1], item->Steps[2]);
+            double profit = calculateProfit(strategy, 1, item->Steps);
+//            spdlog::debug("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
+            if (profit <= 1 || profit <= maxProfit)
             {
-                auto triangular = item.second[i];
-                double profit = calculateProfit(strategy, triangular);
-                if (profit <= 1 || profit <= maxProfit)
-                {
-                    continue;
-                }
-
-                auto path = formatPath(strategy, triangular);
-                adjustQuantities(path);
-                if (not checkPath(path))
-                {
-                    continue;
-                }
-
-                maxProfit = profit;
-                resultPath = path;
+                continue;
             }
+
+            auto path = formatPath(strategy, 1, item->Steps);
+            adjustQuantities(path);
+            if (not checkPath(path))
+            {
+                continue;
+            }
+
+            maxProfit = profit;
+            resultPath = path;
+            spdlog::info("func: {}, update max profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
         }
+        gettimeofday(&tv2,NULL);
+
+        /*spdlog::debug("func: {}, scan rings: {}, path time cost: {}us, max profit: {}",
+                "CalculateArbitrage",
+                relatedTriangular[formatKey(quoteIndex, baseIndex)].size(),
+                tv2.tv_sec*1000000 + tv2.tv_usec - (tv1.tv_sec*1000000 + tv1.tv_usec),
+                maxProfit);*/
 
         ArbitrageChance chance{};
         if (resultPath.size() != 3) {
@@ -221,41 +327,29 @@ namespace Pathfinder{
     }
 
     ArbitrageChance Graph::FindBestPath(FindBestPathReq& req) {
-        Strategy strategy{};
-        if (req.Name == "maker") {
-            strategy.Fee = 0;
-            strategy.OrderType = define::LIMIT_MAKER;
-            strategy.TimeInForce = define::GTC;
-        } else {
-            strategy.Fee = 0.0004;
-            strategy.OrderType = define::LIMIT;
-            strategy.TimeInForce = define::IOC;
-        }
-
         int originToken = tokenToIndex[req.Origin];
         int endToken = tokenToIndex[req.End];
 
         double maxProfit = 0;
         vector<TransactionPathItem> resultPath{};
-        for (auto& item: bestPathMap[formatKey(originToken, endToken)])
-        {
-            double profit = calculateProfit(strategy, item);
-            if (profit <= maxProfit) {
+        ArbitrageChance chance{};
+        auto item = bestPathMap[formatKey(originToken, endToken)];
+        list<BestPath>::iterator p1;
+        for (p1 = item.begin(); p1 != item.end(); p1++) {
+            resultPath = formatPath(req.Strategy, req.Phase, p1->bestPath);
+            if (resultPath.empty()) {
                 continue;
             }
-
-            auto path = formatPath(strategy, item);
-            adjustQuantities(path);
-            if (not checkPath(path)) {
+            adjustQuantities(resultPath);
+            if (not checkPath(resultPath)) {
                 continue;
             }
-
-            maxProfit = profit;
-            resultPath = path;
+            // 找到利润率最大的有效路径
+            break;
         }
 
-        ArbitrageChance chance{};
-        if (resultPath.empty()) {
+        // 找完了都没找到有效路径
+        if (p1 == item.end()){
             return chance;
         }
 
@@ -275,7 +369,7 @@ namespace Pathfinder{
         return chance;
     }
 
-    vector<TransactionPathItem> Graph::formatPath(Strategy& strategy, vector<int>& path)
+    vector<TransactionPathItem> Graph::formatPath(conf::Strategy& strategy, int phase, vector<int>& path)
     {
         vector<TransactionPathItem> result;
         if (path.size() < 2)
@@ -289,7 +383,7 @@ namespace Pathfinder{
             auto to = path[i + 1];
 
             auto node = tradeNodeMap[formatKey(from, to)];
-            result.emplace_back(node->Format(strategy, indexToToken, from, to));
+            result.emplace_back(node->Format(strategy.GetStep(phase+i), indexToToken, from, to));
         }
 
         return result;
@@ -315,7 +409,7 @@ namespace Pathfinder{
         return true;
     }
 
-    double Graph::calculateProfit(Strategy& strategy, vector<int>& path)
+    double Graph::calculateProfit(conf::Strategy& strategy, int phase, vector<int>& path)
     {
         if (path.size() < 2)
         {
@@ -329,7 +423,7 @@ namespace Pathfinder{
             auto to = path[i + 1];
 
             auto node = tradeNodeMap[formatKey(from, to)];
-            profit = profit * node->GetParsePrice(from, to) * (1 - strategy.Fee);
+            profit = profit * node->GetParsePrice(from, to) * strategy.GetFee(phase);
         }
 
         return profit;
@@ -374,5 +468,14 @@ namespace Pathfinder{
                 }
             }
         }
+    }
+
+    void Graph::SubscribeArbitrage(function<void(ArbitrageChance &path)> handler)
+    {
+        this->subscriber = handler;
+    }
+
+    void Graph::SubscribeMock(function<void(const string& base, string quote, double buyPrice, double sellPrice)> handler){
+        this->mockSubscriber = handler;
     }
 }

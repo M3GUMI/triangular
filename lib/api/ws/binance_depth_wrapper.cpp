@@ -21,11 +21,11 @@ namespace WebsocketWrapper
 
     int BinanceDepthWrapper::Connect(string symbol)
     {
-        string msg = R"({"method":"SUBSCRIBE","params":[")" + toLower(symbol) + R"(@bookTicker"],"id":)" + to_string(time(NULL) % 1000) + R"(})";
+        string msg = R"({"method":"SUBSCRIBE","params":[")" + toLower(symbol) + R"(@depth5@100ms"],"id":)" + to_string(time(NULL) % 1000) + R"(})";
         return WebsocketWrapper::Connect("", msg, bind(&BinanceDepthWrapper::msgHandler, this, placeholders::_1, placeholders::_2, symbol));
     }
 
-    void BinanceDepthWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string symbol)
+    /*void BinanceDepthWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string symbol)
     {
         rapidjson::Document depthInfoJson;
         depthInfoJson.Parse(msg->get_payload().c_str());
@@ -61,9 +61,9 @@ namespace WebsocketWrapper
         {
             func(data);
         }
-    }
+    }*/
 
-    /*void BinanceDepthWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string symbol)
+    void BinanceDepthWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg, string symbol)
     {
         rapidjson::Document depthInfoJson;
         depthInfoJson.Parse(msg->get_payload().c_str());
@@ -91,43 +91,37 @@ namespace WebsocketWrapper
 
         DepthData data;
         auto symbolData = this->apiWrapper.GetSymbolData(symbol);
-        data.FromToken = symbolData.BaseToken;
-        data.ToToken = symbolData.QuoteToken;
+        data.BaseToken = symbolData.BaseToken;
+        data.QuoteToken = symbolData.QuoteToken;
         data.UpdateTime = GetNowTime();
 
         for (unsigned i = 0; i < bids.Size() && i < 5; i++)
         {
             const auto &bid = bids[i];
-            double bidPrice = 0, bidValue = 0;
             std::string strBidPrice = bid[0].GetString();
             std::string strBidValue = bid[1].GetString();
-            String2Double(strBidPrice.c_str(), bidPrice);
-            String2Double(strBidValue.c_str(), bidValue);
 
-            DepthItem bidData;
-            bidData.Price = bidPrice;
-            bidData.Quantity = bidValue;
-            data.Bids.push_back(bidData);
+            data.Bids.emplace_back(DepthItem{
+                    .Price = String2Double(strBidPrice),
+                    .Quantity = String2Double(strBidValue)
+            });
         }
 
         for (unsigned i = 0; i < asks.Size() && i < 5; i++)
         {
             const auto &ask = asks[i];
-            double askPrice = 0, askValue = 0;
             std::string strAskPrice = ask[0].GetString();
             std::string strAskValue = ask[1].GetString();
-            String2Double(strAskPrice.c_str(), askPrice);
-            String2Double(strAskValue.c_str(), askValue);
 
-            DepthItem askData;
-            askData.Price = askPrice;
-            askData.Quantity = askValue;
-            data.Asks.push_back(askData);
+            data.Asks.emplace_back(DepthItem{
+                .Price = String2Double(strAskPrice),
+                .Quantity = String2Double(strAskValue)
+            });
         }
 
         for (auto func : this->depthSubscriber)
         {
             func(data);
         }
-    }*/
+    }
 }

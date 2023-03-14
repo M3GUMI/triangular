@@ -2,6 +2,7 @@
 #include "triangular.h"
 #include "conf/strategy.h"
 #include "lib/api/ws/binance_order_wrapper.h"
+#include <functional>
 
 using namespace std;
 namespace Arbitrage
@@ -11,25 +12,37 @@ namespace Arbitrage
     {
     public:
         MakerTriangularArbitrage(websocketpp::lib::asio::io_service& ioService,
-                                 WebsocketWrapper::BinanceOrderWrapper &orderWrapper,
+                                 WebsocketWrapper::BinanceOrderWrapper& orderWrapper,
                                  Pathfinder::Pathfinder& pathfinder,
                                  CapitalPool::CapitalPool& pool,
                                  HttpWrapper::BinanceApiWrapper& apiWrapper);
 
         ~MakerTriangularArbitrage();
 
-        int Run(Pathfinder::ArbitrageChance& chance);
+        int Run(string baseToken, string quoteToken);
 
-        void makerOrderChangeHandler(Pathfinder::TransactionPathItem& lastpath);//价格变化幅度不够大，撤单重挂单
-        std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂單計時器
     private:
         websocketpp::lib::asio::io_service& ioService;
-        WebsocketWrapper::BinanceOrderWrapper &orderWrapper;
+        WebsocketWrapper::BinanceOrderWrapper& orderWrapper;
 
-        void TransHandler(OrderData& orderData);
+        OrderData* PendingOrder = nullptr; // 提前挂单
+        int currentPhase = 0;
+        string baseToken;
+        string quoteToken;
 
-        double threshold;
+        double close = 0.01; // 撤单重挂阈值
+        double open = 0.005; // 挂单阈值
 
-        int partiallyFilledHandler(OrderData& orderData);
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂单计时器
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> retryTimer;//市价吃单计时器
+
+        void mockTrader(const string& base, string quote, double buyPrice, double sellPrice);
+
+        void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单
+        int partiallyFilledHandler(OrderData& data);
+        void takerHandler(OrderData &data);
+        void makerHandler(OrderData &data);
+
+        void TransHandler(OrderData& data) override;
     };
 }

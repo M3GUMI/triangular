@@ -227,7 +227,7 @@ namespace HttpWrapper
         req.sign = true;
         auto apiCallback = bind(&BinanceApiWrapper::getOpenOrderCallback, this, ::_1, ::_2);
 
-        this->MakeRequest(req, apiCallback);
+        this->MakeRequest(req, apiCallback, true);
         return 0;
     }
 
@@ -296,8 +296,12 @@ namespace HttpWrapper
 
         // ticketSize校验
         auto symbolData = GetSymbolData(req.BaseToken, req.QuoteToken);
-        uint32_t tmp = req.Quantity / symbolData.StepSize;
-        req.Quantity = tmp * symbolData.StepSize;
+        uint32_t tmpPrice = req.Price / symbolData.TicketSize;
+        req.Price = tmpPrice * symbolData.TicketSize;
+
+        // stepSize校验
+        uint32_t tmpQuantity = req.Quantity / symbolData.StepSize;
+        req.Quantity = tmpQuantity * symbolData.StepSize;
 
         if (req.Quantity == 0) {
             req.OrderStatus = define::EXPIRED;
@@ -309,7 +313,9 @@ namespace HttpWrapper
             return define::ErrorLessMinNotional;
         }
 
-        args["newOrderRespType"] = "RESULT";
+        if (req.OrderType == define::LIMIT && req.TimeInForce == define::IOC) {
+            args["newOrderRespType"] = "RESULT";
+        }
         args["symbol"] = symbolData.Symbol;
         args["side"] = sideToString(req.Side);
         args["type"] = orderTypeToString(req.OrderType);
@@ -361,7 +367,7 @@ namespace HttpWrapper
 
             data.ExecutePrice = req.Price;
             data.ExecuteQuantity = req.Quantity;
-            data.CummulativeQuoteQuantity = RoundDouble(req.Quantity*req.ExecutePrice);
+            data.CummulativeQuoteQuantity = RoundDouble(data.Quantity*data.ExecutePrice);
 
             // 最大成交50
             if (data.ExecuteQuantity == 1) {
@@ -383,7 +389,6 @@ namespace HttpWrapper
             return callback(data, checkResult.Err);
         }
 
-        spdlog::debug("func: createOrderCallback, res: {}", res->payload());
         rapidjson::Document order;
         order.Parse(res->payload().c_str());
 
@@ -487,6 +492,10 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::cancelOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, std::string ori_symbol)
     {
+        if (conf::EnableMock) {
+            return;
+        }
+
         if (auto checkResult = this->CheckRespWithCode(res); checkResult.Err > 0)
         {
             if (checkResult.Code == -2011 && checkResult.Msg == "Unknown order sent.") {
@@ -527,6 +536,10 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::createListkeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(string listenKey, int err)> callback)
     {
+        if (conf::EnableMock) {
+            return callback("mock", 0);
+        }
+
         if (auto err = this->CheckResp(res); err > 0)
         {
             spdlog::error("func: createListkeyCallback, err: {}, resp: {}", WrapErr(err), res->payload());

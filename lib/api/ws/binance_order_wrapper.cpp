@@ -28,7 +28,8 @@ namespace WebsocketWrapper
             WebsocketWrapper::Connect("/"+listenKey, msg, bind(&BinanceOrderWrapper::msgHandler, this, placeholders::_1, placeholders::_2));
             keepListenKeyHandler(false);
         } else {
-            apiWrapper.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
+            // todo 不能一直发请求，ip会被ban
+            // apiWrapper.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
         }
     }
 
@@ -51,7 +52,6 @@ namespace WebsocketWrapper
 
         if (not msgInfoJson.HasMember("e"))
         {
-            spdlog::error("func: {}, err: {}", "msgHandler", WrapErr(define::ErrorInvalidResp));
             return;
         }
 
@@ -100,8 +100,8 @@ namespace WebsocketWrapper
         data.UpdateTime = updateTime;
 
         spdlog::debug(
-                "func: executionReportHandler, symbol: {}, side: {}, price: {}, quantity: {}, executeQuantity: {}, newQuantity: {}",
-                symbol, side, data.Price, data.Quantity, data.GetExecuteQuantity(), data.GetNewQuantity()
+                "func: executionReportHandler, symbol: {}, side: {}, status: {], price: {}, quantity: {}, executeQuantity: {}, newQuantity: {}",
+                symbol, side, data.OrderStatus, data.Price, data.Quantity, data.GetExecuteQuantity(), data.GetNewQuantity()
         );
 
         // todo 需要内存管理

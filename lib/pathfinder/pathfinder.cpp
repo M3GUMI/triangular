@@ -17,14 +17,15 @@ namespace Pathfinder
         scanDepthTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1000));
         scanDepthTimer->async_wait(bind(&Pathfinder::scanDepthSocket, this));
 
-        // 5秒后开始每100ms跑算法
-        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5000));
-        huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
-
         Graph::Init(data);
 
         for (const auto &symbolData: data) {
             auto symbol = symbolData.Symbol;
+            if (conf::EnableMock &&
+                (symbol != "XRPBUSD" && symbol != "XRPUSDT" && symbol != "BUSDUSDT" &&
+                 symbol != "XRPBTC" && symbol != "BTCBUSD")){
+                continue;
+            }
 
             depthSocketMap[symbol] = new WebsocketWrapper::BinanceDepthWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
             if (auto err = (*depthSocketMap[symbol]).Connect(symbol); err > 0) {
@@ -67,27 +68,16 @@ namespace Pathfinder
         if (initNum > 0 || failNum > 0) {
             spdlog::info("func: {}, init: {}, connected: {}, reconnect: {}", "scanDepthSocket", initNum, succNum, failNum);
         }
-    }
 
-    void Pathfinder::HuntingKing()
-    {
-        huntingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
-                                                                              websocketpp::lib::asio::milliseconds(20));
-        huntingTimer->async_wait(bind(&Pathfinder::HuntingKing, this));
-
-        auto time = GetNanoTime();
-        auto chance = Graph::CalculateArbitrage("IocTriangular");
-        if (chance.Profit <= 1)
+        if (this->depthSocketMap.size() - succNum <= 10 && this->depthReadySubscriber != nullptr)
         {
-            return;
+            this->depthReadySubscriber();
+            this->depthReadySubscriber = nullptr;
         }
-        spdlog::info("CalculateArbitrage time: {}micro", GetNanoTime() - time);
-
-        return this->subscriber(chance);
     }
 
-	void Pathfinder::SubscribeArbitrage(function<void(ArbitrageChance &path)> handler)
-	{
-		this->subscriber = handler;
-	}
+    void Pathfinder::SubscribeDepthReady(function<void()> callback)
+    {
+        this->depthReadySubscriber = callback;
+    }
 }

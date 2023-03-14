@@ -5,6 +5,7 @@
 #include <functional>
 #include "lib/api/ws/binance_depth_wrapper.h"
 #include "graph.h"
+#include <cmath>
 
 using namespace std;
 namespace Pathfinder
@@ -12,12 +13,13 @@ namespace Pathfinder
     class Pathfinder : public Graph
     {
     private:
-        function<void(ArbitrageChance& chance)> subscriber = nullptr;
         websocketpp::lib::asio::io_service& ioService;
 
         map<string, WebsocketWrapper::BinanceDepthWrapper*> depthSocketMap; // depth连接管理
         std::shared_ptr<websocketpp::lib::asio::steady_timer> scanDepthTimer; // depth检查计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> huntingTimer; // 寻找套利计时器
+
+        function<void()> depthReadySubscriber = nullptr;
 
         void symbolReadyHandler(vector<HttpWrapper::BinanceSymbolData>& data); // symbol数据就绪
         void scanDepthSocket(); // 检查socket连接有效性
@@ -26,8 +28,6 @@ namespace Pathfinder
 
         ~Pathfinder();
 
-        void HuntingKing();
-
-        void SubscribeArbitrage(function<void(ArbitrageChance& chance)> handler);      // 订阅套利机会推送
+        void SubscribeDepthReady(function<void()> callback);
     };
 }

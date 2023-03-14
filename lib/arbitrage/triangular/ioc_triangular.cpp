@@ -8,7 +8,8 @@ namespace Arbitrage{
             CapitalPool::CapitalPool &pool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
     ) : TriangularArbitrage(pathfinder, pool, apiWrapper) {
-        this->strategy = "IocTriangular";
+        // todo 要改
+        this->strategy = conf::MakerTriangular;
     }
 
     IocTriangularArbitrage::~IocTriangularArbitrage() = default;
@@ -35,7 +36,7 @@ namespace Arbitrage{
 
         spdlog::info(
                 "{}::Run, profit: {}, quantity: {}, path: {}",
-                this->strategy,
+                this->strategy.StrategyName,
                 chance.Profit,
                 lockedQuantity,
                 spdlog::fmt_lib::join(chance.Format(), ","));
@@ -49,14 +50,15 @@ namespace Arbitrage{
 
         this->TargetToken = targetToken;
         this->OriginQuantity = lockedQuantity;
-        TriangularArbitrage::ExecuteTrans(0, firstStep);
+        uint64_t orderId;
+        TriangularArbitrage::ExecuteTrans(orderId, 0, firstStep);
         return 0;
     }
 
     void IocTriangularArbitrage::TransHandler(OrderData &data) {
         spdlog::info(
                 "{}::TransHandler, base: {}, quote: {}, orderStatus: {}, price: {}, executePrice: {}, unExecuteQuantity: {}, executeQuantity: {}, newQuantity: {}",
-                this->strategy,
+                this->strategy.StrategyName,
                 data.BaseToken,
                 data.QuoteToken,
                 data.OrderStatus,
@@ -86,7 +88,7 @@ namespace Arbitrage{
         }
 
         if (err > 0) {
-            spdlog::error("{}::TransHandler, err: {}", this->strategy, WrapErr(err));
+            spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             return;
         }
     }
@@ -98,9 +100,8 @@ namespace Arbitrage{
             return 0;
         }
 
-        return TriangularArbitrage::ReviseTrans(
-                data.GetToToken(), this->TargetToken, 0, data.GetNewQuantity()
-        );
+        uint64_t orderId;
+        return TriangularArbitrage::ReviseTrans(orderId, 0, data.GetToToken(), data.GetNewQuantity());
     }
 
     int IocTriangularArbitrage::partiallyFilledHandler(OrderData &data) {
@@ -113,7 +114,8 @@ namespace Arbitrage{
             }
         } else if (define::NotStableCoin(data.GetFromToken())) {
             // 未成交部分重执行
-            auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, 0, data.GetUnExecuteQuantity());
+            uint64_t orderId;
+            auto err = this->ReviseTrans(orderId, 0, data.GetFromToken(), data.GetUnExecuteQuantity());
             if (err > 0) {
                 return err;
             }
@@ -121,7 +123,8 @@ namespace Arbitrage{
 
         if (data.GetToToken() != this->TargetToken) {
             // 已成交部分继续执行
-            auto err = this->ReviseTrans(data.GetToToken(), this->TargetToken, 0, data.GetNewQuantity());
+            uint64_t orderId;
+            auto err = this->ReviseTrans(orderId, 0, data.GetToToken(), data.GetNewQuantity());
             if (err > 0) {
                 return err;
             }
@@ -132,7 +135,8 @@ namespace Arbitrage{
 
     int IocTriangularArbitrage::expiredHandler(OrderData &data) {
         // 未成交部分重执行
-        auto err = this->ReviseTrans(data.GetFromToken(), this->TargetToken, 0, data.GetUnExecuteQuantity());
+        uint64_t orderId;
+        auto err = this->ReviseTrans(orderId, 0, data.GetFromToken(), data.GetUnExecuteQuantity());
         if (err > 0) {
             return err;
         }
