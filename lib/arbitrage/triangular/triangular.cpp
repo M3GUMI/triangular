@@ -71,6 +71,7 @@ namespace Arbitrage{
         order->Quantity = tmpQuantity * symbolData.StepSize;
 
         orderMap[order->OrderId] = order;
+        spdlog::info("TriangularArbitrage::ExecuteTrans: phase:{}", order->Phase);
         orderId = order->OrderId;
 
         auto err = apiWrapper.CreateOrder(
@@ -82,13 +83,14 @@ namespace Arbitrage{
                         placeholders::_2
                 ));
         spdlog::info(
-                "{}::ExecuteTrans, symbol: {}, side: {}, orderType: {}, price: {}, quantity: {}",
+                "{}::ExecuteTrans, symbol: {}, side: {}, orderType: {}, price: {}, quantity: {}， phase:{}",
                 this->strategy.StrategyName,
                 order->BaseToken+order->QuoteToken,
                 sideToString(order->Side),
                 orderTypeToString(order->OrderType),
                 order->Price,
-                order->Quantity
+                order->Quantity,
+                order->Phase
         );
         if (err > 0) {
             spdlog::info(
@@ -126,6 +128,7 @@ namespace Arbitrage{
     }
 
     void TriangularArbitrage::baseOrderHandler(OrderData &data, int err) {
+        spdlog::info("func: baseOrderHandler,get in baseOrderHandler， data.phase:{}", data.Phase);
         if (err > 0) {
             spdlog::error("func: baseOrderHandler, err: {}", WrapErr(err));
             return;
@@ -140,6 +143,18 @@ namespace Arbitrage{
             return;
         }
 
+         if(data.Phase == 1 ){
+            spdlog::info("func: baseOrderHandler, originQuantity: {}, ExecuteQuantity:{}", OriginQuantity,data.GetExecuteQuantity());
+            OriginQuantity = data.GetExecuteQuantity();
+        }
+        else if(data.Phase == 2 ){
+            spdlog::info("func: baseOrderHandler, PathQuantity: {}, NewQuantity:{}", OriginQuantity,data.GetNewQuantity());
+            PathQuantity = data.GetNewQuantity();
+        }
+        else if(data.Phase == 3 ){
+            spdlog::info("func: baseOrderHandler, FinalQuantity: {}, NewQuantity:{}", OriginQuantity,data.GetNewQuantity());
+            FinalQuantity = data.GetNewQuantity() + (PathQuantity - data.GetExecuteQuantity()) / data.Price ;
+        }
         OrderData* order = orderMap[data.OrderId];
         if (conf::EnableMock) { // mock情况下可相同毫秒更新
             if (order->UpdateTime > data.UpdateTime) {

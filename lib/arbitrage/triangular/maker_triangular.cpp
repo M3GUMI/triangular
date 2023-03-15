@@ -52,7 +52,7 @@ namespace Arbitrage{
     void MakerTriangularArbitrage::TransHandler(OrderData &data)
     {
         spdlog::info(
-                "{}::TransHandler, symbol: {}, side: {}, phase: {}, status: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
+                "{}::TransHandler, symbol: {}, side: {}, phase: {}, status: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}" ,
                 this->strategy.StrategyName,
                 data.BaseToken+data.QuoteToken,
                 sideToString(data.Side),
@@ -73,7 +73,6 @@ namespace Arbitrage{
         if (data.GetToToken() == this->TargetToken) {
             FinalQuantity += data.GetNewQuantity();
         }
-
         if (data.Phase == 1)
         {
             return takerHandler(data);
@@ -88,7 +87,7 @@ namespace Arbitrage{
         {
             this->currentPhase = this->currentPhase + 1;
             spdlog::info("{}::Finish, profit: {}, originQuantity: {}, finialQuantity: {}",
-                         this->strategy.StrategyName, data.GetNewQuantity() / OriginQuantity, OriginQuantity, data.GetNewQuantity());
+                         this->strategy.StrategyName, FinalQuantity / OriginQuantity, OriginQuantity, FinalQuantity);
             CheckFinish();
             return;
         }
@@ -109,7 +108,7 @@ namespace Arbitrage{
         auto realProfit = data.GetParsePrice()*chance.Profit;
         if (realProfit > 1) {
             uint64_t orderId;
-            spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", realProfit, spdlog::fmt_lib::join(chance.Format(), ","));
+            spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", "MakerTriangularArbitrage",realProfit, spdlog::fmt_lib::join(chance.Format(), ","),"");
             auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
             if (err > 0) {
                 spdlog::error("{}::TakerHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
@@ -288,10 +287,13 @@ namespace Arbitrage{
             return;
         }
 
+//        mockPriceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(30000));
+//        mockPriceTimer->async_wait(bind(&MakerTriangularArbitrage::mockPriceControl, this, buyPrice, sellPrice));
         for (auto& item:orderMap) {
             auto orderId = item.first;
             auto order = item.second;
-
+            //验证得取出的order有phase
+//            spdlog::info("MakerTriangularArbitrage::mockTrader, phase:{}", order->Phase);
             if (base != order->BaseToken || quote != order->QuoteToken) {
                 continue;
             }
@@ -314,6 +316,7 @@ namespace Arbitrage{
             if (execute) {
                 auto data = OrderData{
                         .OrderId = orderId,
+                        .Phase = order->Phase,
                         .OrderStatus = define::FILLED,
                         .ExecutePrice = order->Price,
                         .ExecuteQuantity = order->Quantity,
@@ -323,6 +326,25 @@ namespace Arbitrage{
 
                 this->baseOrderHandler(data, 0);
             }
+        }
+    }
+    map<string, double> MakerTriangularArbitrage::mockPriceControl(double buyPrice, double sellPrice){
+        map<string, double> prices;
+        int ram = rand() % 4 + 1;
+        switch (ram)
+        {
+            case 1:
+                prices["buyPrice"] = buyPrice = buyPrice * 1.05;
+                break;
+            case 2:
+                prices["buyPrice"] = buyPrice = buyPrice * 0.95;
+                break;
+            case 3:
+                prices["sellPrice"] = sellPrice = sellPrice * 1.05;
+                break;
+            case 4:
+                prices["sellPrice"] = sellPrice = sellPrice * 0.95;
+                break;
         }
     }
 }
