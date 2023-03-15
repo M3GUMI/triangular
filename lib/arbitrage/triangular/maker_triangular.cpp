@@ -107,12 +107,12 @@ namespace Arbitrage{
 
         auto chance = pathfinder.FindBestPath(req);
         auto realProfit = data.GetParsePrice()*chance.Profit;
-        spdlog::info("realProfit: {}, find_path: {}", realProfit, spdlog::fmt_lib::join(chance.Format(), ","));
         if (realProfit > 1) {
             uint64_t orderId;
+            spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", realProfit, spdlog::fmt_lib::join(chance.Format(), ","));
             auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
             if (err > 0) {
-                spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
+                spdlog::error("{}::TakerHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             }
 
             this->lastStep = Pathfinder::TransactionPathItem{
@@ -296,6 +296,10 @@ namespace Arbitrage{
                 continue;
             }
 
+            if (order->OrderType != define::LIMIT_MAKER) {
+                continue;
+            }
+
             if (order->OrderStatus != define::INIT && order->OrderStatus != define::NEW) {
                 continue;
             }
@@ -308,26 +312,12 @@ namespace Arbitrage{
             }
 
             if (execute) {
-                double executeQuantity = 0;
-                if (order->Side == define::SELL) {
-                    executeQuantity = order->Quantity;
-                } else if (order->Side == define::BUY) {
-                    executeQuantity = RoundDouble(order->Quantity*order->Price);
-                }
-
-                double cummulativeQuantity = 0;
-                if (order->Side == define::SELL) {
-                    cummulativeQuantity = RoundDouble(order->Price*order->Quantity);
-                } else if (order->Side == define::BUY) {
-                    cummulativeQuantity = order->Quantity;
-                }
-
                 auto data = OrderData{
                         .OrderId = orderId,
                         .OrderStatus = define::FILLED,
                         .ExecutePrice = order->Price,
-                        .ExecuteQuantity = executeQuantity,
-                        .CummulativeQuoteQuantity = cummulativeQuantity,
+                        .ExecuteQuantity = order->Quantity,
+                        .CummulativeQuoteQuantity = RoundDouble(order->Price*order->Quantity),
                         .UpdateTime = GetNowTime()
                 };
 
