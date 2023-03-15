@@ -52,7 +52,7 @@ namespace Arbitrage{
     void MakerTriangularArbitrage::TransHandler(OrderData &data)
     {
         spdlog::info(
-                "{}::TransHandler, symbol: {}, side: {}, phase: {}, status: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}" ,
+                "{}::TransHandler, symbol: {}, side: {}, phase: {}, status: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
                 this->strategy.StrategyName,
                 data.BaseToken+data.QuoteToken,
                 sideToString(data.Side),
@@ -108,7 +108,7 @@ namespace Arbitrage{
         auto realProfit = data.GetParsePrice()*chance.Profit;
         if (realProfit > 1) {
             uint64_t orderId;
-            spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", "MakerTriangularArbitrage",realProfit, spdlog::fmt_lib::join(chance.Format(), ","),"");
+            spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", this->strategy.StrategyName, realProfit, spdlog::fmt_lib::join(chance.Format(), ","));
             auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
             if (err > 0) {
                 spdlog::error("{}::TakerHandler, err: {}", this->strategy.StrategyName, WrapErr(err));

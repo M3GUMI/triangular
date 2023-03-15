@@ -128,7 +128,6 @@ namespace Arbitrage{
     }
 
     void TriangularArbitrage::baseOrderHandler(OrderData &data, int err) {
-        spdlog::info("func: baseOrderHandler,get in baseOrderHandler， data.phase:{}", data.Phase);
         if (err > 0) {
             spdlog::error("func: baseOrderHandler, err: {}", WrapErr(err));
             return;
@@ -143,18 +142,6 @@ namespace Arbitrage{
             return;
         }
 
-         if(data.Phase == 1 ){
-            spdlog::info("func: baseOrderHandler, originQuantity: {}, ExecuteQuantity:{}", OriginQuantity,data.GetExecuteQuantity());
-            OriginQuantity = data.GetExecuteQuantity();
-        }
-        else if(data.Phase == 2 ){
-            spdlog::info("func: baseOrderHandler, PathQuantity: {}, NewQuantity:{}", OriginQuantity,data.GetNewQuantity());
-            PathQuantity = data.GetNewQuantity();
-        }
-        else if(data.Phase == 3 ){
-            spdlog::info("func: baseOrderHandler, FinalQuantity: {}, NewQuantity:{}", OriginQuantity,data.GetNewQuantity());
-            FinalQuantity = data.GetNewQuantity() + (PathQuantity - data.GetExecuteQuantity()) / data.Price ;
-        }
         OrderData* order = orderMap[data.OrderId];
         if (conf::EnableMock) { // mock情况下可相同毫秒更新
             if (order->UpdateTime > data.UpdateTime) {
@@ -175,6 +162,21 @@ namespace Arbitrage{
         order->ExecuteQuantity = data.ExecuteQuantity;
         order->CummulativeQuoteQuantity = data.CummulativeQuoteQuantity;
         order->UpdateTime = data.UpdateTime;
+
+        spdlog::info("func: baseOrderHandler,get in baseOrderHandler， data.phase:{}", order->Phase);
+
+        if(order->Phase == 1 ){
+            spdlog::info("func: baseOrderHandler, originQuantity: {}, ExecuteQuantity:{}", OriginQuantity, order->GetExecuteQuantity());
+            OriginQuantity = order->GetExecuteQuantity();
+        }
+        else if(data.Phase == 2 ){
+            spdlog::info("func: baseOrderHandler, PathQuantity: {}, NewQuantity:{}", OriginQuantity, order->GetNewQuantity());
+            PathQuantity = order->GetNewQuantity();
+        }
+        else if(data.Phase == 3 ){
+            spdlog::info("func: baseOrderHandler, FinalQuantity: {}, NewQuantity:{}", OriginQuantity, order->GetNewQuantity());
+            FinalQuantity = order->GetNewQuantity() + (PathQuantity - order->GetExecuteQuantity()) * order->Price ;
+        }
 
         TransHandler(*order);
         // TriangularArbitrage::CheckFinish();
