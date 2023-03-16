@@ -12,12 +12,12 @@ namespace Pathfinder
     {
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
         {
-            return this->sellPrice;
+            return this->sellDepth[0].Price;
         }
 
         if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
         {
-            return this->buyPrice;
+            return this->buyDepth[0].Price;
         }
 
         return 0;
@@ -41,26 +41,24 @@ namespace Pathfinder
     double Node::GetQuantity(int fromIndex, int toIndex)
     {
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex) {
-            return this->sellQuantity;
+            return this->sellDepth[0].Quantity;
         }
 
         if (fromIndex == this->quoteIndex && toIndex == this->baseIndex) {
-            return this->buyQuantity;
+            return this->buyDepth[0].Quantity;
         }
 
         return 0;
     }
 
-    double Node::UpdateSell(double price, double quantity)
+    double Node::UpdateSell(vector<DepthItem> depth)
     {
-        this->sellPrice = price;
-        this->sellQuantity = quantity;
+        this->sellDepth = depth;
     }
 
-    double Node::UpdateBuy(double price, double quantity)
+    double Node::UpdateBuy(vector<DepthItem> depth)
     {
-        this->buyPrice = price;
-        this->buyQuantity = quantity;
+        this->buyDepth = depth;
     }
 
     TransactionPathItem Node::Format(conf::Step& step, map<int, string>& indexToToken, int from, int to) {
@@ -79,20 +77,56 @@ namespace Pathfinder
         }
 
         return item;
-    };
+    }
 
-    void Node::mockSetOriginPrice(int fromIndex, int toIndex, double price){
+    double Node::GetPathPrice(Graph graph, int fromIndex, int toIndex)
+    {
+        double quantity = 0, currentPrice = 0;
+        double toDollar = graph.toDollar(fromIndex);
+        if (toDollar == 0){
+            return 0;
+        }
 
-        if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
-        {
-            this->sellPrice = price;
+        vector<WebsocketWrapper::DepthItem> depth;
+        if (fromIndex == baseIndex) {
+            depth = sellDepth;
+        }
+        if (fromIndex == quoteIndex) {
+            depth = buyDepth;
+        }
+        for (auto item : depth) {
+            quantity += item.Quantity;
+            if (quantity * toDollar >= 20) {
+                currentPrice = item.Price;
+                break;
+            }
+        }
+
+        if (currentPrice == 0){
+            return 0;
         }
 
         if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
         {
-            this->buyPrice = price;
+            return 1/currentPrice;
+        } else {
+            return currentPrice;
         }
-    }
+    };
+
+//    void Node::mockSetOriginPrice(int fromIndex, int toIndex, double price){
+//
+//        if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
+//        {
+//            this->sellPrice = price;
+//        }
+//
+//        if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
+//        {
+//            this->buyPrice = price;
+//        }
+//    }
+
     vector<int> Node::mockGetIndexs(){
         vector<int> indexs;
         indexs[0] = baseIndex;

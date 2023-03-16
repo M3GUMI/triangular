@@ -20,8 +20,15 @@ namespace Pathfinder{
 
         // 初始化index
         int indexCount = 0;
+        int baseNum = 0, quoteNum = 0;
         for (auto& item : data)
         {
+            if(item.BaseToken=="USDT"){
+                baseNum ++;
+            }
+            if(item.quoteToken=="USDT"){
+                quoteNum++;
+            }
             if (not tokenToIndex.count(item.BaseToken)) {
                 tokenToIndex[item.BaseToken] = indexCount;
                 indexToToken[indexCount] = item.BaseToken;
@@ -34,6 +41,7 @@ namespace Pathfinder{
                 indexCount++;
             }
         }
+        spdlog::info("baseNum: {}, quoteNum: {}", baseNum, quoteNum);
 
         // 初始化交易节点
         for (auto& item : data)
@@ -237,7 +245,7 @@ namespace Pathfinder{
                 return 0;
             }
 
-            currentProfit = currentProfit * node->GetParsePrice(from, to);
+            currentProfit = currentProfit * node->GetPathPrice(this, from, to);
         }
         currentProfit = currentProfit*(1-0.0004);
         return currentProfit;
@@ -472,5 +480,15 @@ namespace Pathfinder{
 
     void Graph::SubscribeMock(function<void(const string& base, string quote, double buyPrice, double sellPrice)> handler){
         this->mockSubscriber = handler;
+    }
+
+    double Graph::toDollar(int fromIndex){
+        double toDollar = 0;
+        toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex("USDT"))].GetOriginPrice(fromIndex, tokenToIndex("USDT"));
+        if (toDollar==0){
+            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex("BUSD"))].GetOriginPrice(fromIndex, tokenToIndex("BUSD"))
+        }
+
+        return toDollar;
     }
 }

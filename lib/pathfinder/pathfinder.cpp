@@ -25,14 +25,14 @@ namespace Pathfinder
         for (const auto& symbolData : data)
         {
             auto symbol = symbolData.Symbol;
-            if (conf::EnableMock && symbol != "XRPBUSD" &&
-                symbol != "XRPBTC" && symbol != "XRPETH" && symbol != "XRPBNB" && symbol != "XRPUSDC" &&
-                symbol != "XRPUSDT" &&
-                symbol != "BTCBUSD" && symbol != "ETHBUSD" && symbol != "BUSDBNB" && symbol != "USDCBUSD" &&
-                symbol != "BUSDUSDT")
-            {
-                continue;
-            }
+//            if (conf::EnableMock && symbol != "XRPBUSD" &&
+//                symbol != "XRPBTC" && symbol != "XRPETH" && symbol != "XRPBNB" && symbol != "XRPUSDC" &&
+//                symbol != "XRPUSDT" &&
+//                symbol != "BTCBUSD" && symbol != "ETHBUSD" && symbol != "BUSDBNB" && symbol != "USDCBUSD" &&
+//                symbol != "BUSDUSDT")
+//            {
+//                continue;
+//            }
 
             depthSocketMap[symbol] = new WebsocketWrapper::BinanceDepthWrapper(ioService, apiWrapper,
                                                                                "stream.binance.com", "9443");
