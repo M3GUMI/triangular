@@ -293,13 +293,9 @@ namespace Arbitrage{
             return;
         }
 
-//        mockPriceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(30000));
-//        mockPriceTimer->async_wait(bind(&MakerTriangularArbitrage::mockPriceControl, this, buyPrice, sellPrice));
         for (auto& item:orderMap) {
             auto orderId = item.first;
             auto order = item.second;
-            //验证得取出的order有phase
-//            spdlog::info("MakerTriangularArbitrage::mockTrader, phase:{}", order->Phase);
             if (base != order->BaseToken || quote != order->QuoteToken) {
                 continue;
             }
