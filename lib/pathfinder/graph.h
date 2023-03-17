@@ -128,5 +128,7 @@ namespace Pathfinder{
         double calculateMakerPathProfit(vector<int>& path);
         static u_int64_t formatKey(int from, int to);
         static void adjustQuantities(vector<TransactionPathItem>& items);
+        double GetPathPrice(int fromIndex, int toIndex);
+        double ToDollar(int fromIndex);
     };
 }
