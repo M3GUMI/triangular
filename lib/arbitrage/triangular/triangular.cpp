@@ -174,8 +174,8 @@ namespace Arbitrage{
             PathQuantity = order->GetNewQuantity();
         }
         else if(data.Phase == 3 ){
-            spdlog::info("func: baseOrderHandler, FinalQuantity: {}, NewQuantity:{}", OriginQuantity, order->GetNewQuantity());
-            FinalQuantity = (order->GetNewQuantity() + (PathQuantity - order->GetExecuteQuantity()) * order->Price)  *  (1-0.00014);
+            spdlog::info("func: baseOrderHandler, FinalQuantity: {}, NewQuantity:{}", FinalQuantity, order->GetNewQuantity());
+//            FinalQuantity = (order->GetNewQuantity() + (PathQuantity - order->GetExecuteQuantity()) * order->Price)  *  (1-0.00014);
         }
         TransHandler(*order);
         // TriangularArbitrage::CheckFinish();
