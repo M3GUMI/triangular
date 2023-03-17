@@ -163,8 +163,6 @@ namespace Arbitrage{
         order->CummulativeQuoteQuantity = data.CummulativeQuoteQuantity;
         order->UpdateTime = data.UpdateTime;
 
-        spdlog::info("func: baseOrderHandler,get in baseOrderHandler， data.phase:{}", order->Phase);
-
         if(order->Phase == 1 ){
             spdlog::info("func: baseOrderHandler, originQuantity: {}, ExecuteQuantity:{}", OriginQuantity, order->GetExecuteQuantity());
             OriginQuantity = order->GetExecuteQuantity();

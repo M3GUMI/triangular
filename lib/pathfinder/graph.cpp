@@ -239,7 +239,7 @@ namespace Pathfinder{
 
             currentProfit = currentProfit * node->GetParsePrice(from, to);
         }
-        currentProfit = currentProfit*(1-0.0004);
+        currentProfit = currentProfit*(1-0.00017);
         return currentProfit;
     }
 
