@@ -44,8 +44,10 @@ namespace Arbitrage{
 
         // todo 后续改成通用逻辑
         orderWrapper.SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
-
+//        mockPriceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(30000));
+//        mockPriceTimer->async_wait(bind(&MakerTriangularArbitrage::mockPriceControl, this, PendingOrder));
         MakerTriangularArbitrage::makerOrderChangeHandler();
+
         return 0;
     }
 
@@ -73,7 +75,6 @@ namespace Arbitrage{
         if (data.GetToToken() == this->TargetToken) {
             FinalQuantity += data.GetNewQuantity();
         }
-
         if (data.Phase == 1)
         {
             return takerHandler(data);
@@ -87,8 +88,12 @@ namespace Arbitrage{
         if (data.Phase == 3)
         {
             this->currentPhase = this->currentPhase + 1;
+            if (PathQuantity != 0){
+                FinalQuantity += (PathQuantity-data.GetExecuteQuantity()) / data.Price;
+                spdlog::info("pathQuantity:{}", PathQuantity);
+            }
             spdlog::info("{}::Finish, profit: {}, originQuantity: {}, finialQuantity: {}",
-                         this->strategy.StrategyName, data.GetNewQuantity() / OriginQuantity, OriginQuantity, data.GetNewQuantity());
+                         this->strategy.StrategyName, FinalQuantity / OriginQuantity, OriginQuantity, FinalQuantity);
             CheckFinish();
             return;
         }
@@ -109,7 +114,7 @@ namespace Arbitrage{
         auto realProfit = data.GetParsePrice()*chance.Profit;
         if (realProfit > 1) {
             uint64_t orderId;
-            spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", realProfit, spdlog::fmt_lib::join(chance.Format(), ","));
+            spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", this->strategy.StrategyName, realProfit, spdlog::fmt_lib::join(chance.Format(), ","));
             auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
             if (err > 0) {
                 spdlog::error("{}::TakerHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
@@ -284,14 +289,13 @@ namespace Arbitrage{
     }
 
     void MakerTriangularArbitrage::mockTrader(const string& base, string quote, double buyPrice, double sellPrice) {
-        if (!conf::EnableMock) {
+            if (!conf::EnableMock) {
             return;
         }
 
         for (auto& item:orderMap) {
             auto orderId = item.first;
             auto order = item.second;
-
             if (base != order->BaseToken || quote != order->QuoteToken) {
                 continue;
             }
@@ -314,6 +318,7 @@ namespace Arbitrage{
             if (execute) {
                 auto data = OrderData{
                         .OrderId = orderId,
+                        .Phase = order->Phase,
                         .OrderStatus = define::FILLED,
                         .ExecutePrice = order->Price,
                         .ExecuteQuantity = order->Quantity,
@@ -324,5 +329,35 @@ namespace Arbitrage{
                 this->baseOrderHandler(data, 0);
             }
         }
+    }
+    map<string, double> MakerTriangularArbitrage::mockPriceControl(OrderData& PendingOrder){
+        double buyPrice = 0;
+        double sellPrice = 0;
+        if (PendingOrder.Side == define::SELL){
+            sellPrice = PendingOrder.Price * 0.995;
+        }
+        if (PendingOrder.Side == define::BUY){
+            buyPrice = PendingOrder.Price * 1.005;
+        }
+        mockTrader(PendingOrder.BaseToken, PendingOrder.QuoteToken, buyPrice, sellPrice);
+//        map<string, double> prices;
+//        int ram = rand() % 4 + 1;
+//        switch (ram)
+//        {
+//            case 1:
+//                prices["buyPrice"] = buyPrice = buyPrice * 1.05;
+//                break;
+//            case 2:
+//                prices["buyPrice"] = buyPrice = buyPrice * 0.95;
+//                break;
+//            case 3:
+//                prices["sellPrice"] = sellPrice = sellPrice * 1.05;
+//                break;
+//            case 4:
+//                prices["sellPrice"] = sellPrice = sellPrice * 0.95;
+//                break;
+//        }
+        mockPriceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(30000));
+        mockPriceTimer->async_wait(bind(&MakerTriangularArbitrage::mockPriceControl, this, PendingOrder));
     }
 }
