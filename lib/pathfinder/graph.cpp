@@ -140,13 +140,11 @@ namespace Pathfinder{
         auto node = tradeNodeMap[formatKey(baseIndex, quoteIndex)];
         if (not data.Bids.empty())
         { // 买单挂出价，我方卖出价
-            auto depth = data.Bids[0];
-            node->UpdateSell(depth.Price, depth.Quantity);
+            node->UpdateSell(data.Bids);
         }
         if (!data.Asks.empty())
         { // 卖单挂出价，我方买入价
-            auto depth = data.Asks[0];
-            node->UpdateBuy(depth.Price, depth.Quantity);
+            node->UpdateBuy(data.Asks);
         }
 
         if (define::IsStableCoin(data.BaseToken)){
@@ -237,10 +235,42 @@ namespace Pathfinder{
                 return 0;
             }
 
-            currentProfit = currentProfit * node->GetParsePrice(from, to);
+            currentProfit = currentProfit * GetPathPrice(from, to);
         }
         currentProfit = currentProfit*(1-0.0004);
         return currentProfit;
+    }
+
+    double Graph::GetPathPrice(int fromIndex, int toIndex){
+        double toDollar = ToDollar(fromIndex);
+        if (toDollar==0)
+            return 0;
+
+        double price = 0, quantity = 0;
+        Node* node = tradeNodeMap[formatKey(fromIndex, toIndex)];
+        vector<WebsocketWrapper::DepthItem> depths = node->getDepth(fromIndex, toIndex);
+        for (auto depth : depths){
+            quantity += depth.Quantity;
+            if (quantity * toDollar >= 20){
+                price = depth.Price;
+                break;
+            }
+        }
+
+        return node->GetParsePathPrice(price, fromIndex, toIndex);
+    }
+
+    double Graph::ToDollar(int fromIndex){
+        double toDollar = 0;
+        if (tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["USDT"]))) {
+            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["USDT"])]->GetOriginPrice(fromIndex, tokenToIndex["USDT"]);
+        }
+
+        if (toDollar == 0 && tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["BUSD"]))) {
+            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["BUSD"])]->GetOriginPrice(fromIndex, tokenToIndex["BUSD"]);
+        }
+
+        return toDollar;
     }
 
     int Graph::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
