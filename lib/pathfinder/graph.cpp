@@ -237,7 +237,7 @@ namespace Pathfinder{
 
             currentProfit = currentProfit * GetPathPrice(from, to);
         }
-        currentProfit = currentProfit*(1-0.0004);
+        currentProfit = currentProfit*(1-0.00017);
         return currentProfit;
     }
 
