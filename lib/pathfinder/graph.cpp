@@ -142,7 +142,7 @@ namespace Pathfinder{
         { // 买单挂出价，我方卖出价
             node->UpdateSell(data.Bids);
         }
-        if (!data.Asks.empty())
+        if (not data.Asks.empty())
         { // 卖单挂出价，我方买入价
             node->UpdateBuy(data.Asks);
         }
@@ -175,21 +175,42 @@ namespace Pathfinder{
 
     double Graph::GetPathPrice(int fromIndex, int toIndex){
         double toDollar = ToDollar(fromIndex);
+        if (toDollar == 0)
+            return 0;
 
-        vector<WebsocketWrapper::DepthItem> depths = tradeNodeMap[formatKey(fromIndex, toIndex)]->getDepth(fromIndex, toIndex);
+        Node* node = tradeNodeMap[formatKey(fromIndex, toIndex)];
+        vector<WebsocketWrapper::DepthItem> depths = node->getDepth(fromIndex, toIndex);
         double quantity = 0;
+        double price = 0;
         for (auto depth : depths){
             quantity += depth.Quantity;
             if (quantity * toDollar >= 20) {
-                return depth.Price;
+                price = depth.Price;
+                break;
             }
         }
-        return 0;
+
+//        spdlog::info("func: {}, from: {}, to: {}, toDollar: {}, quantity: {}, quantity*toDollar: {}, price: {}, depth Len: {}",
+//                     "GetPathPrice",
+//                     indexToToken[fromIndex],
+//                     indexToToken[toIndex],
+//                     toDollar,
+//                     quantity,
+//                     quantity * toDollar,
+//                     price,
+//                     depths.size()
+//        );
+
+        return node->GetParsePathPrice(price, fromIndex, toIndex);
     }
 
     double Graph::ToDollar(int fromIndex){
-        double toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["USDT"])]->GetOriginPrice(fromIndex, tokenToIndex["USDT"]);
-        if (toDollar==0){
+        double toDollar = 0;
+        if (tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["USDT"]))) {
+            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["USDT"])]->GetOriginPrice(fromIndex, tokenToIndex["USDT"]);
+        }
+
+        if (toDollar == 0 && tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["BUSD"]))) {
             toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["BUSD"])]->GetOriginPrice(fromIndex, tokenToIndex["BUSD"]);
         }
 
@@ -232,16 +253,17 @@ namespace Pathfinder{
                 if (p == bestPaths.end()) {
                     bestPaths.insert(p, {path->Steps, currentProfit});
                 }
+                updateNum ++;
             }
         }
 
-        /*spdlog::debug("func: {}, {}->{}, Path Num: {}, New Num: {}, Update Num: {}",
-                "updateBestMap",
-                from,
-                to,
-                relatedPath[formatKey(from, to)].size(),
-                newNum,
-                updateNum);*/
+//        spdlog::info("func: {}, {}->{}, Path Num: {}, New Num: {}, Update Num: {}",
+//                "updateBestMap",
+//                indexToToken[from],
+//                indexToToken[to],
+//                relatedPath[formatKey(from, to)].size(),
+//                newNum,
+//                updateNum);
         return updateNum;
     }
 

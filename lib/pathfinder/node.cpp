@@ -12,11 +12,15 @@ namespace Pathfinder
     {
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
         {
+            if (this->sellDepth.size() == 0)
+                return 0;
             return this->sellDepth[0].Price;
         }
 
         if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
         {
+            if (this->buyDepth.size() == 0)
+                return 0;
             return this->buyDepth[0].Price;
         }
 
@@ -26,6 +30,19 @@ namespace Pathfinder
     double Node::GetParsePrice(int fromIndex, int toIndex)
     {
         auto price = GetOriginPrice(fromIndex, toIndex);
+        if (price == 0) {
+            return 0;
+        }
+
+        if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
+        {
+            return 1/price;
+        } else {
+            return price;
+        }
+    }
+
+    double Node::GetParsePathPrice(double price, int fromIndex, int toIndex){
         if (price == 0) {
             return 0;
         }

@@ -94,6 +94,8 @@ namespace Pathfinder
 
         double GetParsePrice(int fromIndex, int toIndex);
 
+        double GetParsePathPrice(double price, int fromIndex, int toIndex);
+
         double GetQuantity(int fromIndex, int toIndex);
 
         double UpdateSell(vector<WebsocketWrapper::DepthItem> depth);
