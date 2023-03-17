@@ -43,8 +43,6 @@ set(ALL_FILES
         lib/arbitrage/triangular/ioc_triangular.cpp
         lib/arbitrage/triangular/maker_triangular.cpp
         lib/arbitrage/triangular/maker_triangular.h
-        lib/arbitrage/triangular/maker_mock.h
-        lib/arbitrage/triangular/maker_mock.cpp
         lib/capital_pool/capital_pool.cpp
         lib/capital_pool/capital_pool.h
         lib/executor/executor.cpp

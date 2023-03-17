@@ -16,7 +16,14 @@ namespace Arbitrage{
     ) : ioService(ioService), orderWrapper(orderWrapper), TriangularArbitrage(pathfinder, pool, apiWrapper)
     {
         this->strategy = conf::MakerTriangular;
-        pathfinder.SubscribeMock((bind(&MakerTriangularArbitrage::mockTrader, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)));
+        pathfinder.SubscribeMock((bind(
+                &MakerTriangularArbitrage::mockTrader,
+                this,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                std::placeholders::_3,
+                std::placeholders::_4
+                )));
     }
 
     MakerTriangularArbitrage::~MakerTriangularArbitrage() = default;
@@ -80,6 +87,8 @@ namespace Arbitrage{
         if (data.Phase == 3)
         {
             this->currentPhase = this->currentPhase + 1;
+            spdlog::info("{}::Finish, profit: {}, originQuantity: {}, finialQuantity: {}",
+                         this->strategy.StrategyName, data.GetNewQuantity() / OriginQuantity, OriginQuantity, data.GetNewQuantity());
             CheckFinish();
             return;
         }
@@ -99,13 +108,22 @@ namespace Arbitrage{
         auto chance = pathfinder.FindBestPath(req);
         auto realProfit = data.GetParsePrice()*chance.Profit;
         if (realProfit > 1) {
-            spdlog::info("!!!!path: {}", spdlog::fmt_lib::join(chance.Format(), ","));
-
             uint64_t orderId;
+            spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", realProfit, spdlog::fmt_lib::join(chance.Format(), ","));
             auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
             if (err > 0) {
-                spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
+                spdlog::error("{}::TakerHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             }
+
+            this->lastStep = Pathfinder::TransactionPathItem{
+                    .BaseToken = chance.Path[1].BaseToken,
+                    .QuoteToken = chance.Path[1].QuoteToken,
+                    .Side = chance.Path[1].Side,
+                    .OrderType = chance.Path[1].OrderType,
+                    .TimeInForce = chance.Path[1].TimeInForce,
+                    .Price = chance.Path[1].Price,
+                    .Quantity = chance.Path[1].Quantity,
+            };
 
             this->currentPhase = newPhase;
         } else {
@@ -122,9 +140,14 @@ namespace Arbitrage{
         }
 
         int newPhase = 3;
+        if (data.GetToToken() == this->lastStep.BaseToken) {
+            this->lastStep.Quantity = data.GetNewQuantity();
+        } else if (data.GetToToken() == this->lastStep.QuoteToken) {
+            this->lastStep.Quantity = data.GetNewQuantity()/this->lastStep.Price;
+        }
 
         uint64_t orderId;
-        auto err = this->ReviseTrans(orderId, newPhase, data.GetToToken(), data.GetNewQuantity());
+        auto err = this->ExecuteTrans(orderId, newPhase, this->lastStep);
         if (err > 0)
         {
             spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
@@ -273,6 +296,10 @@ namespace Arbitrage{
                 continue;
             }
 
+            if (order->OrderType != define::LIMIT_MAKER) {
+                continue;
+            }
+
             if (order->OrderStatus != define::INIT && order->OrderStatus != define::NEW) {
                 continue;
             }
@@ -285,19 +312,12 @@ namespace Arbitrage{
             }
 
             if (execute) {
-                double cummulativeQuantity = 0;
-                if (order->Side == define::SELL) {
-                    cummulativeQuantity = RoundDouble(order->Price*order->Quantity);
-                } else if (order->Side == define::BUY) {
-                    cummulativeQuantity = order->Quantity;
-                }
-
                 auto data = OrderData{
                         .OrderId = orderId,
                         .OrderStatus = define::FILLED,
                         .ExecutePrice = order->Price,
                         .ExecuteQuantity = order->Quantity,
-                        .CummulativeQuoteQuantity = cummulativeQuantity,
+                        .CummulativeQuoteQuantity = RoundDouble(order->Price*order->Quantity),
                         .UpdateTime = GetNowTime()
                 };
 

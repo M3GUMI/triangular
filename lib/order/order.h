@@ -58,14 +58,21 @@ struct OrderData {
 
     double GetUnExecuteQuantity()
     {
-        if (Side == define::SELL) {
+        if (Side == define::SELL)
+        {
             return RoundDouble(Quantity - ExecuteQuantity);
-        } else {
-            return RoundDouble(Quantity*ExecutePrice - CummulativeQuoteQuantity);
+        }
+        else
+        {
+            return RoundDouble(Quantity * (CummulativeQuoteQuantity / ExecuteQuantity) - CummulativeQuoteQuantity);
         }
     }
 
     double GetExecuteQuantity() {
+        if (OrderStatus != define::PARTIALLY_FILLED && OrderStatus != define::FILLED) {
+            return 0;
+        }
+
         if (Side == define::SELL) {
             return RoundDouble(ExecuteQuantity);
         } else {
@@ -76,10 +83,14 @@ struct OrderData {
     // 实际新币数量
     double GetNewQuantity()
     {
+        if (OrderStatus != define::PARTIALLY_FILLED && OrderStatus != define::FILLED) {
+            return 0;
+        }
+
         if (Side == define::SELL) {
             return RoundDouble(CummulativeQuoteQuantity);
         } else {
-            return RoundDouble(CummulativeQuoteQuantity/ExecutePrice);
+            return RoundDouble(ExecuteQuantity);
         }
     }
 };

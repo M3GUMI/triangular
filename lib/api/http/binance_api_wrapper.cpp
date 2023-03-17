@@ -355,24 +355,24 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::createOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, OrderData &req, function<void(OrderData& data, int err)> callback) {
         OrderData data;
-        if (conf::EnableMock) {
+        if (conf::EnableMock)
+        {
             data.OrderId = req.OrderId;
             data.UpdateTime = GetNowTime();
-            data.OrderStatus = define::FILLED;
+            data.OrderStatus = define::NEW;
             data.Price = req.Price;
             data.Quantity = req.Quantity;
             data.Side = req.Side;
             data.OrderType = req.OrderType;
             data.TimeInForce = req.TimeInForce;
 
-            data.ExecutePrice = req.Price;
-            data.ExecuteQuantity = req.Quantity;
-            data.CummulativeQuoteQuantity = RoundDouble(data.Quantity*data.ExecutePrice);
 
-            // 最大成交50
-            if (data.ExecuteQuantity == 1) {
-                data.ExecuteQuantity = 0.5;
-                data.OrderStatus = define::PARTIALLY_FILLED;
+            if (data.OrderType == define::LIMIT || data.OrderType == define::MARKET)
+            {
+                data.OrderStatus = define::FILLED;
+                data.ExecutePrice = req.Price;
+                data.ExecuteQuantity = req.Quantity;
+                data.CummulativeQuoteQuantity = RoundDouble(data.Quantity * data.ExecutePrice);
             }
 
             spdlog::debug("func: {}, msg: {}", "createOrderCallback", "mock create_order");

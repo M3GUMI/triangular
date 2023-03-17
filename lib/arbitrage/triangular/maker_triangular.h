@@ -30,13 +30,15 @@ namespace Arbitrage
         string baseToken;
         string quoteToken;
 
-        double close = 0.01; // 撤单重挂阈值
-        double open = 0.005; // 挂单阈值
+        double close = 0.002; // 撤单重挂阈值
+        double open = 0.001; // 挂单阈值
 
         std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> retryTimer;//市价吃单计时器
 
         void mockTrader(const string& base, string quote, double buyPrice, double sellPrice);
+
+        Pathfinder::TransactionPathItem lastStep{};
 
         void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单
         int partiallyFilledHandler(OrderData& data);
