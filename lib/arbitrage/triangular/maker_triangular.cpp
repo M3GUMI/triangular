@@ -44,8 +44,10 @@ namespace Arbitrage{
 
         // todo 后续改成通用逻辑
         orderWrapper.SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
-
+//        mockPriceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(30000));
+//        mockPriceTimer->async_wait(bind(&MakerTriangularArbitrage::mockPriceControl, this, PendingOrder));
         MakerTriangularArbitrage::makerOrderChangeHandler();
+
         return 0;
     }
 
@@ -86,6 +88,10 @@ namespace Arbitrage{
         if (data.Phase == 3)
         {
             this->currentPhase = this->currentPhase + 1;
+            if (PathQuantity != 0){
+                FinalQuantity += (PathQuantity-data.GetExecuteQuantity()) / data.Price;
+                spdlog::info("pathQuantity:{}", PathQuantity);
+            }
             spdlog::info("{}::Finish, profit: {}, originQuantity: {}, finialQuantity: {}",
                          this->strategy.StrategyName, FinalQuantity / OriginQuantity, OriginQuantity, FinalQuantity);
             CheckFinish();
@@ -283,7 +289,7 @@ namespace Arbitrage{
     }
 
     void MakerTriangularArbitrage::mockTrader(const string& base, string quote, double buyPrice, double sellPrice) {
-        if (!conf::EnableMock) {
+            if (!conf::EnableMock) {
             return;
         }
 
@@ -328,23 +334,34 @@ namespace Arbitrage{
             }
         }
     }
-    map<string, double> MakerTriangularArbitrage::mockPriceControl(double buyPrice, double sellPrice){
-        map<string, double> prices;
-        int ram = rand() % 4 + 1;
-        switch (ram)
-        {
-            case 1:
-                prices["buyPrice"] = buyPrice = buyPrice * 1.05;
-                break;
-            case 2:
-                prices["buyPrice"] = buyPrice = buyPrice * 0.95;
-                break;
-            case 3:
-                prices["sellPrice"] = sellPrice = sellPrice * 1.05;
-                break;
-            case 4:
-                prices["sellPrice"] = sellPrice = sellPrice * 0.95;
-                break;
+    map<string, double> MakerTriangularArbitrage::mockPriceControl(OrderData& PendingOrder){
+        double buyPrice = 0;
+        double sellPrice = 0;
+        if (PendingOrder.Side == define::SELL){
+            sellPrice = PendingOrder.Price * 0.995;
         }
+        if (PendingOrder.Side == define::BUY){
+            buyPrice = PendingOrder.Price * 1.005;
+        }
+        mockTrader(PendingOrder.BaseToken, PendingOrder.QuoteToken, buyPrice, sellPrice);
+//        map<string, double> prices;
+//        int ram = rand() % 4 + 1;
+//        switch (ram)
+//        {
+//            case 1:
+//                prices["buyPrice"] = buyPrice = buyPrice * 1.05;
+//                break;
+//            case 2:
+//                prices["buyPrice"] = buyPrice = buyPrice * 0.95;
+//                break;
+//            case 3:
+//                prices["sellPrice"] = sellPrice = sellPrice * 1.05;
+//                break;
+//            case 4:
+//                prices["sellPrice"] = sellPrice = sellPrice * 0.95;
+//                break;
+//        }
+        mockPriceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(30000));
+        mockPriceTimer->async_wait(bind(&MakerTriangularArbitrage::mockPriceControl, this, PendingOrder));
     }
 }

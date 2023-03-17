@@ -71,7 +71,6 @@ namespace Arbitrage{
         order->Quantity = tmpQuantity * symbolData.StepSize;
 
         orderMap[order->OrderId] = order;
-        spdlog::info("TriangularArbitrage::ExecuteTrans: phase:{}", order->Phase);
         orderId = order->OrderId;
 
         auto err = apiWrapper.CreateOrder(
@@ -167,15 +166,15 @@ namespace Arbitrage{
             spdlog::info("func: baseOrderHandler, originQuantity: {}, ExecuteQuantity:{}", OriginQuantity, order->GetExecuteQuantity());
             OriginQuantity = order->GetExecuteQuantity();
         }
-        else if(data.Phase == 2 ){
-            spdlog::info("func: baseOrderHandler, PathQuantity: {}, NewQuantity:{}", OriginQuantity, order->GetNewQuantity());
+        //A -> B
+        else if(order->Phase == 2 ){
+            spdlog::info("func: baseOrderHandler, PathQuantity: {}", order->GetNewQuantity());
             PathQuantity = order->GetNewQuantity();
         }
         else if(data.Phase == 3 ){
-            spdlog::info("func: baseOrderHandler, FinalQuantity: {}, NewQuantity:{}", OriginQuantity, order->GetNewQuantity());
-            FinalQuantity = order->GetNewQuantity() + (PathQuantity - order->GetExecuteQuantity()) * order->Price ;
+            spdlog::info("func: baseOrderHandler, FinalQuantity: {}, NewQuantity:{}", FinalQuantity, order->GetNewQuantity());
+//            FinalQuantity = (order->GetNewQuantity() + (PathQuantity - order->GetExecuteQuantity()) * order->Price)  *  (1-0.00014);
         }
-
         TransHandler(*order);
         // TriangularArbitrage::CheckFinish();
     }
