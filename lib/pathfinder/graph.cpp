@@ -140,11 +140,13 @@ namespace Pathfinder{
         auto node = tradeNodeMap[formatKey(baseIndex, quoteIndex)];
         if (not data.Bids.empty())
         { // 买单挂出价，我方卖出价
-            node->UpdateSell(data.Bids);
+            auto depth = data.Bids[0];
+            node->UpdateSell(depth.Price, depth.Quantity);
         }
-        if (not data.Asks.empty())
+        if (!data.Asks.empty())
         { // 卖单挂出价，我方买入价
-            node->UpdateBuy(data.Asks);
+            auto depth = data.Asks[0];
+            node->UpdateBuy(depth.Price, depth.Quantity);
         }
 
         if (define::IsStableCoin(data.BaseToken)){
@@ -171,50 +173,6 @@ namespace Pathfinder{
         spdlog::info("func: {}, path found profit: {}", "UpdateNode", chance.Profit);
 
         return this->subscriber(chance);*/
-    }
-
-    double Graph::GetPathPrice(int fromIndex, int toIndex){
-        double toDollar = ToDollar(fromIndex);
-        if (toDollar == 0)
-            return 0;
-
-        Node* node = tradeNodeMap[formatKey(fromIndex, toIndex)];
-        vector<WebsocketWrapper::DepthItem> depths = node->getDepth(fromIndex, toIndex);
-        double quantity = 0;
-        double price = 0;
-        for (auto depth : depths){
-            quantity += depth.Quantity;
-            if (quantity * toDollar >= 20) {
-                price = depth.Price;
-                break;
-            }
-        }
-
-//        spdlog::info("func: {}, from: {}, to: {}, toDollar: {}, quantity: {}, quantity*toDollar: {}, price: {}, depth Len: {}",
-//                     "GetPathPrice",
-//                     indexToToken[fromIndex],
-//                     indexToToken[toIndex],
-//                     toDollar,
-//                     quantity,
-//                     quantity * toDollar,
-//                     price,
-//                     depths.size()
-//        );
-
-        return node->GetParsePathPrice(price, fromIndex, toIndex);
-    }
-
-    double Graph::ToDollar(int fromIndex){
-        double toDollar = 0;
-        if (tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["USDT"]))) {
-            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["USDT"])]->GetOriginPrice(fromIndex, tokenToIndex["USDT"]);
-        }
-
-        if (toDollar == 0 && tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["BUSD"]))) {
-            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["BUSD"])]->GetOriginPrice(fromIndex, tokenToIndex["BUSD"]);
-        }
-
-        return toDollar;
     }
 
     int Graph::updateBestMap(int from, int to){
@@ -253,17 +211,16 @@ namespace Pathfinder{
                 if (p == bestPaths.end()) {
                     bestPaths.insert(p, {path->Steps, currentProfit});
                 }
-                updateNum ++;
             }
         }
 
-//        spdlog::info("func: {}, {}->{}, Path Num: {}, New Num: {}, Update Num: {}",
-//                "updateBestMap",
-//                indexToToken[from],
-//                indexToToken[to],
-//                relatedPath[formatKey(from, to)].size(),
-//                newNum,
-//                updateNum);
+        /*spdlog::debug("func: {}, {}->{}, Path Num: {}, New Num: {}, Update Num: {}",
+                "updateBestMap",
+                from,
+                to,
+                relatedPath[formatKey(from, to)].size(),
+                newNum,
+                updateNum);*/
         return updateNum;
     }
 
@@ -280,7 +237,7 @@ namespace Pathfinder{
                 return 0;
             }
 
-            currentProfit = currentProfit * GetPathPrice(from, to);
+            currentProfit = currentProfit * node->GetParsePrice(from, to);
         }
         currentProfit = currentProfit*(1-0.0004);
         return currentProfit;

@@ -37,12 +37,12 @@ namespace Executor{
         }
         this->lock = true;
 
-        apiWrapper.CancelOrderSymbol("XRP", "BUSD");
+        apiWrapper.CancelOrderSymbol("XRP", "USDT");
 
         auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
                 ioService, orderWrapper, pathfinder, capitalPool, apiWrapper
         );
-        auto err = makerTriangular->Run("XRP", "BUSD");
+        auto err = makerTriangular->Run("XRP", "USDT");
         if (err > 0)
         {
             return;
@@ -84,7 +84,7 @@ namespace Executor{
     }
 
     void Executor::print(double btc) {
-        auto symbolData = apiWrapper.GetSymbolData("BUSD", "BTC");
+        auto symbolData = apiWrapper.GetSymbolData("USDT", "BTC");
         Pathfinder::GetExchangePriceReq priceReq{};
         priceReq.BaseToken = symbolData.BaseToken;
         priceReq.QuoteToken = symbolData.QuoteToken;
@@ -95,6 +95,6 @@ namespace Executor{
             return;
         }
 
-        spdlog::info("busd: {}", btc*priceResp.SellPrice);
+        spdlog::info("USDT: {}", btc*priceResp.SellPrice);
     }
 }

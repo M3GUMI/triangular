@@ -176,7 +176,7 @@ namespace HttpWrapper
         AccountInfo info;
         if (conf::EnableMock) {
             BalanceData data;
-            data.Token = "BUSD";
+            data.Token = "USDT";
             data.Free = 20;
             data.Locked = 0;
             info.Balances.push_back(data);

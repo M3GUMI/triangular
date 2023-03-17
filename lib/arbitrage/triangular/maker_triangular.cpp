@@ -30,14 +30,14 @@ namespace Arbitrage{
 
     int MakerTriangularArbitrage::Run(string base, string quote) {
         double lockedQuantity;
-        if (auto err = capitalPool.LockAsset("BUSD", 20, lockedQuantity); err > 0) {
+        if (auto err = capitalPool.LockAsset("USDT", 20, lockedQuantity); err > 0) {
             return err;
         }
 
         spdlog::info("{}::Run, symbol: {}", this->strategy.StrategyName, base+quote);
 
         this->OriginQuantity = lockedQuantity;
-        this->TargetToken = "BUSD";
+        this->TargetToken = "USDT";
         this->currentPhase = 1;
         this->baseToken = base;
         this->quoteToken = quote;
@@ -235,7 +235,7 @@ namespace Arbitrage{
         double newPrice = 0;
         double newQuantity = 0;
 
-        if (req.BaseToken == "BUSD")
+        if (req.BaseToken == "USDT")
         {
             newSide = define::SELL;
             newPrice = res.SellPrice * (1 + this->open);
