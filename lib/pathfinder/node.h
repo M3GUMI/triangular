@@ -1,6 +1,8 @@
 #pragma once
 #include "conf/strategy.h"
 #include "utils/utils.h"
+#include "lib/api/http/binance_api_wrapper.h"
+#include "lib/api/ws/binance_depth_wrapper.h"
 
 namespace Pathfinder
 {
@@ -92,13 +94,17 @@ namespace Pathfinder
 
         double GetParsePrice(int fromIndex, int toIndex);
 
+        double GetParsePathPrice(double price, int fromIndex, int toIndex);
+
         double GetQuantity(int fromIndex, int toIndex);
 
-        double UpdateSell(double price, double quantity);
+        double UpdateSell(vector<WebsocketWrapper::DepthItem> depth);
 
-        double UpdateBuy(double price, double quantity);
+        double UpdateBuy(vector<WebsocketWrapper::DepthItem> depth);
 
         void mockSetOriginPrice(int fromIndex, int toIndex, double price);
+
+        vector<WebsocketWrapper::DepthItem> getDepth(int fromIndex, int toIndex);
 
         vector<int> mockGetIndexs();
 
@@ -108,10 +114,8 @@ namespace Pathfinder
         int baseIndex = 0;   // baseToken序号
         int quoteIndex = 0;     // quoteToken序号
 
-        double sellPrice = 0;  // baseToken卖出, 买入quoteToken的原始价格
-        double sellQuantity = 0;  // 卖出原始数量
+        vector<WebsocketWrapper::DepthItem> sellDepth;
 
-        double buyPrice = 0;  // baseToken买入, 卖出quoteToken的原始价格
-        double buyQuantity = 0;  // 买入原始数量
+        vector<WebsocketWrapper::DepthItem> buyDepth;
     };
 }

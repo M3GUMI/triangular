@@ -12,12 +12,16 @@ namespace Pathfinder
     {
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
         {
-            return this->sellPrice;
+            if (this->sellDepth.size() == 0)
+                return 0;
+            return this->sellDepth[0].Price;
         }
 
         if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
         {
-            return this->buyPrice;
+            if (this->buyDepth.size() == 0)
+                return 0;
+            return this->buyDepth[0].Price;
         }
 
         return 0;
@@ -38,29 +42,40 @@ namespace Pathfinder
         }
     }
 
+    double Node::GetParsePathPrice(double price, int fromIndex, int toIndex){
+        if (price == 0) {
+            return 0;
+        }
+
+        if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
+        {
+            return 1/price;
+        } else {
+            return price;
+        }
+    }
+
     double Node::GetQuantity(int fromIndex, int toIndex)
     {
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex) {
-            return this->sellQuantity;
+            return this->sellDepth[0].Quantity;
         }
 
         if (fromIndex == this->quoteIndex && toIndex == this->baseIndex) {
-            return this->buyQuantity;
+            return this->buyDepth[0].Quantity;
         }
 
         return 0;
     }
 
-    double Node::UpdateSell(double price, double quantity)
+    double Node::UpdateSell(vector<WebsocketWrapper::DepthItem> depth)
     {
-        this->sellPrice = price;
-        this->sellQuantity = quantity;
+        this->sellDepth = depth;
     }
 
-    double Node::UpdateBuy(double price, double quantity)
+    double Node::UpdateBuy(vector<WebsocketWrapper::DepthItem> depth)
     {
-        this->buyPrice = price;
-        this->buyQuantity = quantity;
+        this->buyDepth = depth;
     }
 
     TransactionPathItem Node::Format(conf::Step& step, map<int, string>& indexToToken, int from, int to) {
@@ -85,14 +100,27 @@ namespace Pathfinder
 
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
         {
-            this->sellPrice = price;
+            this->sellDepth[0].Price = price;
         }
 
         if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
         {
-            this->buyPrice = price;
+            this->buyDepth[0].Price = price;
         }
     }
+
+    vector<WebsocketWrapper::DepthItem> Node::getDepth(int fromIndex, int toIndex){
+        if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
+        {
+            return sellDepth;
+        }
+
+        if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
+        {
+            return buyDepth;
+        }
+    }
+
     vector<int> Node::mockGetIndexs(){
         vector<int> indexs;
         indexs[0] = baseIndex;

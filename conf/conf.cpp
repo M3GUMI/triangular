@@ -11,9 +11,9 @@ namespace conf
     double MaxTriangularQuantity = 60;
     double MinTriangularQuantity = 20;
 
-    string BaseAsset = "BUSD";
+    string BaseAsset = "USDT";
     map<string, double> BaseAssets = {
-        {"BUSD", 10},
+        {"USDT", 10},
     };
     map<u_int64_t, double> HandlingFeeMap = {
             {formatKey(define::LIMIT_MAKER, define::GTC), 0},

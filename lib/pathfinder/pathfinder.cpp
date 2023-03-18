@@ -28,7 +28,7 @@ namespace Pathfinder
             if (conf::EnableMock && symbol != "XRPBUSD" &&
                 symbol != "XRPBTC" && symbol != "XRPETH" && symbol != "XRPBNB" && symbol != "XRPUSDC" &&
                 symbol != "XRPUSDT" &&
-                symbol != "BTCBUSD" && symbol != "ETHBUSD" && symbol != "BUSDBNB" && symbol != "USDCBUSD" &&
+                symbol != "BTCUSDT" && symbol != "ETHUSDT" && symbol != "BNBUSDT" && symbol != "USDCUSDT" &&
                 symbol != "BUSDUSDT")
             {
                 continue;
