@@ -26,25 +26,31 @@ namespace Arbitrage
         WebsocketWrapper::BinanceOrderWrapper& orderWrapper;
 
         OrderData* PendingOrder = nullptr; // 提前挂单
+        OrderData* LastOrder = nullptr; // 稳定币挂单
+
         int currentPhase = 0;
         string baseToken;
         string quoteToken;
+        Pathfinder::TransactionPathItem lastStep{}; // 最后一步挂单数据
 
         double close = 0.002; // 撤单重挂阈值
         double open = 0.001; // 挂单阈值
 
         std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> retryTimer;//市价吃单计时器
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> lastOrderTimer;//市价吃单计时器
+
         std::shared_ptr<websocketpp::lib::asio::steady_timer> mockPriceTimer;//mock测试价格变化计时器
-        void mockTrader(const string& base, string quote, double buyPrice, double sellPrice);
-        map<string, double> mockPriceControl(OrderData& PendingOrder);
-        Pathfinder::TransactionPathItem lastStep{};
 
         void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单
-        int partiallyFilledHandler(OrderData& data);
-        void takerHandler(OrderData &data);
-        void makerHandler(OrderData &data);
+        void takerHandler(OrderData& data);
+
+        void makerHandler(OrderData& data);
 
         void TransHandler(OrderData& data) override;
+
+        void mockTrader(const string& base, string quote, double buyPrice, double sellPrice);
+
+        map<string, double> mockPriceControl(OrderData& PendingOrder);
     };
 }

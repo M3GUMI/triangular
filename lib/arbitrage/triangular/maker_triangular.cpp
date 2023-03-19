@@ -44,8 +44,6 @@ namespace Arbitrage{
 
         // todo 后续改成通用逻辑
         orderWrapper.SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
-//        mockPriceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(30000));
-//        mockPriceTimer->async_wait(bind(&MakerTriangularArbitrage::mockPriceControl, this, PendingOrder));
         MakerTriangularArbitrage::makerOrderChangeHandler();
 
         return 0;
@@ -132,78 +130,65 @@ namespace Arbitrage{
 
             this->currentPhase = newPhase;
         } else {
-            reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(20));
-            reorderTimer->async_wait(bind(&MakerTriangularArbitrage::takerHandler, this, data));
+            retryTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(20));
+            retryTimer->async_wait(bind(&MakerTriangularArbitrage::takerHandler, this, data));
         }
     }
 
     void MakerTriangularArbitrage::makerHandler(OrderData &data)
     {
+        if (this->LastOrder != nullptr && this->LastOrder->OrderStatus != define::INIT) {
+            // 若挂单成功则不再重试
+            return;
+        }
+
+        lastOrderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(10));
+        lastOrderTimer->async_wait(bind(&MakerTriangularArbitrage::makerHandler, this, data));
+
         if (data.GetToToken() == this->TargetToken) {
             CheckFinish();
             return;
         }
 
+        Pathfinder::GetExchangePriceReq req{
+            .BaseToken = this->lastStep.BaseToken,
+            .QuoteToken = this->lastStep.QuoteToken,
+            .OrderType = define::LIMIT_MAKER
+        };
+
+        Pathfinder::GetExchangePriceResp resp{};
+        if (auto err = this->pathfinder.GetExchangePrice(req, resp); err > 0) {
+            spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
+            return;
+        }
+
         int newPhase = 3;
+        auto step = this->lastStep;
+        if (step.Side == define::SELL) {
+            if (resp.SellPrice > step.Price) {
+                step.Price = resp.SellPrice;
+            }
+        } else {
+            if (resp.BuyPrice < this->lastStep.Price) {
+                step.Price = resp.BuyPrice;
+            }
+        }
+
         if (data.GetToToken() == this->lastStep.BaseToken) {
-            this->lastStep.Quantity = data.GetNewQuantity();
+            step.Quantity = data.GetNewQuantity();
         } else if (data.GetToToken() == this->lastStep.QuoteToken) {
-            this->lastStep.Quantity = data.GetNewQuantity()/this->lastStep.Price;
+            step.Quantity = data.GetNewQuantity()/this->lastStep.Price;
         }
 
         uint64_t orderId;
-        auto err = this->ExecuteTrans(orderId, newPhase, this->lastStep);
+        auto err = this->ExecuteTrans(orderId, newPhase, step);
         if (err > 0)
         {
             spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             return;
-        }
-        this->currentPhase = newPhase;
-    }
-
-    int MakerTriangularArbitrage::partiallyFilledHandler(OrderData &orderData)
-    {
-        //部分转换之后放去ioc，剩余的部分放回资金池
-        spdlog::info(
-                "MakerTriangularArbitrage::partiallyFilledHandler::Now there are {} {} left",
-                orderData.GetUnExecuteQuantity(), orderData.BaseToken
-        );
-        //如果剩余为稳定币 放回资金池 剩余订单取消
-        if (define::IsStableCoin(orderData.GetFromToken()) || orderData.GetUnExecuteQuantity() > 0)
-        {
-            // 稳定币持仓，等待重平衡
-            auto err = TriangularArbitrage::capitalPool.FreeAsset(orderData.GetFromToken(),
-                                                                  orderData.GetUnExecuteQuantity());
-            if (err > 0)
-            {
-                return err;
-            }
-            string symbol = apiWrapper.GetSymbol(orderData.BaseToken, orderData.QuoteToken);
-            apiWrapper.CancelOrder(orderData.OrderId);
-        }
-        else if (!define::IsStableCoin(orderData.GetFromToken()) || orderData.GetUnExecuteQuantity() > 0)
-        {
-            uint64_t orderId;
-            auto err = this->ReviseTrans(orderId, 0, orderData.GetFromToken(), orderData.GetUnExecuteQuantity());
-            if (err > 0)
-            {
-                return err;
-            }
-        }
-        //第一步至第二步
-        if (orderData.GetToToken() != this->TargetToken)
-        {
-            uint64_t orderId;
-            auto err = this->ReviseTrans(orderId, 0, orderData.GetToToken(), orderData.GetNewQuantity());
-            if (err > 0)
-            {
-                return err;
-            }
-        }
-        else if (orderData.GetToToken() == this->TargetToken)
-        {
-            FinalQuantity += orderData.GetNewQuantity();
-            return 1;
+        } else {
+            this->LastOrder = orderMap[orderId];
+            this->currentPhase = newPhase;
         }
     }
 

@@ -20,6 +20,7 @@ namespace Executor{
     Executor::~Executor() = default;
 
     void Executor::Init() {
+        apiWrapper.CancelOrderSymbol("XRP", "USDT");
         checkTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
         checkTimer->async_wait(bind(&Executor::initMaker, this));
     }
@@ -32,12 +33,11 @@ namespace Executor{
         checkTimer->async_wait(bind(&Executor::initMaker, this));
 
         if (this->lock) {
-            spdlog::debug("lock");
             return;
         }
         this->lock = true;
 
-        apiWrapper.CancelOrderSymbol("XRP", "USDT");
+        apiWrapper.GetUserAsset(bind(&Executor::print, this, placeholders::_1));
 
         auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
                 ioService, orderWrapper, pathfinder, capitalPool, apiWrapper

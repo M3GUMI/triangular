@@ -57,6 +57,10 @@ namespace Pathfinder
 
     double Node::GetQuantity(int fromIndex, int toIndex)
     {
+        if (this->sellDepth.size() == 0 || this->buyDepth.size() == 0) {
+            return 0;
+        }
+
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex) {
             return this->sellDepth[0].Quantity;
         }
