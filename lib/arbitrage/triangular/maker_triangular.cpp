@@ -154,7 +154,9 @@ namespace Arbitrage{
             {
                 backOrder.Side = define::SELL;
             }
-            data.Phase = -1;
+            backOrder.Phase = -1;
+            backOrder.OrderType = define::MARKET;
+            backOrder.Quantity = data.GetExecuteQuantity();
             apiWrapper.CreateOrder( backOrder, bind(&MakerTriangularArbitrage::baseOrderHandler,
                                                      this, std::placeholders::_1,
                                                      std::placeholders::_2));
