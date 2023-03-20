@@ -75,7 +75,6 @@ namespace Arbitrage{
         }
         if (data.Phase == 1)
         {
-            retryTime = 0;
             return takerHandler(data);
         }
 
@@ -108,43 +107,9 @@ namespace Arbitrage{
         req.End = this->TargetToken;
         req.Quantity = data.GetNewQuantity();
         req.Phase = newPhase;
-        if (retryTime < 10)
-        {
-            retryTime++;
-            auto chance = pathfinder.FindBestPath(req);
-            auto realProfit = data.GetParsePrice() * chance.Profit;
-            if (realProfit > 1)
-            {
-                uint64_t orderId;
-                spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", this->strategy.StrategyName, realProfit,
-                             spdlog::fmt_lib::join(chance.Format(), ","));
-                auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
-                if (err > 0)
-                {
-                    spdlog::error("{}::TakerHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
-                }
 
-                this->lastStep = Pathfinder::TransactionPathItem{
-                        .BaseToken = chance.Path[1].BaseToken,
-                        .QuoteToken = chance.Path[1].QuoteToken,
-                        .Side = chance.Path[1].Side,
-                        .OrderType = chance.Path[1].OrderType,
-                        .TimeInForce = chance.Path[1].TimeInForce,
-                        .Price = chance.Path[1].Price,
-                        .Quantity = chance.Path[1].Quantity,
-                };
-
-                this->currentPhase = newPhase;
-            }
-            else
-            {
-                retryTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
-                                                                                    websocketpp::lib::asio::milliseconds(
-                                                                                            20));
-                retryTimer->async_wait(bind(&MakerTriangularArbitrage::takerHandler, this, data));
-            }
-        }
-        else{
+        // 重试次数过多，终止
+        if (retryTime > 10) {
             OrderData backOrder = data;
             if (data.Side == define::SELL)
             {
@@ -154,14 +119,48 @@ namespace Arbitrage{
             {
                 backOrder.Side = define::SELL;
             }
-            backOrder.Phase = -1;
             backOrder.OrderType = define::MARKET;
-            backOrder.Quantity = data.GetExecuteQuantity();
+            backOrder.Quantity = data.ExecuteQuantity;
             apiWrapper.CreateOrder( backOrder, bind(&MakerTriangularArbitrage::baseOrderHandler,
                                                      this, std::placeholders::_1,
                                                      std::placeholders::_2));
-            spdlog::info("{}::TakerHandler,side:{},base:{},quote:{},id:{} fail in finding path",
-                         this->strategy.StrategyName, data.Side, data.BaseToken, data.QuoteToken, data.OrderId );
+            spdlog::info("{}::TakerHandler, msg: fail in finding path, symbol: {}, side:{}, quantity: {}",
+                         this->strategy.StrategyName, data.BaseToken, data.QuoteToken, data.Side, backOrder.Quantity);
+            // Finish();
+            return;
+        }
+
+        retryTime++;
+        auto chance = pathfinder.FindBestPath(req);
+        auto realProfit = data.GetParsePrice() * chance.Profit;
+        if (realProfit > 1)
+        {
+            uint64_t orderId;
+            spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", this->strategy.StrategyName, realProfit,
+                spdlog::fmt_lib::join(chance.Format(), ","));
+            auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
+            if (err > 0)
+            {
+                spdlog::error("{}::TakerHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
+            }
+
+            this->lastStep = Pathfinder::TransactionPathItem{
+                .BaseToken = chance.Path[1].BaseToken,
+                .QuoteToken = chance.Path[1].QuoteToken,
+                .Side = chance.Path[1].Side,
+                .OrderType = chance.Path[1].OrderType,
+                .TimeInForce = chance.Path[1].TimeInForce,
+                .Price = chance.Path[1].Price,
+                .Quantity = chance.Path[1].Quantity,
+            };
+
+            this->currentPhase = newPhase;
+        }
+        else
+        {
+            retryTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
+                                                                        websocketpp::lib::asio::milliseconds(20));
+            retryTimer->async_wait(bind(&MakerTriangularArbitrage::takerHandler, this, data));
         }
     }
 
