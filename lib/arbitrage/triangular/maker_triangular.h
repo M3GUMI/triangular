@@ -26,7 +26,6 @@ namespace Arbitrage
         WebsocketWrapper::BinanceOrderWrapper& orderWrapper;
 
         OrderData* PendingOrder = nullptr; // 提前挂单
-        OrderData* LastOrder = nullptr; // 稳定币挂单
         int retryTime = 0;
         int currentPhase = 0;
         string baseToken;

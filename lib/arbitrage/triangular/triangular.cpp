@@ -82,14 +82,14 @@ namespace Arbitrage{
                         placeholders::_2
                 ));
         spdlog::info(
-                "{}::ExecuteTrans, symbol: {}, side: {}, orderType: {}, price: {}, quantity: {}， phase:{}",
+                "{}::ExecuteTrans, phase:{}, symbol: {}, side: {}, orderType: {}, price: {}, quantity: {}",
                 this->strategy.StrategyName,
+                order->Phase,
                 order->BaseToken+order->QuoteToken,
                 sideToString(order->Side),
                 orderTypeToString(order->OrderType),
                 order->Price,
-                order->Quantity,
-                order->Phase
+                order->Quantity
         );
         if (err > 0) {
             spdlog::info(

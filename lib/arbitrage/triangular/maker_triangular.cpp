@@ -130,7 +130,7 @@ namespace Arbitrage{
             return;
         }
 
-        retryTime++;
+        // todo retryTime++;
         auto chance = pathfinder.FindBestPath(req);
         auto realProfit = data.GetParsePrice() * chance.Profit;
         if (realProfit > 1)
@@ -167,14 +167,6 @@ namespace Arbitrage{
 
     void MakerTriangularArbitrage::makerHandler(OrderData &data)
     {
-        if (this->LastOrder != nullptr && this->LastOrder->OrderStatus != define::INIT) {
-            // 若挂单成功则不再重试
-            return;
-        }
-
-        lastOrderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(10));
-        lastOrderTimer->async_wait(bind(&MakerTriangularArbitrage::makerHandler, this, data));
-
         if (data.GetToToken() == this->TargetToken) {
             CheckFinish();
             return;
@@ -216,10 +208,9 @@ namespace Arbitrage{
         {
             spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             return;
-        } else {
-            this->LastOrder = orderMap[orderId];
-            this->currentPhase = newPhase;
         }
+
+        this->currentPhase = newPhase;
     }
 
     //价格变化幅度不够大，撤单重挂单
