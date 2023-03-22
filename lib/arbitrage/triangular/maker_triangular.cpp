@@ -80,6 +80,8 @@ namespace Arbitrage{
 
         if (data.Phase == 2)
         {
+            spdlog::info(" MakerTriangular::transHandler, base:{}, quote:{}, side:{}, price:{}", data.BaseToken, data.QuoteToken, data.Side, data.Price);
+            spdlog::info("lastPrice{}", data.Price);
             return makerHandler(data);
         }
 
@@ -109,26 +111,26 @@ namespace Arbitrage{
         req.Phase = newPhase;
 
         // 重试次数过多，终止
-        if (retryTime > 10) {
-            OrderData backOrder = data;
-            if (data.Side == define::SELL)
-            {
-                backOrder.Side = define::BUY;
-            }
-            if (data.Side == define::BUY)
-            {
-                backOrder.Side = define::SELL;
-            }
-            backOrder.OrderType = define::MARKET;
-            backOrder.Quantity = data.ExecuteQuantity;
-            apiWrapper.CreateOrder( backOrder, bind(&MakerTriangularArbitrage::baseOrderHandler,
-                                                     this, std::placeholders::_1,
-                                                     std::placeholders::_2));
-            spdlog::info("{}::TakerHandler, msg: fail in finding path, symbol: {}, side:{}, quantity: {}",
-                         this->strategy.StrategyName, data.BaseToken, data.QuoteToken, data.Side, backOrder.Quantity);
-            // Finish();
-            return;
-        }
+//      if (retryTime > 10) {
+//            OrderData backOrder = data;
+//            if (data.Side == define::SELL)
+//            {
+//                backOrder.Side = define::BUY;
+//            }
+//            if (data.Side == define::BUY)
+//            {
+//                backOrder.Side = define::SELL;
+//            }
+//            backOrder.OrderType = define::MARKET;
+//            backOrder.Quantity = data.ExecuteQuantity;
+//            apiWrapper.CreateOrder( backOrder, bind(&MakerTriangularArbitrage::baseOrderHandler,
+//                                                     this, std::placeholders::_1,
+//                                                     std::placeholders::_2));
+//            spdlog::info("{}::TakerHandler, msg: fail in finding path, symbol: {}, side:{}, quantity: {}",
+//                         this->strategy.StrategyName, data.BaseToken, data.QuoteToken, data.Side, backOrder.Quantity);
+//            // Finish();
+//            return;
+//        }
 
         // todo retryTime++;
         auto chance = pathfinder.FindBestPath(req);
@@ -158,6 +160,7 @@ namespace Arbitrage{
         }
         else
         {
+            spdlog::info("{}::TakerHandler,failed_path:{}, profit:{}",this->strategy.StrategyName,  spdlog::fmt_lib::join(chance.Format(), ","),realProfit);
             retryTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
                                                                         websocketpp::lib::asio::milliseconds(20));
             retryTimer->async_wait(bind(&MakerTriangularArbitrage::takerHandler, this, data));
@@ -183,16 +186,17 @@ namespace Arbitrage{
             spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             return;
         }
-
         int newPhase = 3;
         auto step = this->lastStep;
         if (step.Side == define::SELL) {
             if (resp.SellPrice > step.Price) {
                 step.Price = resp.SellPrice;
+                step.Price *= 1.007;
             }
         } else {
             if (resp.BuyPrice < this->lastStep.Price) {
                 step.Price = resp.BuyPrice;
+                step.Price *= 0.993;
             }
         }
 

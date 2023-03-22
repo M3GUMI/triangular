@@ -256,6 +256,9 @@ namespace HttpWrapper
     void BinanceApiWrapper::getUserAssetHandler(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(double btc)> callback)
     {
         rapidjson::Document data;
+        if(res == nullptr){
+            return;
+        }
         data.Parse(res->payload().c_str());
 
         double btcAsset = 0;
