@@ -138,6 +138,9 @@ namespace Pathfinder{
         auto quoteIndex = tokenToIndex[data.QuoteToken];
 
         auto node = tradeNodeMap[formatKey(baseIndex, quoteIndex)];
+        if(data.BaseToken=="XRP" && data.QuoteToken=="USDT"){
+//            spdlog::info("update node, sellPrice: {}, buyPrice: {}", data.Bids[0].Price, data.Asks[0].Price);
+        }
         if (not data.Bids.empty())
         { // 买单挂出价，我方卖出价
             node->UpdateSell(data.Bids);
@@ -145,6 +148,9 @@ namespace Pathfinder{
         if (!data.Asks.empty())
         { // 卖单挂出价，我方买入价
             node->UpdateBuy(data.Asks);
+        }
+        if(data.BaseToken=="XRP" && data.QuoteToken=="USDT"){
+//            spdlog::info("update node 2, sellPrice: {}, buyPrice: {}", node->GetOriginPrice(baseIndex, quoteIndex), node->GetOriginPrice(quoteIndex, baseIndex));
         }
 
         if (define::IsStableCoin(data.BaseToken)){
@@ -190,24 +196,24 @@ namespace Pathfinder{
             // 如果本路径本就是最优路径则更新profit
             else {
                 list<BestPath>::iterator p;
-                auto bestPaths = bestPathMap[key];
+                list<BestPath>* bestPaths = &bestPathMap[key];
 
                 // 如果当前路径已被记录就删除，之后重新插入
-                for(p = bestPaths.begin(); p != bestPaths.end(); p++){
+                for(p = bestPaths->begin(); p != bestPaths->end(); p++){
                     if (path->Steps == p->bestPath){
-                        bestPaths.erase(p);
+                        bestPaths->erase(p);
                         break;
                     }
                 }
 
                 // 插入路径
-                for(p = bestPaths.begin(); p != bestPaths.end(); p++) {
+                for(p = bestPaths->begin(); p != bestPaths->end(); p++) {
                     if (p->profit < currentProfit) {
-                        bestPaths.insert(p, {path->Steps, currentProfit});
+                        bestPaths->insert(p, {path->Steps, currentProfit});
                     }
                 }
-                if (p == bestPaths.end()) {
-                    bestPaths.insert(p, {path->Steps, currentProfit});
+                if (p == bestPaths->end()) {
+                    bestPaths->insert(p, {path->Steps, currentProfit});
                 }
             }
         }
@@ -287,6 +293,8 @@ namespace Pathfinder{
         resp.SellQuantity = node->GetQuantity(baseIndex, quoteIndex);
         resp.BuyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
         resp.BuyQuantity = node->GetQuantity(quoteIndex, baseIndex);
+
+        spdlog::info("func: {}, sell: {}, buy: {}", "GetExchangePrice", resp.SellPrice, resp.BuyPrice);
 
         // maker不可下单到对手盘
         auto symbolData = apiWrapper.GetSymbolData(req.BaseToken, req.QuoteToken);

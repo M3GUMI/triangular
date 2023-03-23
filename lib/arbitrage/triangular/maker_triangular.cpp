@@ -240,6 +240,9 @@ namespace Arbitrage{
         // 盘口价格
         Pathfinder::GetExchangePriceResp res;
         auto err = pathfinder.GetExchangePrice(req, res);
+        if (req.BaseToken == "XRP" && req.QuoteToken == "USDT"){
+            spdlog::info("baseToken: {}, quoteToken: {}, buy price: {}, sell price: {}", baseToken, quoteToken, res.BuyPrice, res.SellPrice);
+        }
         if (err > 0) {
             spdlog::info("{}:makerOrderChangeHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             return;
