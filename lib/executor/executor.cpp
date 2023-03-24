@@ -78,6 +78,10 @@ namespace Executor{
     void Executor::arbitrageFinishHandler() {
         // this->lock = false;
         capitalPool.Refresh();
+        if (executeTime < 10){
+            executeTime++;
+            initMaker();
+        }
         if (!conf::EnableMock) {
             apiWrapper.GetUserAsset(bind(&Executor::print, this, placeholders::_1));
         }

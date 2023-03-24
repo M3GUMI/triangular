@@ -84,7 +84,7 @@ namespace Arbitrage{
             return makerHandler(data);
         }
 
-        if (data.Phase == 3)
+        if (data.Phase == 3 )
         {
             this->currentPhase = this->currentPhase + 1;
             if (PathQuantity != 0){
@@ -191,14 +191,14 @@ namespace Arbitrage{
             if (resp.SellPrice > step.Price) {
                 step.Price = resp.SellPrice;
                 if(data.Phase == 2){
-                    step.Price *= 1.002;
+                    step.Price *= 1.0015;
                 }
             }
         } else {
             if (resp.BuyPrice < this->lastStep.Price) {
                 step.Price = resp.BuyPrice;
                 if(data.Phase == 2){
-                    step.Price *= 0.998;
+                    step.Price *= 0.9995;
                 }
             }
         }
@@ -307,7 +307,7 @@ namespace Arbitrage{
 
             //挂出新单
             uint64_t orderId = 0;
-            spdlog::info("成功挂出");
+//            spdlog::info("成功挂出");
             ExecuteTrans(orderId, 1, path);
             this->PendingOrder = orderMap[orderId];
         }

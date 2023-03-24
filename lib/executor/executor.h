@@ -18,7 +18,7 @@ namespace Executor
         HttpWrapper::BinanceApiWrapper& apiWrapper;
 
         std::shared_ptr<websocketpp::lib::asio::steady_timer> checkTimer; // 计时器
-
+        int executeTime = 0;
         bool lock = false; // 同时只执行一个套利任务
         void arbitragePathHandler(Pathfinder::ArbitrageChance& chance);
 
