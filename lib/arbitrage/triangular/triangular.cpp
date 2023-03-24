@@ -162,7 +162,14 @@ namespace Arbitrage{
         order->CummulativeQuoteQuantity = data.CummulativeQuoteQuantity;
         order->UpdateTime = data.UpdateTime;
 
-        if(order->Phase == 1 ){
+        //堵住重复调用
+        if (order->Phase == 1 && overFirstStep == true && order->OrderStatus == define::FILLED){
+            spdlog::info("overFirstStep = true, status:{}", order->OrderStatus );
+            return;
+        }
+
+        if(order->Phase == 1 && overFirstStep == false && order->OrderStatus == define::FILLED ){
+            overFirstStep = true;
             // spdlog::info("func: baseOrderHandler, originQuantity: {}, ExecuteQuantity:{}", OriginQuantity, order->GetExecuteQuantity());
             OriginQuantity = order->GetExecuteQuantity();
         }
@@ -174,6 +181,7 @@ namespace Arbitrage{
             // spdlog::info("func: baseOrderHandler, FinalQuantity: {}, NewQuantity:{}", FinalQuantity, order->GetNewQuantity());
             // FinalQuantity = (order->GetNewQuantity() + (PathQuantity - order->GetExecuteQuantity()) * order->Price)  *  (1-0.00014);
         }
+
         TransHandler(*order);
         // TriangularArbitrage::CheckFinish();
     }

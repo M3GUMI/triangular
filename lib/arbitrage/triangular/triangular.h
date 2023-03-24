@@ -39,6 +39,8 @@ namespace Arbitrage{
         double FinalQuantity = 0;  // 最终起点token数量
         double PathQuantity = 0;  //过程币的数量
 
+        bool overFirstStep = false; //临时堵住baseOrderHandler
+
         Pathfinder::Pathfinder &pathfinder;
         CapitalPool::CapitalPool &capitalPool;
         HttpWrapper::BinanceApiWrapper &apiWrapper;
