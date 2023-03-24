@@ -210,11 +210,23 @@ namespace Pathfinder{
                 for(p = bestPaths->begin(); p != bestPaths->end(); p++) {
                     if (p->profit < currentProfit) {
                         bestPaths->insert(p, {path->Steps, currentProfit});
+                        break;
                     }
                 }
                 if (p == bestPaths->end()) {
                     bestPaths->insert(p, {path->Steps, currentProfit});
                 }
+
+//                if (indexToToken[path->Steps[0]]=="XRP" && indexToToken[path->Steps[path->Steps.size()-1]]=="USDT") {
+//                    int i = 0;
+//                    for(p = bestPaths->begin(); p != bestPaths->end(); p++){
+//                        if (path->Steps == p->bestPath){
+//                            spdlog::info("bestPath, size: {}, i: {}, profit: {}, max profit: {}", bestPaths->size(), i, p->profit, bestPaths->begin()->profit);
+//                            break;
+//                        }
+//                        i++;
+//                    }
+//                }
             }
         }
 
@@ -293,8 +305,6 @@ namespace Pathfinder{
         resp.SellQuantity = node->GetQuantity(baseIndex, quoteIndex);
         resp.BuyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
         resp.BuyQuantity = node->GetQuantity(quoteIndex, baseIndex);
-
-        spdlog::info("func: {}, sell: {}, buy: {}", "GetExchangePrice", resp.SellPrice, resp.BuyPrice);
 
         // maker不可下单到对手盘
         auto symbolData = apiWrapper.GetSymbolData(req.BaseToken, req.QuoteToken);
