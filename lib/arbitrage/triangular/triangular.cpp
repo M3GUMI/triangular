@@ -170,17 +170,13 @@ namespace Arbitrage{
 
         if(order->Phase == 1 && overFirstStep == false && order->OrderStatus == define::FILLED ){
             overFirstStep = true;
-            // spdlog::info("func: baseOrderHandler, originQuantity: {}, ExecuteQuantity:{}", OriginQuantity, order->GetExecuteQuantity());
-            OriginQuantity = order->GetExecuteQuantity();
+                OriginQuantity = order->GetExecuteQuantity();
         }
         else if(order->Phase == 2 ){
-            // spdlog::info("func: baseOrderHandler, PathQuantity: {}", order->GetNewQuantity());
-            PathQuantity = order->GetNewQuantity();
+              PathQuantity = order->GetNewQuantity();
         }
         else if(data.Phase == 3 ){
-            // spdlog::info("func: baseOrderHandler, FinalQuantity: {}, NewQuantity:{}", FinalQuantity, order->GetNewQuantity());
-            // FinalQuantity = (order->GetNewQuantity() + (PathQuantity - order->GetExecuteQuantity()) * order->Price)  *  (1-0.00014);
-        }
+               }
 
         TransHandler(*order);
         // TriangularArbitrage::CheckFinish();

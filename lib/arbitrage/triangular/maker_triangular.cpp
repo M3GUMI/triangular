@@ -242,9 +242,6 @@ namespace Arbitrage{
         // 盘口价格
         Pathfinder::GetExchangePriceResp res;
         auto err = pathfinder.GetExchangePrice(req, res);
-//        if (req.BaseToken == "XRP" && req.QuoteToken == "USDT"){
-//            spdlog::info("baseToken: {}, quoteToken: {}, buy price: {}, sell price: {}", baseToken, quoteToken, res.BuyPrice, res.SellPrice);
-//        }
         if (err > 0) {
             spdlog::info("{}:makerOrderChangeHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             return;
@@ -262,10 +259,7 @@ namespace Arbitrage{
             newPrice = res.SellPrice * (1 + this->open);
             newQuantity = 20; // todo 固定20刀
 
-//            if (this->PendingOrder != nullptr)
-//            {
-//                spdlog::info("side:{}, sellprice:{}, price:{}",newSide, res.SellPrice * (1 + this->close), this->PendingOrder->Price);
-//            }
+
             if (this->PendingOrder != nullptr && res.SellPrice * (1 + this->close) < this->PendingOrder->Price)
             {
                 // 盘口低于期望价格，撤单重挂
@@ -278,10 +272,7 @@ namespace Arbitrage{
             newSide = define::BUY;
             newPrice = res.BuyPrice * (1 - this->open);
             newQuantity = RoundDouble(20 / newPrice); // todo 固定20刀
-//            if (this->PendingOrder != nullptr)
-//            {
-//                spdlog::info("side:{}, sellprice:{}, price:{}",newSide, res.BuyPrice * (1 - this->close), this->PendingOrder->Price);
-//            }
+
             if (this->PendingOrder != nullptr && res.BuyPrice * (1 - this->close) > this->PendingOrder->Price)
             {
                 // 盘口高于期望价格，撤单重挂
@@ -307,7 +298,6 @@ namespace Arbitrage{
 
             //挂出新单
             uint64_t orderId = 0;
-//            spdlog::info("成功挂出");
             ExecuteTrans(orderId, 1, path);
             this->PendingOrder = orderMap[orderId];
         }
