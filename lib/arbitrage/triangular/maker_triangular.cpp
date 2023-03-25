@@ -43,7 +43,7 @@ namespace Arbitrage{
         this->quoteToken = quote;
 
         // todo 后续改成通用逻辑
-        orderWrapper.SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler,  this, std::placeholders::_1, std::placeholders::_2));
+        orderWrapper.SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
         MakerTriangularArbitrage::makerOrderChangeHandler();
 
         return 0;
@@ -84,7 +84,7 @@ namespace Arbitrage{
             return makerHandler(data);
         }
 
-        if (data.Phase == 3 )
+        if (data.Phase == 3)
         {
             this->currentPhase = this->currentPhase + 1;
             if (PathQuantity != 0){
