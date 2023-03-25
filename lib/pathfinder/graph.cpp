@@ -190,24 +190,25 @@ namespace Pathfinder{
             // 如果本路径本就是最优路径则更新profit
             else {
                 list<BestPath>::iterator p;
-                auto bestPaths = bestPathMap[key];
+                list<BestPath>* bestPaths = &bestPathMap[key];
 
                 // 如果当前路径已被记录就删除，之后重新插入
-                for(p = bestPaths.begin(); p != bestPaths.end(); p++){
+                for(p = bestPaths->begin(); p != bestPaths->end(); p++){
                     if (path->Steps == p->bestPath){
-                        bestPaths.erase(p);
+                        bestPaths->erase(p);
                         break;
                     }
                 }
 
                 // 插入路径
-                for(p = bestPaths.begin(); p != bestPaths.end(); p++) {
+                for(p = bestPaths->begin(); p != bestPaths->end(); p++) {
                     if (p->profit < currentProfit) {
-                        bestPaths.insert(p, {path->Steps, currentProfit});
+                        bestPaths->insert(p, {path->Steps, currentProfit});
+                        break;
                     }
                 }
-                if (p == bestPaths.end()) {
-                    bestPaths.insert(p, {path->Steps, currentProfit});
+                if (p == bestPaths->end()) {
+                    bestPaths->insert(p, {path->Steps, currentProfit});
                 }
             }
         }
