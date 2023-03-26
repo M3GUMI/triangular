@@ -35,14 +35,18 @@ namespace WebsocketWrapper
 
     void BinanceOrderWrapper::keepListenKeyHandler(bool call)
     {
-        /*uint64_t next_keep_time_ms = 1000 * 60 * 20;
-        auto listenkeyKeepTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(this->ioService,
+        uint64_t next_keep_time_ms = 1000 * 60 * 20;
+        listenkeyKeepTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(this->ioService,
                                                                                          websocketpp::lib::asio::milliseconds(
                                                                                                  next_keep_time_ms));
         listenkeyKeepTimer->async_wait(bind(&BinanceOrderWrapper::keepListenKeyHandler, this, true));
 
+        if (!call) {
+            return;
+        }
+
         auto func = [](string listenKey, int err) -> void{};
-        apiWrapper.CreateListenKey(this->listenKey, func);*/
+        apiWrapper.CreateListenKey(this->listenKey, func);
     }
 
     void BinanceOrderWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)
