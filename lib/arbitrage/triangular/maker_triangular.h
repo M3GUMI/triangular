@@ -40,7 +40,7 @@ namespace Arbitrage
         std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> retryTimer;//市价吃单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> lastOrderTimer;//市价吃单计时器
-
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> cancelOrderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> mockPriceTimer;//mock测试价格变化计时器
 
         void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单

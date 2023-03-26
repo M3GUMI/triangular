@@ -43,7 +43,7 @@ namespace Arbitrage{
         this->quoteToken = quote;
 
         // todo 后续改成通用逻辑
-        orderWrapper.SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler,  this, std::placeholders::_1, std::placeholders::_2));
+        orderWrapper.SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
         MakerTriangularArbitrage::makerOrderChangeHandler();
 
         return 0;
@@ -84,7 +84,7 @@ namespace Arbitrage{
             return makerHandler(data);
         }
 
-        if (data.Phase == 3 )
+        if (data.Phase == 3)
         {
             this->currentPhase = this->currentPhase + 1;
             if (PathQuantity != 0){
@@ -134,7 +134,7 @@ namespace Arbitrage{
         // todo retryTime++;
         auto chance = pathfinder.FindBestPath(req);
         auto realProfit = data.GetParsePrice() * chance.Profit;
-        if (realProfit > 1)
+        if (realProfit > 1.0005)
         {
             uint64_t orderId;
             spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", this->strategy.StrategyName, realProfit,
@@ -190,16 +190,16 @@ namespace Arbitrage{
         if (step.Side == define::SELL) {
             if (resp.SellPrice > step.Price) {
                 step.Price = resp.SellPrice;
-                if(data.Phase == 2){
-                    step.Price *= 1.0015;
-                }
+                /*if(data.Phase == 2){
+                    step.Price *= 1.0003;
+                }*/
             }
         } else {
             if (resp.BuyPrice < this->lastStep.Price) {
                 step.Price = resp.BuyPrice;
-                if(data.Phase == 2){
+                /*if(data.Phase == 2){
                     step.Price *= 0.9995;
-                }
+                }*/
             }
         }
 
@@ -259,11 +259,9 @@ namespace Arbitrage{
             newPrice = res.SellPrice * (1 + this->open);
             newQuantity = 20; // todo 固定20刀
 
-
             if (this->PendingOrder != nullptr && res.SellPrice * (1 + this->close) < this->PendingOrder->Price)
             {
                 // 盘口低于期望价格，撤单重挂
-                spdlog::info("need:{}", needReOrder);
                 needReOrder = true;
             }
         }
@@ -276,7 +274,6 @@ namespace Arbitrage{
             if (this->PendingOrder != nullptr && res.BuyPrice * (1 - this->close) > this->PendingOrder->Price)
             {
                 // 盘口高于期望价格，撤单重挂
-                spdlog::info("need:{}", needReOrder);
                 needReOrder = true;
             }
         }
@@ -284,6 +281,22 @@ namespace Arbitrage{
             // 取消旧单
             if (this->PendingOrder != nullptr) {
                 apiWrapper.CancelOrder(this->PendingOrder->OrderId);
+                this->PendingOrder = nullptr;
+            } else {
+                Pathfinder::TransactionPathItem path{
+                        .BaseToken = this->baseToken,
+                        .QuoteToken = this->quoteToken,
+                        .Side = newSide,
+                        .OrderType = define::LIMIT_MAKER,
+                        .TimeInForce = define::GTC,
+                        .Price = newPrice,
+                        .Quantity = newQuantity
+                };
+
+                //挂出新单
+                uint64_t orderId = 0;
+                ExecuteTrans(orderId, 1, path);
+                this->PendingOrder = orderMap[orderId];
             }
 
             Pathfinder::TransactionPathItem path{

@@ -40,6 +40,7 @@ namespace Arbitrage{
                      this->strategy.StrategyName, this->FinalQuantity / this->OriginQuantity, this->FinalQuantity, this->OriginQuantity);
         finished = true;
         if (this->subscriber != nullptr) {
+            spdlog::info("finish:subscriber");
             this->subscriber();
         }
         return true;
