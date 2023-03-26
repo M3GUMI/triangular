@@ -64,6 +64,7 @@ namespace Pathfinder{
         double SellQuantity = 0; // 可卖出的数量
         double BuyPrice = 0; // 可买入的价格
         double BuyQuantity = 0; // 可买入的数量
+        time_t UpdateTime = 0; // 更新时间
     };
 
     struct BestPath
@@ -100,8 +101,6 @@ namespace Pathfinder{
         // 套利计算分组，一次只算500个环。取值为0-499、500-999、1000-1499、1500-1999、2000-2113
         int indexStart = 0;
         int groupSize = 500;
-
-
 
         struct Triangular
         {

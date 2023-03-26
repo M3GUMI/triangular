@@ -22,6 +22,8 @@ namespace WebsocketWrapper
         string sendMsg;
         string uri;
 
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> pingTimer;
+
         websocketpp::connection_hdl hdl;
         websocketpp::client<websocketpp::config::asio_tls_client> client;
 
@@ -29,6 +31,7 @@ namespace WebsocketWrapper
         websocketpp::lib::shared_ptr<websocketpp::lib::asio::ssl::context> on_tls_init(websocketpp::connection_hdl); // ssl安全 http转https
         void on_open(websocketpp::connection_hdl hdl);
         void on_fail(websocketpp::connection_hdl hdl);
+        void on_ping_timer();
         void send(const string &data);
 
     protected:

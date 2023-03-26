@@ -58,9 +58,9 @@ namespace WebsocketWrapper
 
     void WebsocketWrapper::on_open(websocketpp::connection_hdl hdl)
     {
-        // todo ping timer
-        // ping_timer = std::make_shared<websocketpp::lib::asio::steady_timer>(*_ios, websocketpp::lib::asio::milliseconds(10000));
-        // ping_timer->async_wait(websocketpp::lib::bind(&BaseExchange::on_ping_timer, this, websocketpp::lib::placeholders::_1));
+        pingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(this->ioService, websocketpp::lib::asio::milliseconds(10000));
+        pingTimer->async_wait(bind(&WebsocketWrapper::on_ping_timer, this));
+
         this->hdl = hdl;
         this->Status = define::SocketStatusConnected;
         send(sendMsg);
@@ -69,6 +69,12 @@ namespace WebsocketWrapper
     void WebsocketWrapper::on_fail(websocketpp::connection_hdl hdl)
     {
         this->Status = define::SocketStatusFailConnect;
+    }
+
+    void WebsocketWrapper::on_ping_timer()
+    {
+        websocketpp::lib::error_code ec;
+        client.send(hdl, "ping", websocketpp::frame::opcode::text, ec);
     }
 
     void WebsocketWrapper::send(const std::string &data)
