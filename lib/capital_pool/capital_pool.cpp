@@ -58,7 +58,7 @@ namespace CapitalPool
                 auto err = tryRebalance(token, conf::BaseAsset, freeAmount);
                 if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional)
                 {
-                    spdlog::error("func: RebalancePool, err: {}", WrapErr(err));
+                    spdlog::debug("func: RebalancePool, err: {}", WrapErr(err));
                 }
             }
         }
