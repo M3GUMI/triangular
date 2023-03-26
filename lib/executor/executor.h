@@ -21,7 +21,6 @@ namespace Executor
         std::shared_ptr<websocketpp::lib::asio::steady_timer> checkTimer; // 计时器
         int executeTime = 1;
         bool lock = false; // 同时只执行一个套利任务
-        auto err = std::make_shared<int>(0); //
         void arbitragePathHandler(Pathfinder::ArbitrageChance& chance);
 
         void arbitrageFinishHandler();

@@ -42,7 +42,7 @@ namespace Executor{
         auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
                 ioService, orderWrapper, pathfinder, capitalPool, apiWrapper
         );
-        auto err = makerTriangular->Run("XRP", "USDT");
+        auto err = makerTriangular->Run("USDT", "XRP", 20);
         if (err > 0)
         {
             return;
@@ -77,35 +77,12 @@ namespace Executor{
 
     void Executor::arbitrageFinishHandler() {
         spdlog::info("intoxxxxxx");
-         this->lock = false;
         capitalPool.Refresh();
         if (executeTime <= 10){
+            this->lock = false;
             executeTime++;
-            auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
-                    ioService, orderWrapper, pathfinder, capitalPool, apiWrapper
-            );
-            auto err = std::make_shared<int>(0);
-            rerunTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
-                                                                                websocketpp::lib::asio::milliseconds(1000));
-            rerunTimer->async_wait([makerTriangular, &err](const boost::system::error_code& ec)
-                                   {
-                                       if (ec)
-                                       {
-                                           // 处理错误
-                                           *err = -1;
-                                           return;
-                                       }
-                                       *err = makerTriangular->Run("XRP", "USDT");
-                                   });
-//            auto err = makerTriangular->Run("XRP", "USDT");
-            if (*err > 0)
-            {
-                spdlog::info("rerun_error");
-                return;
-            }
-            spdlog::info("executeTime:{}", executeTime);
-            makerTriangular->SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
         }
+
         if (!conf::EnableMock) {
             apiWrapper.GetUserAsset(bind(&Executor::print, this, placeholders::_1));
         }

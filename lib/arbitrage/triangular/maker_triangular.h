@@ -19,7 +19,7 @@ namespace Arbitrage
 
         ~MakerTriangularArbitrage();
 
-        int Run(string baseToken, string quoteToken);
+        int Run(const string& baseToken, const string& quoteToken, int amount);
 
     private:
         websocketpp::lib::asio::io_service& ioService;
@@ -48,7 +48,7 @@ namespace Arbitrage
 
         void TransHandler(OrderData& data) override;
 
-        void mockTrader(const string& base, string quote, double buyPrice, double sellPrice);
+        void mockTrader(const string& origin, string step, double buyPrice, double sellPrice);
 
         map<string, double> mockPriceControl(OrderData& PendingOrder);
     };

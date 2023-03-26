@@ -220,7 +220,7 @@ namespace CapitalPool
         spdlog::info("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
     }
 
-    int CapitalPool::  LockAsset(const string& token, double amount, double& lockAmount) {
+    int CapitalPool::LockAsset(const string& token, double amount, double& lockAmount) {
         if (locked) {
             spdlog::error(
                     "func: LockAsset, token: {}, amount: {}, err: {}",
