@@ -13,7 +13,7 @@ int main() {
     CapitalPool::CapitalPool capitalPool(ioService, pathfinder, apiWrapper);
     Executor::Executor executor(ioService, orderWrapper, pathfinder, capitalPool, apiWrapper);
 
-    apiWrapper.GetOpenOrder("XRPBUSD");
+    apiWrapper.GetOpenOrder("XRPUSDT");
 
     apiWrapper.InitBinanceSymbol();
     ioService.run();

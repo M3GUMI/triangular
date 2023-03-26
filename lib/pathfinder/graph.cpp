@@ -138,9 +138,6 @@ namespace Pathfinder{
         auto quoteIndex = tokenToIndex[data.QuoteToken];
 
         auto node = tradeNodeMap[formatKey(baseIndex, quoteIndex)];
-        if(data.BaseToken=="XRP" && data.QuoteToken=="USDT"){
-//            spdlog::info("update node, sellPrice: {}, buyPrice: {}", data.Bids[0].Price, data.Asks[0].Price);
-        }
         if (not data.Bids.empty())
         { // 买单挂出价，我方卖出价
             node->UpdateSell(data.Bids);
@@ -148,9 +145,6 @@ namespace Pathfinder{
         if (!data.Asks.empty())
         { // 卖单挂出价，我方买入价
             node->UpdateBuy(data.Asks);
-        }
-        if(data.BaseToken=="XRP" && data.QuoteToken=="USDT"){
-//            spdlog::info("update node 2, sellPrice: {}, buyPrice: {}", node->GetOriginPrice(baseIndex, quoteIndex), node->GetOriginPrice(quoteIndex, baseIndex));
         }
 
         if (define::IsStableCoin(data.BaseToken)){
@@ -216,17 +210,6 @@ namespace Pathfinder{
                 if (p == bestPaths->end()) {
                     bestPaths->insert(p, {path->Steps, currentProfit});
                 }
-
-//                if (indexToToken[path->Steps[0]]=="XRP" && indexToToken[path->Steps[path->Steps.size()-1]]=="USDT") {
-//                    int i = 0;
-//                    for(p = bestPaths->begin(); p != bestPaths->end(); p++){
-//                        if (path->Steps == p->bestPath){
-//                            spdlog::info("bestPath, size: {}, i: {}, profit: {}, max profit: {}", bestPaths->size(), i, p->profit, bestPaths->begin()->profit);
-//                            break;
-//                        }
-//                        i++;
-//                    }
-//                }
             }
         }
 

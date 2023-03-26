@@ -298,21 +298,6 @@ namespace Arbitrage{
                 ExecuteTrans(orderId, 1, path);
                 this->PendingOrder = orderMap[orderId];
             }
-
-            Pathfinder::TransactionPathItem path{
-                    .BaseToken = this->baseToken,
-                    .QuoteToken = this->quoteToken,
-                    .Side = newSide,
-                    .OrderType = define::LIMIT_MAKER,
-                    .TimeInForce = define::GTC,
-                    .Price = newPrice,
-                    .Quantity = newQuantity
-            };
-
-            //挂出新单
-            uint64_t orderId = 0;
-            ExecuteTrans(orderId, 1, path);
-            this->PendingOrder = orderMap[orderId];
         }
     }
 

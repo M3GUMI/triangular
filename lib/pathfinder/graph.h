@@ -76,7 +76,7 @@ namespace Pathfinder{
     class Graph {
     public:
         function<void(ArbitrageChance& chance)> subscriber = nullptr;
-        function<void(const string& base, string quote, double buyPrice, double sellPrice)>   mockSubscriber = nullptr;
+        function<void(const string& base, string quote, double buyPrice, double sellPrice)> mockSubscriber = nullptr;
         Graph(HttpWrapper::BinanceApiWrapper &apiWrapper);
         ~Graph();
 
