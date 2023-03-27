@@ -26,14 +26,13 @@ namespace WebsocketWrapper
 
         websocketpp::connection_hdl hdl;
         websocketpp::client<websocketpp::config::asio_tls_client> client;
-
+        void on_disconnect(websocketpp::connection_hdl hdl);
         // 事件触发函数
         websocketpp::lib::shared_ptr<websocketpp::lib::asio::ssl::context> on_tls_init(websocketpp::connection_hdl); // ssl安全 http转https
         void on_open(websocketpp::connection_hdl hdl);
         void on_fail(websocketpp::connection_hdl hdl);
         void on_ping_timer();
         void send(const string &data);
-
     protected:
         // 连接
         websocketpp::lib::asio::io_service &ioService;

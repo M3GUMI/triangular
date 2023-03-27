@@ -71,10 +71,22 @@ namespace WebsocketWrapper
         this->Status = define::SocketStatusFailConnect;
     }
 
+    void WebsocketWrapper::on_disconnect(websocketpp::connection_hdl hdl)
+    {
+        this->Status = define::SocketStatusFailConnect;
+    }
+
     void WebsocketWrapper::on_ping_timer()
     {
         websocketpp::lib::error_code ec;
-        client.send(hdl, "ping", websocketpp::frame::opcode::text, ec);
+        client.ping(hdl, "ping", ec);
+//        spdlog::info("ping:{}", ec.message());
+//        if (ec.message() == "invalid state"){
+//            this->Status = define::SocketStatusFailConnect;
+//            spdlog::info("reconnecting...");
+//        }
+        pingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(this->ioService, websocketpp::lib::asio::milliseconds(5000));
+        pingTimer->async_wait(bind(&WebsocketWrapper::on_ping_timer, this));
     }
 
     void WebsocketWrapper::send(const std::string &data)
