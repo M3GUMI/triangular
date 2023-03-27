@@ -197,8 +197,6 @@ namespace Arbitrage{
             }
         }
 
-        spdlog::info("sellPrice: {}, buyPrice: {}, updateTime: {}", resp.SellPrice, resp.BuyPrice, resp.UpdateTime);
-
         if (data.GetToToken() == this->lastStep.BaseToken) {
             step.Quantity = data.GetNewQuantity();
         } else if (data.GetToToken() == this->lastStep.QuoteToken) {
