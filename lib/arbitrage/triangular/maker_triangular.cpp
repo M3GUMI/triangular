@@ -86,7 +86,7 @@ namespace Arbitrage{
 
         if (data.Phase == 3)
         {
-            this->currentPhase = this->currentPhase + 1;
+            // this->currentPhase = this->currentPhase + 1;
             if (PathQuantity != 0){
                 FinalQuantity += (PathQuantity-data.GetExecuteQuantity()) * data.Price;
                 spdlog::info("pathQuantity:{}", PathQuantity);
@@ -190,18 +190,14 @@ namespace Arbitrage{
         if (step.Side == define::SELL) {
             if (resp.SellPrice > step.Price) {
                 step.Price = resp.SellPrice;
-                /*if(data.Phase == 2){
-                    step.Price *= 1.0003;
-                }*/
             }
         } else {
             if (resp.BuyPrice < this->lastStep.Price) {
                 step.Price = resp.BuyPrice;
-                /*if(data.Phase == 2){
-                    step.Price *= 0.9995;
-                }*/
             }
         }
+
+        spdlog::info("sellPrice: {}, buyPrice: {}, updateTime: {}", res.SellPrice, res.BuyPrice, res.UpdateTime);
 
         if (data.GetToToken() == this->lastStep.BaseToken) {
             step.Quantity = data.GetNewQuantity();

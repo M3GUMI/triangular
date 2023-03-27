@@ -178,10 +178,10 @@ namespace Arbitrage{
 
         if(order->Phase == 1 && overFirstStep == false && order->OrderStatus == define::FILLED ){
             overFirstStep = true;
-                OriginQuantity = order->GetExecuteQuantity();
+            OriginQuantity = order->GetExecuteQuantity();
         }
         else if(order->Phase == 2 ){
-              PathQuantity = order->GetNewQuantity();
+            PathQuantity = order->GetNewQuantity();
         }
         else if(data.Phase == 3 ){
                }
