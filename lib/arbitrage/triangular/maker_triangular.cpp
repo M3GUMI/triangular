@@ -252,8 +252,6 @@ namespace Arbitrage{
         double newPrice = 0;
         double newQuantity = 0;
 
-        spdlog::info("sellPrice: {}, buyPrice: {}, updateTime: {}", res.SellPrice, res.BuyPrice, res.UpdateTime);
-
         if (req.BaseToken == this->TargetToken)
         {
             spdlog::info("nullptr");
