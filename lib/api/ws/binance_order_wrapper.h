@@ -13,6 +13,8 @@ namespace WebsocketWrapper
         vector<function<void(OrderData &data, int err)>> orderSubscriber;
         HttpWrapper::BinanceApiWrapper &apiWrapper;
 
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> listenkeyKeepTimer;
+
         void createListenKeyHandler(string listenKey, int err);
         void keepListenKeyHandler(bool call);
         void msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg);

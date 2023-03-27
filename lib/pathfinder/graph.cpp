@@ -140,11 +140,11 @@ namespace Pathfinder{
         auto node = tradeNodeMap[formatKey(baseIndex, quoteIndex)];
         if (not data.Bids.empty())
         { // 买单挂出价，我方卖出价
-            node->UpdateSell(data.Bids);
+            node->UpdateSell(data.Bids, data.UpdateTime);
         }
         if (!data.Asks.empty())
         { // 卖单挂出价，我方买入价
-            node->UpdateBuy(data.Asks);
+            node->UpdateBuy(data.Asks, data.UpdateTime);
         }
 
         if (define::IsStableCoin(data.BaseToken)){
@@ -288,6 +288,7 @@ namespace Pathfinder{
         resp.SellQuantity = node->GetQuantity(baseIndex, quoteIndex);
         resp.BuyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
         resp.BuyQuantity = node->GetQuantity(quoteIndex, baseIndex);
+        resp.UpdateTime = node->updateTime;
 
         // maker不可下单到对手盘
         auto symbolData = apiWrapper.GetSymbolData(req.BaseToken, req.QuoteToken);

@@ -98,9 +98,9 @@ namespace Pathfinder
 
         double GetQuantity(int fromIndex, int toIndex);
 
-        double UpdateSell(vector<WebsocketWrapper::DepthItem> depth);
+        double UpdateSell(vector<WebsocketWrapper::DepthItem> depth, time_t updateTime);
 
-        double UpdateBuy(vector<WebsocketWrapper::DepthItem> depth);
+        double UpdateBuy(vector<WebsocketWrapper::DepthItem> depth, time_t updateTime);
 
         void mockSetOriginPrice(int fromIndex, int toIndex, double price);
 
@@ -109,6 +109,8 @@ namespace Pathfinder
         vector<int> mockGetIndexs();
 
         TransactionPathItem Format(conf::Step& step, map<int, string>& indexToToken, int from, int to);
+
+        time_t updateTime = 0;
 
     private:
         int baseIndex = 0;   // baseToken序号

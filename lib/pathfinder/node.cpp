@@ -1,5 +1,6 @@
 #include "define/define.h"
 #include "node.h"
+#include <utility>
 
 namespace Pathfinder
 {
@@ -72,14 +73,16 @@ namespace Pathfinder
         return 0;
     }
 
-    double Node::UpdateSell(vector<WebsocketWrapper::DepthItem> depth)
+    double Node::UpdateSell(vector<WebsocketWrapper::DepthItem> depth, time_t time)
     {
-        this->sellDepth = depth;
+        this->updateTime = time;
+        this->sellDepth = std::move(depth);
     }
 
-    double Node::UpdateBuy(vector<WebsocketWrapper::DepthItem> depth)
+    double Node::UpdateBuy(vector<WebsocketWrapper::DepthItem> depth, time_t time)
     {
-        this->buyDepth = depth;
+        this->updateTime = time;
+        this->buyDepth = std::move(depth);
     }
 
     TransactionPathItem Node::Format(conf::Step& step, map<int, string>& indexToToken, int from, int to) {

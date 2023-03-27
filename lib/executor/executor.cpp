@@ -42,7 +42,7 @@ namespace Executor{
         auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
                 ioService, orderWrapper, pathfinder, capitalPool, apiWrapper
         );
-        auto err = makerTriangular->Run("XRP", "USDT");
+        auto err = makerTriangular->Run("USDT", "XRP", 20);
         if (err > 0)
         {
             return;
@@ -76,12 +76,13 @@ namespace Executor{
     }
 
     void Executor::arbitrageFinishHandler() {
-        // this->lock = false;
+        spdlog::info("intoxxxxxx");
         capitalPool.Refresh();
-        if (executeTime < 10){
+        if (executeTime <= 10){
+            this->lock = false;
             executeTime++;
-            initMaker();
         }
+
         if (!conf::EnableMock) {
             apiWrapper.GetUserAsset(bind(&Executor::print, this, placeholders::_1));
         }

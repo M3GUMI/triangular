@@ -23,24 +23,25 @@ namespace Arbitrage{
                 std::placeholders::_2,
                 std::placeholders::_3,
                 std::placeholders::_4
-                )));
+        )));
     }
 
     MakerTriangularArbitrage::~MakerTriangularArbitrage() = default;
 
-    int MakerTriangularArbitrage::Run(string base, string quote) {
+    int MakerTriangularArbitrage::Run(const string& origin, const string& step, int amount) {
         double lockedQuantity;
-        if (auto err = capitalPool.LockAsset("USDT", 20, lockedQuantity); err > 0) {
+        if (auto err = capitalPool.LockAsset(origin, amount, lockedQuantity); err > 0) {
             return err;
         }
 
-        spdlog::info("{}::Run, symbol: {}", this->strategy.StrategyName, base+quote);
+        auto symbolData = apiWrapper.GetSymbolData(origin, step);
+        spdlog::info("{}::Run, symbol: {}", this->strategy.StrategyName, symbolData.Symbol);
 
         this->OriginQuantity = lockedQuantity;
-        this->TargetToken = "USDT";
+        this->TargetToken = origin;
         this->currentPhase = 1;
-        this->baseToken = base;
-        this->quoteToken = quote;
+        this->baseToken = symbolData.BaseToken;
+        this->quoteToken = symbolData.QuoteToken;
 
         // todo 后续改成通用逻辑
         orderWrapper.SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
@@ -66,7 +67,6 @@ namespace Arbitrage{
 
         if (data.OrderStatus != define::FILLED)
         {
-            spdlog::info("not_filled_status:{}", data.OrderStatus);
             // 暂定执行完才处理
             return;
         }
@@ -159,7 +159,7 @@ namespace Arbitrage{
         }
         else
         {
-            spdlog::info("{}::TakerHandler,failed_path:{}, profit:{}",this->strategy.StrategyName,  spdlog::fmt_lib::join(chance.Format(), ","),realProfit);
+            // spdlog::info("{}::TakerHandler,failed_path:{}, profit:{}",this->strategy.StrategyName,  spdlog::fmt_lib::join(chance.Format(), ","),realProfit);
             retryTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
                                                                         websocketpp::lib::asio::milliseconds(20));
             retryTimer->async_wait(bind(&MakerTriangularArbitrage::takerHandler, this, data));
@@ -252,12 +252,12 @@ namespace Arbitrage{
         double newPrice = 0;
         double newQuantity = 0;
 
-        if (req.BaseToken == "USDT")
+        if (req.BaseToken == this->TargetToken)
         {
             spdlog::info("nullptr");
             newSide = define::SELL;
             newPrice = res.SellPrice * (1 + this->open);
-            newQuantity = 20; // todo 固定20刀
+            newQuantity = this->OriginQuantity;
 
             if (this->PendingOrder != nullptr && res.SellPrice * (1 + this->close) < this->PendingOrder->Price)
             {
@@ -269,7 +269,7 @@ namespace Arbitrage{
         {
             newSide = define::BUY;
             newPrice = res.BuyPrice * (1 - this->open);
-            newQuantity = RoundDouble(20 / newPrice); // todo 固定20刀
+            newQuantity = RoundDouble(this->OriginQuantity / newPrice);
 
             if (this->PendingOrder != nullptr && res.BuyPrice * (1 - this->close) > this->PendingOrder->Price)
             {
@@ -302,7 +302,7 @@ namespace Arbitrage{
     }
 
     void MakerTriangularArbitrage::mockTrader(const string& base, string quote, double buyPrice, double sellPrice) {
-            if (!conf::EnableMock) {
+        if (!conf::EnableMock) {
             return;
         }
 
