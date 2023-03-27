@@ -22,6 +22,7 @@ namespace Arbitrage{
     bool TriangularArbitrage::CheckFinish()
     {
         if (finished) {
+            spdlog::info("finished:{}", finished);
             return true;
         }
 
@@ -32,6 +33,8 @@ namespace Arbitrage{
                 order->OrderStatus != define::PARTIALLY_FILLED &&
                 order->OrderStatus != define::EXPIRED)
             {
+                spdlog::info("order:{},base:{}, quote:{}, side:{}, ExecuteQuantity:{},NewQuantity:{},finished:{}",
+                             order->OrderStatus, order->BaseToken, order->QuoteToken, order->Side, order->ExecuteQuantity,order->GetNewQuantity(), "false");
                 return false;
             }
         }
@@ -39,6 +42,10 @@ namespace Arbitrage{
         spdlog::info("{}::Finish, profit: {}, finalQuantity: {}, originQuantity: {}",
                      this->strategy.StrategyName, this->FinalQuantity / this->OriginQuantity, this->FinalQuantity, this->OriginQuantity);
         finished = true;
+        if (this->subscriber == nullptr)
+        {
+            spdlog::info("subscriber:null");
+        }
         if (this->subscriber != nullptr) {
             spdlog::info("finish:subscriber");
             this->subscriber();
