@@ -564,7 +564,7 @@ namespace HttpWrapper
         req.method = "PUT";
         req.uri = uri;
         req.data = "";
-        req.sign = true;
+        req.sign = false;
         req.args["listenKey"] = std::move(listenKey);
         auto apiCallback = bind(&BinanceApiWrapper::keepListenKeyCallback, this, placeholders::_1, placeholders::_2);
 
