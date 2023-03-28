@@ -7,7 +7,7 @@ namespace WebsocketWrapper
 {
     BinanceOrderWrapper::BinanceOrderWrapper(websocketpp::lib::asio::io_service& ioService, HttpWrapper::BinanceApiWrapper& binanceApiWrapper, string hostname, string hostport): WebsocketWrapper(hostname, hostport, ioService), apiWrapper(binanceApiWrapper)
     {
-        apiWrapper.CreateListenKey("", bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
+        apiWrapper.CreateListenKey(bind(&BinanceOrderWrapper::createListenKeyHandler, this, placeholders::_1, placeholders::_2));
     }
 
     BinanceOrderWrapper::~BinanceOrderWrapper()
@@ -35,18 +35,12 @@ namespace WebsocketWrapper
 
     void BinanceOrderWrapper::keepListenKeyHandler(bool call)
     {
-        uint64_t next_keep_time_ms = 1000 * 60 * 20;
         listenkeyKeepTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(this->ioService,
                                                                                          websocketpp::lib::asio::milliseconds(
-                                                                                                 next_keep_time_ms));
+                                                                                                 1000 * 60 * 20));
         listenkeyKeepTimer->async_wait(bind(&BinanceOrderWrapper::keepListenKeyHandler, this, true));
 
-        if (!call) {
-            return;
-        }
-
-        auto func = [](string listenKey, int err) -> void{};
-        apiWrapper.CreateListenKey(this->listenKey, func);
+        apiWrapper.KeepListenKey(this->listenKey);
     }
 
     void BinanceOrderWrapper::msgHandler(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr msg)
