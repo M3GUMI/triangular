@@ -39,7 +39,7 @@ namespace Pathfinder
             double quantity = 0;
             for (auto depth : sellDepth){
                 quantity += depth.Quantity;
-                if (quantity * toDollar >= 20){
+                if (quantity * toDollar >= 15){
                     return depth.Price;
                 }
             }
@@ -55,7 +55,7 @@ namespace Pathfinder
             double quantity = 0;
             for (auto depth : buyDepth){
                 quantity += depth.Quantity;
-                if (quantity * toDollar >= 20){
+                if (quantity * toDollar >= 15){
                     return depth.Price;
                 }
             }
