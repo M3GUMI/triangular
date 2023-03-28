@@ -8,11 +8,10 @@ using namespace std;
 namespace Executor{
     Executor::Executor(
             websocketpp::lib::asio::io_service& ioService,
-            WebsocketWrapper::BinanceOrderWrapper& orderWrapper,
             Pathfinder::Pathfinder &pathfinder,
             CapitalPool::CapitalPool &capitalPool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
-    ) : ioService(ioService), orderWrapper(orderWrapper), pathfinder(pathfinder), capitalPool(capitalPool), apiWrapper(apiWrapper) {
+    ) : ioService(ioService), pathfinder(pathfinder), capitalPool(capitalPool), apiWrapper(apiWrapper) {
         pathfinder.SubscribeArbitrage((bind(&Executor::arbitragePathHandler, this, placeholders::_1)));
         pathfinder.SubscribeDepthReady(bind(&Executor::Init, this));
     }
@@ -41,7 +40,7 @@ namespace Executor{
         apiWrapper.GetUserAsset(bind(&Executor::print, this, placeholders::_1));
 
         auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
-                ioService, orderWrapper, pathfinder, capitalPool, apiWrapper
+                ioService, pathfinder, capitalPool, apiWrapper
         );
         auto err = makerTriangular->Run("USDT", "XRP", 20);
         if (err > 0)
