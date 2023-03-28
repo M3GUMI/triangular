@@ -76,9 +76,9 @@ namespace Executor{
     }
 
     void Executor::arbitrageFinishHandler() {
-        spdlog::info("intoxxxxxx");
+        spdlog::info("executor::arbitrageFinishHandler, orderFinish!!! ");
         capitalPool.Refresh();
-        if (executeTime <= 10){
+        if (executeTime <= 5){
             this->lock = false;
             executeTime++;
         }

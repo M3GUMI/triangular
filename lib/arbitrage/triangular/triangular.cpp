@@ -31,7 +31,8 @@ namespace Arbitrage{
             auto order = item.second;
             if (order->OrderStatus != define::FILLED &&
                 order->OrderStatus != define::PARTIALLY_FILLED &&
-                order->OrderStatus != define::EXPIRED)
+                order->OrderStatus != define::EXPIRED &&
+                order->OrderStatus != define::NEW )
             {
                 spdlog::info("order:{},base:{}, quote:{}, side:{}, ExecuteQuantity:{},NewQuantity:{},finished:{}",
                              order->OrderStatus, order->BaseToken, order->QuoteToken, order->Side, order->ExecuteQuantity,order->GetNewQuantity(), "false");
