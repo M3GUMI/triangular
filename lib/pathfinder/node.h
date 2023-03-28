@@ -86,7 +86,7 @@ namespace Pathfinder
     class Node
     {
     public:
-        Node(int baseIndex, int quoteIndex);
+        Node(int baseIndex, int quoteIndexe2);
 
         ~Node() = default;
 
@@ -104,7 +104,15 @@ namespace Pathfinder
 
         void mockSetOriginPrice(int fromIndex, int toIndex, double price);
 
-        vector<WebsocketWrapper::DepthItem> getDepth(int fromIndex, int toIndex);
+        void setBase2Dollar(Node* node);
+
+        void setQuote2Dollar(Node* node);
+
+        int getBaseIndex();
+
+        int getQuoteIndex();
+
+        vector<WebsocketWrapper::DepthItem> getDepth(int index);
 
         vector<int> mockGetIndexs();
 
@@ -115,6 +123,8 @@ namespace Pathfinder
     private:
         int baseIndex = 0;   // baseToken序号
         int quoteIndex = 0;     // quoteToken序号
+        Node* base2Dollar;
+        Node* quote2Dollar;
 
         vector<WebsocketWrapper::DepthItem> sellDepth;
 

@@ -9,20 +9,56 @@ namespace Pathfinder
 
     }
 
+    int Node::getBaseIndex(){
+        return baseIndex;
+    }
+
+    int Node::getQuoteIndex() {
+        return quoteIndex;
+    }
+
+    void Node::setBase2Dollar(Node *node) {
+        base2Dollar = node;
+    }
+
+    void Node::setQuote2Dollar(Node *node) {
+        quote2Dollar = node;
+    }
+
     double Node::GetOriginPrice(int fromIndex, int toIndex)
     {
+        double toDollar = 0;
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
         {
-            if (this->sellDepth.size() == 0)
+            if (this->sellDepth.size() == 0 || base2Dollar == nullptr || base2Dollar->getDepth(fromIndex).size() == 0)
                 return 0;
-            return this->sellDepth[0].Price;
+
+            double toDollar = base2Dollar->getDepth(fromIndex)[0].Price;
+            if (toDollar==0)
+                return 0;
+            double quantity = 0;
+            for (auto depth : sellDepth){
+                quantity += depth.Quantity;
+                if (quantity * toDollar >= 20){
+                    return depth.Price;
+                }
+            }
         }
 
         if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
         {
-            if (this->buyDepth.size() == 0)
+            if (this->buyDepth.size() == 0 || quote2Dollar == nullptr || quote2Dollar->getDepth(fromIndex).size() == 0)
                 return 0;
-            return this->buyDepth[0].Price;
+            double toDollar = quote2Dollar->getDepth(fromIndex)[0].Price;
+            if (toDollar==0)
+                return 0;
+            double quantity = 0;
+            for (auto depth : buyDepth){
+                quantity += depth.Quantity;
+                if (quantity * toDollar >= 20){
+                    return depth.Price;
+                }
+            }
         }
 
         return 0;
@@ -116,13 +152,13 @@ namespace Pathfinder
         }
     }
 
-    vector<WebsocketWrapper::DepthItem> Node::getDepth(int fromIndex, int toIndex){
-        if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
+    vector<WebsocketWrapper::DepthItem> Node::getDepth(int index){
+        if (index == this->baseIndex)
         {
             return sellDepth;
         }
 
-        if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
+        if (index == this->quoteIndex)
         {
             return buyDepth;
         }
