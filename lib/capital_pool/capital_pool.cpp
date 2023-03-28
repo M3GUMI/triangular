@@ -230,7 +230,8 @@ namespace CapitalPool
             return define::ErrorCapitalRefresh;
         }
 
-        if (not balancePool.count(token) || balancePool[token] == 0) {
+        // todo 先写死，后面改
+        if (not balancePool.count(token) || balancePool[token] < 15) {
             spdlog::error(
                     "func: LockAsset, token: {}, amount: {}, err: {}",
                     token,

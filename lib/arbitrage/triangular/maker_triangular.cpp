@@ -86,7 +86,6 @@ namespace Arbitrage{
 
         if (data.Phase == 3)
         {
-            // this->currentPhase = this->currentPhase + 1;
             if (PathQuantity != 0){
                 FinalQuantity += (PathQuantity-data.GetExecuteQuantity()) * data.Price;
                 spdlog::info("pathQuantity:{}", PathQuantity);

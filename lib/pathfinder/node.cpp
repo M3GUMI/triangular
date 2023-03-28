@@ -9,56 +9,22 @@ namespace Pathfinder
 
     }
 
-    int Node::getBaseIndex(){
-        return baseIndex;
-    }
-
-    int Node::getQuoteIndex() {
-        return quoteIndex;
-    }
-
-    void Node::setBase2Dollar(Node *node) {
-        base2Dollar = node;
-    }
-
-    void Node::setQuote2Dollar(Node *node) {
-        quote2Dollar = node;
-    }
-
     double Node::GetOriginPrice(int fromIndex, int toIndex)
     {
-        double toDollar = 0;
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
         {
-            if (this->sellDepth.size() == 0 || base2Dollar == nullptr || base2Dollar->getDepth(fromIndex).size() == 0)
+            if (this->sellDepth.size() == 0)
                 return 0;
 
-            double toDollar = base2Dollar->getDepth(fromIndex)[0].Price;
-            if (toDollar==0)
-                return 0;
-            double quantity = 0;
-            for (auto depth : sellDepth){
-                quantity += depth.Quantity;
-                if (quantity * toDollar >= 15){
-                    return depth.Price;
-                }
-            }
+            return this->sellDepth[0].Price;
         }
 
         if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
         {
-            if (this->buyDepth.size() == 0 || quote2Dollar == nullptr || quote2Dollar->getDepth(fromIndex).size() == 0)
+            if (this->buyDepth.size() == 0)
                 return 0;
-            double toDollar = quote2Dollar->getDepth(fromIndex)[0].Price;
-            if (toDollar==0)
-                return 0;
-            double quantity = 0;
-            for (auto depth : buyDepth){
-                quantity += depth.Quantity;
-                if (quantity * toDollar >= 15){
-                    return depth.Price;
-                }
-            }
+
+            return this->buyDepth[0].Price;
         }
 
         return 0;
@@ -139,35 +105,15 @@ namespace Pathfinder
         return item;
     };
 
-    void Node::mockSetOriginPrice(int fromIndex, int toIndex, double price){
-
+    vector<WebsocketWrapper::DepthItem> Node::getDepth(int fromIndex, int toIndex){
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
-        {
-            this->sellDepth[0].Price = price;
-        }
-
-        if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
-        {
-            this->buyDepth[0].Price = price;
-        }
-    }
-
-    vector<WebsocketWrapper::DepthItem> Node::getDepth(int index){
-        if (index == this->baseIndex)
         {
             return sellDepth;
         }
 
-        if (index == this->quoteIndex)
+        if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
         {
             return buyDepth;
         }
-    }
-
-    vector<int> Node::mockGetIndexs(){
-        vector<int> indexs;
-        indexs[0] = baseIndex;
-        indexs[1] = quoteIndex;
-        return indexs;
     }
 }

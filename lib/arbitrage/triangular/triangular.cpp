@@ -152,8 +152,6 @@ namespace Arbitrage{
 
         OrderData* order = orderMap[data.OrderId];
         if (order->UpdateTime >= data.UpdateTime) {
-            spdlog::info("order->UpdateTime >= data.UpdateTime, order->UpdateTime:{}, data.UpdateTime:{}, order.phase: {}",
-                         order->UpdateTime, data.UpdateTime, order->Phase);
             if (order->OrderStatus != define::NEW || data.OrderStatus != define::FILLED) {
                 return;
             }
