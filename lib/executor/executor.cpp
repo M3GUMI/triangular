@@ -76,11 +76,10 @@ namespace Executor{
     }
 
     void Executor::arbitrageFinishHandler() {
-//        spdlog::info("executor::arbitrageFinishHandler, orderFinish!!! ");
         capitalPool.Refresh();
         if (executeTime <= 5){
             this->lock = false;
-            spdlog::info("executeTime:{}",  executeTime);
+            spdlog::info("func: arbitrageFinishHandler, executeTime:{}",  executeTime);
             executeTime++;
         }
 

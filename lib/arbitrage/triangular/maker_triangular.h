@@ -52,8 +52,6 @@ namespace Arbitrage
 
         void mockTrader(const string& origin, string step, double buyPrice, double sellPrice);
 
-        void takerQuitAndReopen();
-
         map<string, double> mockPriceControl(OrderData& PendingOrder);
     };
 }

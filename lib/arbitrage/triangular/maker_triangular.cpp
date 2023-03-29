@@ -109,8 +109,8 @@ namespace Arbitrage{
         req.Phase = newPhase;
 
         //重试次数过多，终止
-        if (retryTime > 10000) {
-            takerQuitAndReopen();
+        if (retryTime > 10000 && !takerPathFinded){
+            quitAndReopen = true;
         }
 
         if(!finished)
@@ -144,7 +144,7 @@ namespace Arbitrage{
             }
             else
             {
-                if (quitAndReopen == true)
+                if (quitAndReopen)
                 {
                     spdlog::info("{}::TakerHandler,quitAndReopen：{}, can_not_find_path,quit_and_reopen_project",
                                  this->strategy.StrategyName, quitAndReopen);
@@ -166,63 +166,65 @@ namespace Arbitrage{
 //            apiWrapper.CancelOrder(data.OrderId);
 //            orderMap[data.OrderId] = nullptr;
 //        }
-        if (!MakerExecuted)
-        {
-            if (data.GetToToken() == this->TargetToken)
-            {
-                CheckFinish();
-                return;
-            }
 
-            Pathfinder::GetExchangePriceReq req{
-                    .BaseToken = this->lastStep.BaseToken,
-                    .QuoteToken = this->lastStep.QuoteToken,
-                    .OrderType = define::LIMIT_MAKER
-            };
-
-            Pathfinder::GetExchangePriceResp resp{};
-            if (auto err = this->pathfinder.GetExchangePrice(req, resp); err > 0)
-            {
-                spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
-                return;
-            }
-            int newPhase = 3;
-            auto step = this->lastStep;
-            if (step.Side == define::SELL)
-            {
-                if (resp.SellPrice > step.Price)
-                {
-                    step.Price = resp.SellPrice;
-                }
-            }
-            else
-            {
-                if (resp.BuyPrice < this->lastStep.Price)
-                {
-                    step.Price = resp.BuyPrice;
-                }
-            }
-
-            if (data.GetToToken() == this->lastStep.BaseToken)
-            {
-                step.Quantity = data.GetNewQuantity();
-            }
-            else if (data.GetToToken() == this->lastStep.QuoteToken)
-            {
-                step.Quantity = data.GetNewQuantity() / this->lastStep.Price;
-            }
-
-            uint64_t orderId;
-            auto err = this->ExecuteTrans(orderId, newPhase, step);
-            if (err > 0)
-            {
-                spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
-                return;
-            }
-            this->currentPhase = newPhase;
-            reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(300* 1000));
-            reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerHandler, this, data));
+        if (MakerExecuted) {
+            return;
         }
+
+        if (data.GetToToken() == this->TargetToken)
+        {
+            CheckFinish();
+            return;
+        }
+
+        Pathfinder::GetExchangePriceReq req{
+                .BaseToken = this->lastStep.BaseToken,
+                .QuoteToken = this->lastStep.QuoteToken,
+                .OrderType = define::LIMIT_MAKER
+        };
+
+        Pathfinder::GetExchangePriceResp resp{};
+        if (auto err = this->pathfinder.GetExchangePrice(req, resp); err > 0)
+        {
+            spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
+            return;
+        }
+        int newPhase = 3;
+        auto step = this->lastStep;
+        if (step.Side == define::SELL)
+        {
+            if (resp.SellPrice > step.Price)
+            {
+                step.Price = resp.SellPrice;
+            }
+        }
+        else
+        {
+            if (resp.BuyPrice < this->lastStep.Price)
+            {
+                step.Price = resp.BuyPrice;
+            }
+        }
+
+        if (data.GetToToken() == this->lastStep.BaseToken)
+        {
+            step.Quantity = data.GetNewQuantity();
+        }
+        else if (data.GetToToken() == this->lastStep.QuoteToken)
+        {
+            step.Quantity = data.GetNewQuantity() / this->lastStep.Price;
+        }
+
+        uint64_t orderId;
+        auto err = this->ExecuteTrans(orderId, newPhase, step);
+        if (err > 0)
+        {
+            spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
+            return;
+        }
+        this->currentPhase = newPhase;
+        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(300* 1000));
+        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerHandler, this, data));
     }
 
     //价格变化幅度不够大，撤单重挂单
@@ -356,11 +358,6 @@ namespace Arbitrage{
         }
     }
 
-    void MakerTriangularArbitrage::takerQuitAndReopen(){
-        if(takerPathFinded == false){
-            quitAndReopen = true;
-        }
-    }
     map<string, double> MakerTriangularArbitrage::mockPriceControl(OrderData& PendingOrder){
         double buyPrice = 0;
         double sellPrice = 0;

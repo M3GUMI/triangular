@@ -50,7 +50,6 @@ namespace Arbitrage{
         bool CheckFinish();
         bool finished = false;
     private:
-
         function<void()> subscriber = nullptr;
         virtual void TransHandler(OrderData &orderData);
     };
