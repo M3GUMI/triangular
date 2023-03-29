@@ -26,6 +26,7 @@ namespace Arbitrage
         WebsocketWrapper::BinanceOrderWrapper& orderWrapper;
 
         OrderData* PendingOrder = nullptr; // 提前挂单
+        bool takerPathFinded = false;
         int retryTime = 0;
         int currentPhase = 0;
         string baseToken;
@@ -40,6 +41,7 @@ namespace Arbitrage
         std::shared_ptr<websocketpp::lib::asio::steady_timer> lastOrderTimer;//市价吃单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> cancelOrderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> mockPriceTimer;//mock测试价格变化计时器
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> quitAndReopenTimer;//退出taker重挂单计时器
 
         void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单
         void takerHandler(OrderData& data);
@@ -49,6 +51,8 @@ namespace Arbitrage
         void TransHandler(OrderData& data) override;
 
         void mockTrader(const string& origin, string step, double buyPrice, double sellPrice);
+
+        void takerQuitAndReopen();
 
         map<string, double> mockPriceControl(OrderData& PendingOrder);
     };

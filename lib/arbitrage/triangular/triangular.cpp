@@ -25,7 +25,18 @@ namespace Arbitrage{
             spdlog::info("finished:{}", finished);
             return true;
         }
-
+        if(quitAndReopen){
+            finished = true;
+            if (this->subscriber == nullptr)
+            {
+                spdlog::info("quitAndReopen:fail,finish:subscriber:null");
+            }
+            if (this->subscriber != nullptr) {
+                spdlog::info("quitAndReopen:success");
+                this->subscriber();
+            }
+            return true;
+        }
         for (const auto& item : orderMap)
         {
             auto order = item.second;
@@ -45,7 +56,7 @@ namespace Arbitrage{
         finished = true;
         if (this->subscriber == nullptr)
         {
-            spdlog::info("subscriber:null");
+            spdlog::info("finish:subscriber:null");
         }
         if (this->subscriber != nullptr) {
             spdlog::info("finish:subscriber");
