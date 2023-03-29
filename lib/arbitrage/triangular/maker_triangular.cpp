@@ -107,20 +107,17 @@ namespace Arbitrage{
         req.End = this->TargetToken;
         req.Quantity = data.GetNewQuantity();
         req.Phase = newPhase;
-//        quitAndReopenTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(60 * 1000));
-//        quitAndReopenTimer->async_wait(bind(&MakerTriangularArbitrage::takerQuitAndReopen, this));
-//         重试次数过多，终止
-      if (retryTime > 10000) {
+
+        //重试次数过多，终止
+        if (retryTime > 10000) {
             takerQuitAndReopen();
         }
-//        spdlog::info("quieAndReopen:{}", quitAndReopen);
-        // todo retryTime++;
-        if(!finished == true)
+
+        if(!finished)
         {
             auto chance = pathfinder.FindBestPath(req);
             retryTime++;
             auto realProfit = data.GetParsePrice() * chance.Profit;
-//        spdlog::info("chance:path:{}, profit:{}", spdlog::fmt_lib::join(chance.Format(), ","), realProfit);
             if (realProfit > 1.0004)
             {
                 takerPathFinded = true;
