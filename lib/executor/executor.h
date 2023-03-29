@@ -12,7 +12,6 @@ namespace Executor
     {
     private:
         websocketpp::lib::asio::io_service& ioService;
-        WebsocketWrapper::BinanceOrderWrapper& orderWrapper;
         Pathfinder::Pathfinder& pathfinder;
         CapitalPool::CapitalPool& capitalPool;
         HttpWrapper::BinanceApiWrapper& apiWrapper;
@@ -30,8 +29,7 @@ namespace Executor
         void initMaker();
 
     public:
-        Executor(websocketpp::lib::asio::io_service& ioService, WebsocketWrapper::BinanceOrderWrapper& orderWrapper,
-                 Pathfinder::Pathfinder& pathfinder,
+        Executor(websocketpp::lib::asio::io_service& ioService, Pathfinder::Pathfinder& pathfinder,
                  CapitalPool::CapitalPool& capitalPool, HttpWrapper::BinanceApiWrapper& apiWrapper);
 
         ~Executor();

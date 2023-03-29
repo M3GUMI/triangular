@@ -9,13 +9,15 @@ using namespace std;
 namespace Arbitrage{
     MakerTriangularArbitrage::MakerTriangularArbitrage(
             websocketpp::lib::asio::io_service& ioService,
-             WebsocketWrapper::BinanceOrderWrapper &orderWrapper,
             Pathfinder::Pathfinder &pathfinder,
             CapitalPool::CapitalPool &pool,
             HttpWrapper::BinanceApiWrapper &apiWrapper
-    ) : ioService(ioService), orderWrapper(orderWrapper), TriangularArbitrage(pathfinder, pool, apiWrapper)
+    ) : ioService(ioService), TriangularArbitrage(pathfinder, pool, apiWrapper)
     {
         this->strategy = conf::MakerTriangular;
+        this->orderWrapper = new WebsocketWrapper::BinanceOrderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
+        this->orderWrapper->SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
+
         pathfinder.SubscribeMock((bind(
                 &MakerTriangularArbitrage::mockTrader,
                 this,
@@ -43,8 +45,6 @@ namespace Arbitrage{
         this->baseToken = symbolData.BaseToken;
         this->quoteToken = symbolData.QuoteToken;
 
-        // todo 后续改成通用逻辑
-        orderWrapper.SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
         MakerTriangularArbitrage::makerOrderChangeHandler();
 
         return 0;
@@ -86,8 +86,6 @@ namespace Arbitrage{
 
         if (data.Phase == 3)
         {
-
-            // this->currentPhase = this->currentPhase + 1;
             if (PathQuantity != 0){
                 FinalQuantity += (PathQuantity-data.GetExecuteQuantity()) * data.Price;
                 spdlog::info("pathQuantity:{}", PathQuantity);
@@ -233,6 +231,15 @@ namespace Arbitrage{
     //价格变化幅度不够大，撤单重挂单
     //base是BUSD SIDE为BUY QUOTE放购入货币
     void MakerTriangularArbitrage::makerOrderChangeHandler(){
+        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1 * 1000));
+        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerOrderChangeHandler, this));
+
+        // socket重连暂时放在这里
+        if (this->orderWrapper->Status == define::SocketStatusFailConnect) {
+            this->orderWrapper = new WebsocketWrapper::BinanceOrderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
+            this->orderWrapper->SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
+        }
+
         if (this->PendingOrder != nullptr)
         {
             auto orderStatus = this->PendingOrder->OrderStatus;
@@ -241,9 +248,6 @@ namespace Arbitrage{
                 return;
             }
         }
-
-        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1 * 1000));
-        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerOrderChangeHandler, this));
 
         Pathfinder::GetExchangePriceReq req;
         req.BaseToken = this->baseToken;

@@ -80,11 +80,6 @@ namespace WebsocketWrapper
     {
         websocketpp::lib::error_code ec;
         client.ping(hdl, "ping", ec);
-//        spdlog::info("ping:{}", ec.message());
-//        if (ec.message() == "invalid state"){
-//            this->Status = define::SocketStatusFailConnect;
-//            spdlog::info("reconnecting...");
-//        }
         pingTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(this->ioService, websocketpp::lib::asio::milliseconds(5000));
         pingTimer->async_wait(bind(&WebsocketWrapper::on_ping_timer, this));
     }
