@@ -76,16 +76,19 @@ namespace Arbitrage{
         }
         if (data.Phase == 1 && data.OrderStatus == define::FILLED)
         {
+            executeProfit = executeProfit * data.GetParsePrice();
             return takerHandler(data);
         }
 
         if (data.Phase == 2)
         {
+            executeProfit = executeProfit * data.GetParsePrice();
             return makerHandler(data);
         }
 
         if (data.Phase == 3)
         {
+            executeProfit = executeProfit * data.GetParsePrice();
             if (PathQuantity != 0){
                 FinalQuantity += (PathQuantity-data.GetExecuteQuantity()) * data.Price;
                 spdlog::info("pathQuantity:{}", PathQuantity);
@@ -162,15 +165,6 @@ namespace Arbitrage{
 
     void MakerTriangularArbitrage::makerHandler(OrderData &data)
     {
-//        if (orderMap[data.OrderId] != nullptr ){
-//            apiWrapper.CancelOrder(data.OrderId);
-//            orderMap[data.OrderId] = nullptr;
-//        }
-
-        if (MakerExecuted) {
-            return;
-        }
-
         if (data.GetToToken() == this->TargetToken)
         {
             CheckFinish();
@@ -223,8 +217,23 @@ namespace Arbitrage{
             return;
         }
         this->currentPhase = newPhase;
-        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(300* 1000));
-        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerHandler, this, data));
+
+        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(300*1000));
+        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerTimeoutHandler, this, orderId, data));
+    }
+
+    // maker挂单超时
+    void MakerTriangularArbitrage::makerTimeoutHandler(uint64_t orderId, OrderData &data)
+    {
+        /*if (!orderMap.count(orderId)){
+            return;
+        }
+
+        if (orderMap[orderId]->OrderStatus == define::FILLED){
+            return;
+        }
+
+        apiWrapper.CancelOrder(orderId);*/
     }
 
     //价格变化幅度不够大，撤单重挂单
