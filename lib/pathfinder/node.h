@@ -102,11 +102,7 @@ namespace Pathfinder
 
         double UpdateBuy(vector<WebsocketWrapper::DepthItem> depth, time_t updateTime);
 
-        void mockSetOriginPrice(int fromIndex, int toIndex, double price);
-
         vector<WebsocketWrapper::DepthItem> getDepth(int fromIndex, int toIndex);
-
-        vector<int> mockGetIndexs();
 
         TransactionPathItem Format(conf::Step& step, map<int, string>& indexToToken, int from, int to);
 

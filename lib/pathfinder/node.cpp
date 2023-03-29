@@ -15,6 +15,7 @@ namespace Pathfinder
         {
             if (this->sellDepth.size() == 0)
                 return 0;
+
             return this->sellDepth[0].Price;
         }
 
@@ -22,6 +23,7 @@ namespace Pathfinder
         {
             if (this->buyDepth.size() == 0)
                 return 0;
+
             return this->buyDepth[0].Price;
         }
 
@@ -103,19 +105,6 @@ namespace Pathfinder
         return item;
     };
 
-    void Node::mockSetOriginPrice(int fromIndex, int toIndex, double price){
-
-        if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
-        {
-            this->sellDepth[0].Price = price;
-        }
-
-        if (fromIndex == this->quoteIndex && toIndex == this->baseIndex)
-        {
-            this->buyDepth[0].Price = price;
-        }
-    }
-
     vector<WebsocketWrapper::DepthItem> Node::getDepth(int fromIndex, int toIndex){
         if (fromIndex == this->baseIndex && toIndex == this->quoteIndex)
         {
@@ -126,12 +115,5 @@ namespace Pathfinder
         {
             return buyDepth;
         }
-    }
-
-    vector<int> Node::mockGetIndexs(){
-        vector<int> indexs;
-        indexs[0] = baseIndex;
-        indexs[1] = quoteIndex;
-        return indexs;
     }
 }

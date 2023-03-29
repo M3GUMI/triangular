@@ -12,7 +12,6 @@ namespace Arbitrage
     {
     public:
         MakerTriangularArbitrage(websocketpp::lib::asio::io_service& ioService,
-                                 WebsocketWrapper::BinanceOrderWrapper& orderWrapper,
                                  Pathfinder::Pathfinder& pathfinder,
                                  CapitalPool::CapitalPool& pool,
                                  HttpWrapper::BinanceApiWrapper& apiWrapper);
@@ -23,7 +22,7 @@ namespace Arbitrage
 
     private:
         websocketpp::lib::asio::io_service& ioService;
-        WebsocketWrapper::BinanceOrderWrapper& orderWrapper;
+        WebsocketWrapper::BinanceOrderWrapper* orderWrapper;
 
         OrderData* PendingOrder = nullptr; // 提前挂单
         int retryTime = 0;

@@ -58,7 +58,7 @@ namespace CapitalPool
                 auto err = tryRebalance(token, conf::BaseAsset, freeAmount);
                 if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional)
                 {
-                    spdlog::debug("func: RebalancePool, err: {}", WrapErr(err));
+                    // spdlog::debug("func: RebalancePool, err: {}", WrapErr(err));
                 }
             }
         }
@@ -132,7 +132,7 @@ namespace CapitalPool
         // 需补充资金
         if (not addToken.empty() && delToken.empty())
         {
-            spdlog::debug("func: {}, err: {}", "RebalancePool", "need more money");
+            // spdlog::debug("func: {}, err: {}", "RebalancePool", "need more money");
             return;
         }
     }
@@ -230,7 +230,8 @@ namespace CapitalPool
             return define::ErrorCapitalRefresh;
         }
 
-        if (not balancePool.count(token) || balancePool[token] == 0) {
+        // todo 先写死，后面改
+        if (not balancePool.count(token) || balancePool[token] < 15) {
             spdlog::error(
                     "func: LockAsset, token: {}, amount: {}, err: {}",
                     token,

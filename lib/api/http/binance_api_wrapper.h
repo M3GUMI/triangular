@@ -48,6 +48,7 @@ namespace HttpWrapper
         void cancelOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, std::string ori_symbol);
 
         void createListkeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, function<void(string listenKey, int err)> callback);
+        void keepListenKeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec);
 
     public:
         BinanceApiWrapper(websocketpp::lib::asio::io_service &ioService);
@@ -76,6 +77,7 @@ namespace HttpWrapper
         void CancelOrderAll();
 
         // listenKey
-        void CreateListenKey(string listenKey, function<void(string listenKey, int err)> callback);
+        void CreateListenKey(function<void(string listenKey, int err)> callback);
+        void KeepListenKey(string listenKey);
     };
 }

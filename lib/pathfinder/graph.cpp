@@ -77,7 +77,7 @@ namespace Pathfinder{
                     }
 
                     auto triangular = new Triangular{
-                        .Steps = {originIndex, secondIndex, thirdIndex, originIndex}
+                            .Steps = {originIndex, secondIndex, thirdIndex, originIndex}
                     };
                     auto steps = triangular->Steps;
                     triangularMap[originIndex].emplace_back(triangular);
@@ -104,8 +104,8 @@ namespace Pathfinder{
 
                 // 存储一步路径
                 auto onePath = new Path{
-                    .StepCount = 1,
-                    .Steps = vector<int>{originIndex, secondIndex}
+                        .StepCount = 1,
+                        .Steps = vector<int>{originIndex, secondIndex}
                 };
                 pathMap[formatKey(originIndex, secondIndex)].emplace_back(onePath);
 
@@ -187,7 +187,7 @@ namespace Pathfinder{
                 bestPathMap[key].push_back({path->Steps, currentProfit});
                 newNum++;
             }
-            // 如果本路径本就是最优路径则更新profit
+                // 如果本路径本就是最优路径则更新profit
             else {
                 list<BestPath>::iterator p;
                 list<BestPath>* bestPaths = &bestPathMap[key];
@@ -252,7 +252,7 @@ namespace Pathfinder{
         vector<WebsocketWrapper::DepthItem> depths = node->getDepth(fromIndex, toIndex);
         for (auto depth : depths){
             quantity += depth.Quantity;
-            if (quantity * toDollar >= 20){
+            if (quantity * toDollar >= 15){
                 price = depth.Price;
                 break;
             }

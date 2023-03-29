@@ -22,6 +22,7 @@ namespace Arbitrage{
     bool TriangularArbitrage::CheckFinish()
     {
         if (finished) {
+            spdlog::info("finished:{}", finished);
             return true;
         }
 
@@ -30,8 +31,11 @@ namespace Arbitrage{
             auto order = item.second;
             if (order->OrderStatus != define::FILLED &&
                 order->OrderStatus != define::PARTIALLY_FILLED &&
-                order->OrderStatus != define::EXPIRED)
+                order->OrderStatus != define::EXPIRED &&
+                order->OrderStatus != define::NEW )
             {
+                spdlog::info("order:{},base:{}, quote:{}, side:{}, ExecuteQuantity:{},NewQuantity:{},finished:{}",
+                             order->OrderStatus, order->BaseToken, order->QuoteToken, order->Side, order->ExecuteQuantity,order->GetNewQuantity(), "false");
                 return false;
             }
         }
@@ -39,6 +43,10 @@ namespace Arbitrage{
         spdlog::info("{}::Finish, profit: {}, finalQuantity: {}, originQuantity: {}",
                      this->strategy.StrategyName, this->FinalQuantity / this->OriginQuantity, this->FinalQuantity, this->OriginQuantity);
         finished = true;
+        if (this->subscriber == nullptr)
+        {
+            spdlog::info("subscriber:null");
+        }
         if (this->subscriber != nullptr) {
             spdlog::info("finish:subscriber");
             this->subscriber();
@@ -143,12 +151,8 @@ namespace Arbitrage{
         }
 
         OrderData* order = orderMap[data.OrderId];
-        if (conf::EnableMock) { // mock情况下可相同毫秒更新
-            if (order->UpdateTime > data.UpdateTime) {
-                return;
-            }
-        } else {
-            if (order->UpdateTime >= data.UpdateTime) {
+        if (order->UpdateTime >= data.UpdateTime) {
+            if (order->OrderStatus != define::NEW || data.OrderStatus != define::FILLED) {
                 return;
             }
         }
@@ -171,10 +175,10 @@ namespace Arbitrage{
 
         if(order->Phase == 1 && overFirstStep == false && order->OrderStatus == define::FILLED ){
             overFirstStep = true;
-                OriginQuantity = order->GetExecuteQuantity();
+            OriginQuantity = order->GetExecuteQuantity();
         }
         else if(order->Phase == 2 ){
-              PathQuantity = order->GetNewQuantity();
+            PathQuantity = order->GetNewQuantity();
         }
         else if(data.Phase == 3 ){
                }
