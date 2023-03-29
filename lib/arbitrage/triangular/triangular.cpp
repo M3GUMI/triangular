@@ -200,7 +200,8 @@ namespace Arbitrage{
             PathQuantity = order->GetNewQuantity();
         }
         else if(data.Phase == 3 ){
-               }
+            MakerExecuted = true;
+        }
 
         TransHandler(*order);
         // TriangularArbitrage::CheckFinish();
