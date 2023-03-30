@@ -37,6 +37,8 @@ namespace Arbitrage
         double close = 0.002; // 撤单重挂阈值
         double open = 0.001; // 挂单阈值
 
+        double targetProfit = 1.0002;
+
         std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> retryTimer;//市价吃单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> lastOrderTimer;//市价吃单计时器

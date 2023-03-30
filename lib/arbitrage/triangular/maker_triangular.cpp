@@ -225,15 +225,57 @@ namespace Arbitrage{
     // maker挂单超时
     void MakerTriangularArbitrage::makerTimeoutHandler(uint64_t orderId, OrderData &data)
     {
-        /*if (!orderMap.count(orderId)){
+        apiWrapper.CancelOrder(orderId);
+//        orderMap[orderId] = nullptr;
+        spdlog::info("MakerTriangularArbitrage::makerTimeoutHandler, timout_limit");
+        Pathfinder::GetExchangePriceReq reqs{
+                .BaseToken = this->lastStep.BaseToken,
+                .QuoteToken = this->lastStep.QuoteToken,
+                .OrderType = define::LIMIT
+        };
+
+        Pathfinder::GetExchangePriceResp resp{};
+        if (auto err = this->pathfinder.GetExchangePrice(reqs, resp); err > 0)
+        {
+            spdlog::error("{}::makerTimeoutHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             return;
         }
-
-        if (orderMap[orderId]->OrderStatus == define::FILLED){
-            return;
+        double limitPrice = 0;
+        if (data.GetToToken() == this->lastStep.BaseToken)
+        {
+            limitPrice = targetProfit / executeProfit;
+            spdlog::info("MakerTriangularArbitrage::makerTimeoutHandler, limitPrice:{}, targetProfit:{}, executeProfit:{}, quantity:{}", limitPrice, targetProfit, executeProfit, data.GetNewQuantity());
         }
-
-        apiWrapper.CancelOrder(orderId);*/
+        else if (data.GetToToken() == this->lastStep.QuoteToken)
+        {
+            limitPrice = executeProfit / targetProfit;
+            spdlog::info("MakerTriangularArbitrage::makerTimeoutHandler, limitPrice:{}, targetProfit:{}, executeProfit:{}, quantity:{}", limitPrice, targetProfit, executeProfit , data.GetNewQuantity());
+        }
+        auto step = this->lastStep;
+        int newPhase = 3;
+        Pathfinder::TransactionPathItem limitOrder;
+        limitOrder.Price = limitPrice;
+        limitOrder.BaseToken = step.BaseToken;
+        limitOrder.QuoteToken = step.QuoteToken;
+        spdlog::info("limitOrder.BaseToken:{}, limitOrder.QuoteToken :{}", limitOrder.BaseToken,limitOrder.QuoteToken);
+        if (data.GetToToken() == this->lastStep.BaseToken)
+        {
+            step.Quantity = data.GetNewQuantity();
+        }
+        else if (data.GetToToken() == this->lastStep.QuoteToken)
+        {
+            step.Quantity = data.GetNewQuantity() / this->lastStep.Price;
+        }
+        limitOrder.Quantity = step.Quantity;
+        spdlog::info("step.Quantity:{}", step.Quantity);
+        limitOrder.Side = step.Side;
+        limitOrder.TimeInForce = define::GTC;
+        limitOrder.OrderType = define::LIMIT;
+        auto err = ExecuteTrans(orderId, newPhase, limitOrder);
+        if (err > 0)
+        {
+            spdlog::error("{}::makerTimeoutHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
+        }
     }
 
     //价格变化幅度不够大，撤单重挂单

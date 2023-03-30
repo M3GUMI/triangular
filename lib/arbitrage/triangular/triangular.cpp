@@ -87,8 +87,15 @@ namespace Arbitrage{
         order->Price = tmpPrice * symbolData.TicketSize;
 
         // stepSize校验
-        uint32_t tmpQuantity = path.Quantity / symbolData.StepSize;
-        order->Quantity = tmpQuantity * symbolData.StepSize;
+        if(path.Quantity >= symbolData.StepSize)
+        {
+            uint32_t tmpQuantity = path.Quantity / symbolData.StepSize;
+            order->Quantity = tmpQuantity * symbolData.StepSize;
+        }
+        if (path.Quantity < symbolData.StepSize){
+            order->Quantity = path.Quantity;
+        }
+        spdlog::info("order->quantity:{}, path.quantity:{}, symbolData.stepSize:{}", order->Quantity,path.Quantity,symbolData.StepSize);
 
         orderMap[order->OrderId] = order;
         orderId = order->OrderId;
