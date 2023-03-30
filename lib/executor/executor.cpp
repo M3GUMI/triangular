@@ -45,6 +45,7 @@ namespace Executor{
         auto err = makerTriangular->Run("USDT", "XRP", 20);
         if (err > 0)
         {
+            this->lock = false;
             return;
         }
         makerTriangular->SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));

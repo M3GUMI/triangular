@@ -45,8 +45,8 @@ namespace Arbitrage{
                 order->OrderStatus != define::EXPIRED &&
                 order->OrderStatus != define::NEW )
             {
-                spdlog::info("order:{},base:{}, quote:{}, side:{}, ExecuteQuantity:{},NewQuantity:{},finished:{}",
-                             order->OrderStatus, order->BaseToken, order->QuoteToken, order->Side, order->ExecuteQuantity,order->GetNewQuantity(), "false");
+                spdlog::info("order:{},phase: {},base:{}, quote:{}, side:{}, ExecuteQuantity:{},NewQuantity:{},finished:false",
+                             order->OrderStatus, order->Phase, order->BaseToken, order->QuoteToken, order->Side, order->ExecuteQuantity,order->GetNewQuantity());
                 return false;
             }
         }
