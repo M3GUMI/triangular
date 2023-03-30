@@ -134,7 +134,6 @@ namespace Arbitrage{
         // todo retryTime++;
         auto chance = pathfinder.FindBestPath(req);
         auto realProfit = data.GetParsePrice() * chance.Profit;
-        spdlog::info("chance:path:{}, profit:{}", spdlog::fmt_lib::join(chance.Format(), ","), realProfit);
         if (realProfit > 1.0005)
         {
             uint64_t orderId;

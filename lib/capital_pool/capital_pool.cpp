@@ -55,10 +55,72 @@ namespace CapitalPool
             // 非初始稳定币，清仓
             if (not basePool.count(token))
             {
-                auto err = tryRebalance(token, conf::BaseAsset, freeAmount);
-                if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional)
-                {
-                    // spdlog::debug("func: RebalancePool, err: {}", WrapErr(err));
+                double toDollar = pathfinder.get2Dollar(token);
+                if (toDollar == 0){
+                    spdlog::info("func: {}, token: {}, err: {}", "RebalancePool", token, "Cannot transfer to dollar");
+                    return;
+                }
+
+                double amount = balancePool[token];
+                auto symbolData = apiWrapper.GetSymbolData(token, conf::BaseAsset);
+                // 数量太少不管了
+                if (amount * toDollar < 1){
+                    continue;
+                }
+                else if (amount * toDollar < symbolData.MinNotional) {
+                    Pathfinder::GetExchangePriceReq req;
+                    req.BaseToken = symbolData.BaseToken;
+                    req.QuoteToken = symbolData.QuoteToken;
+                    req.OrderType = define::LIMIT;
+
+                    Pathfinder::GetExchangePriceResp res;
+                    auto err = pathfinder.GetExchangePrice(req, res);
+                    if (err > 0) {
+                        spdlog::info("{}, err: {}", "RebalancePool", WrapErr(err));
+                        return;
+                    }
+
+                    double difDollar = symbolData.MinNotional + 0.002 - amount * toDollar;
+                    double tokenQuantity = difDollar / toDollar;
+                    // token 为计价币
+                    if (symbolData.BaseToken == token){
+                        OrderData data = {
+                                .BaseToken = symbolData.BaseToken,
+                                .QuoteToken = symbolData.QuoteToken,
+                                .Price = res.SellPrice,
+                                .Quantity = tokenQuantity,
+                                .Side = define::SELL,
+                                .OrderType = define::LIMIT,
+                                .TimeInForce = define::GTC
+                        };
+                        apiWrapper.CreateOrder(data, nullptr);
+                    }
+                    // token 不为计价币
+                    else if (symbolData.QuoteToken == token) {
+                        OrderData data = {
+                                .BaseToken = symbolData.BaseToken,
+                                .QuoteToken = symbolData.QuoteToken,
+                                .Price = res.BuyPrice,
+                                .Quantity = tokenQuantity / res.BuyPrice,
+                                .Side = define::BUY,
+                                .OrderType = define::LIMIT,
+                                .TimeInForce = define::GTC
+                        };
+                        apiWrapper.CreateOrder(data, nullptr);
+                    }
+                    spdlog::debug("func: {}, token: {}, baseToken: {}, tokenQuantity: {}",
+                            "RebalancePool",
+                            token,
+                            symbolData.BaseToken,
+                            tokenQuantity);
+                }
+                // 满足最小交易额 重平衡
+                else {
+                    auto err = tryRebalance(token, conf::BaseAsset, freeAmount);
+                    if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional)
+                    {
+                        // spdlog::debug("func: RebalancePool, err: {}", WrapErr(err));
+                    }
                 }
             }
         }

@@ -338,21 +338,24 @@ namespace HttpWrapper
                 "func: CreateOrder, symbol: {}, price: {}, quantity: {}, side: {}, orderType: {}",
                 args["symbol"], req.Price, args["quantity"], args["side"], args["type"]
         );
-        ApiRequest apiReq;
-        apiReq.args = args;
-        apiReq.method = "POST";
-        apiReq.uri = uri;
-        apiReq.data = "";
-        apiReq.sign = true;
-        auto apiCallback = bind(
-                &BinanceApiWrapper::createOrderCallback,
-                this,
-                placeholders::_1,
-                placeholders::_2,
-                req,
-                callback
-        );
-        this->MakeRequest(apiReq, apiCallback);
+
+        if (callback!=nullptr){
+            ApiRequest apiReq;
+            apiReq.args = args;
+            apiReq.method = "POST";
+            apiReq.uri = uri;
+            apiReq.data = "";
+            apiReq.sign = true;
+            auto apiCallback = bind(
+                    &BinanceApiWrapper::createOrderCallback,
+                    this,
+                    placeholders::_1,
+                    placeholders::_2,
+                    req,
+                    callback
+                    );
+            this->MakeRequest(apiReq, apiCallback);
+        }
         return 0;
     }
 

@@ -65,6 +65,8 @@ namespace Pathfinder{
         double BuyPrice = 0; // 可买入的价格
         double BuyQuantity = 0; // 可买入的数量
         time_t UpdateTime = 0; // 更新时间
+        string BaseToken;
+        string QuoteToken;
     };
 
     struct BestPath
@@ -86,7 +88,7 @@ namespace Pathfinder{
         ArbitrageChance FindBestPath(FindBestPathReq& req);
         void SubscribeArbitrage(function<void(ArbitrageChance& chance)> handler);      // 订阅套利机会推送
         void SubscribeMock(function<void(const string& base, string quote, double buyPrice, double sellPrice)> handler);
-        double toDollar(int fromIndex); // 获得币到美元的汇率
+        double get2Dollar(string token); // 获得币到美元的汇率
         map<string, int> tokenToIndex{};
         map<int, string> indexToToken{};
 
@@ -128,7 +130,5 @@ namespace Pathfinder{
         double calculateMakerPathProfit(vector<int>& path);
         static u_int64_t formatKey(int from, int to);
         static void adjustQuantities(vector<TransactionPathItem>& items);
-        double GetPathPrice(int fromIndex, int toIndex);
-        double ToDollar(int fromIndex);
     };
 }

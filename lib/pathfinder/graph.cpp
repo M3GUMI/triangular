@@ -483,6 +483,21 @@ namespace Pathfinder{
         }
     }
 
+    double Graph::get2Dollar(string token){
+        double toDollar = 0;
+        int tokenIndex = tokenToIndex[token];
+        int usdtIndex = tokenToIndex["USDT"];
+        int busdIndex = tokenToIndex["BUSD"];
+
+        if (tradeNodeMap.count(formatKey(tokenIndex, usdtIndex))) {
+            toDollar = tradeNodeMap[formatKey(tokenIndex, usdtIndex)]->getDepth(tokenIndex)[0].Price;
+        } else if (tradeNodeMap.count(formatKey(tokenIndex, busdIndex))) {
+            toDollar = tradeNodeMap[formatKey(tokenIndex, busdIndex)]->getDepth(tokenIndex)[0].Price;
+        }
+
+        return toDollar;
+    }
+
     void Graph::SubscribeArbitrage(function<void(ArbitrageChance &path)> handler)
     {
         this->subscriber = handler;
