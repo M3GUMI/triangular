@@ -243,7 +243,7 @@ namespace Pathfinder{
     }
 
     double Graph::GetPathPrice(int fromIndex, int toIndex){
-        double toDollar = ToDollar(fromIndex);
+        double toDollar = DollarPrice(fromIndex);
         if (toDollar==0)
             return 0;
 
@@ -261,7 +261,7 @@ namespace Pathfinder{
         return node->GetParsePathPrice(price, fromIndex, toIndex);
     }
 
-    double Graph::ToDollar(int fromIndex){
+    double Graph::DollarPrice(int fromIndex){
         double toDollar = 0;
         if (tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["USDT"]))) {
             toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["USDT"])]->GetOriginPrice(fromIndex, tokenToIndex["USDT"]);
@@ -274,7 +274,7 @@ namespace Pathfinder{
         return toDollar;
     }
 
-    double Graph::ToDollar(string fromToken){
+    double Graph::DollarPrice(const string& fromToken){
         int fromIndex = tokenToIndex[fromToken];
         double toDollar = 0;
         if (tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["USDT"]))) {

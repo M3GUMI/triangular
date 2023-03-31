@@ -55,72 +55,48 @@ namespace CapitalPool
             // 非初始稳定币，清仓
             if (not basePool.count(token))
             {
-                double toDollar = pathfinder.ToDollar(token);
-                if (toDollar == 0){
-                    spdlog::info("func: {}, token: {}, err: {}", "RebalancePool", token, "Cannot transfer to dollar");
-                    return;
-                }
-
-                double amount = balancePool[token];
-                auto symbolData = apiWrapper.GetSymbolData(token, conf::BaseAsset);
-                // 数量太少不管了
-                if (amount * toDollar < 1){
+                // u计价
+                double dollarPrice = pathfinder.DollarPrice(token);
+                if (dollarPrice == 0){
+                    spdlog::error("func: RebalancePool, token: {}, err: Cannot transfer to dollar", token);
                     continue;
                 }
-                else if (amount * toDollar < symbolData.MinNotional) {
-                    Pathfinder::GetExchangePriceReq req;
-                    req.BaseToken = symbolData.BaseToken;
-                    req.QuoteToken = symbolData.QuoteToken;
-                    req.OrderType = define::LIMIT;
 
-                    Pathfinder::GetExchangePriceResp res;
-                    auto err = pathfinder.GetExchangePrice(req, res);
-                    if (err > 0) {
-                        spdlog::info("{}, err: {}", "RebalancePool", WrapErr(err));
-                        return;
-                    }
-
-                    double difDollar = symbolData.MinNotional + 0.002 - amount * toDollar;
-                    double tokenQuantity = difDollar / toDollar;
-                    // token 为计价币
-                    if (symbolData.BaseToken == token){
-                        OrderData data = {
-                                .BaseToken = symbolData.BaseToken,
-                                .QuoteToken = symbolData.QuoteToken,
-                                .Price = res.SellPrice,
-                                .Quantity = tokenQuantity,
-                                .Side = define::SELL,
-                                .OrderType = define::LIMIT,
-                                .TimeInForce = define::GTC
-                        };
-                        apiWrapper.CreateOrder(data, nullptr);
-                    }
-                    // token 不为计价币
-                    else if (symbolData.QuoteToken == token) {
-                        OrderData data = {
-                                .BaseToken = symbolData.BaseToken,
-                                .QuoteToken = symbolData.QuoteToken,
-                                .Price = res.BuyPrice,
-                                .Quantity = tokenQuantity / res.BuyPrice,
-                                .Side = define::BUY,
-                                .OrderType = define::LIMIT,
-                                .TimeInForce = define::GTC
-                        };
-                        apiWrapper.CreateOrder(data, nullptr);
-                    }
-                    spdlog::debug("func: {}, token: {}, baseToken: {}, tokenQuantity: {}",
-                            "RebalancePool",
-                            token,
-                            symbolData.BaseToken,
-                            tokenQuantity);
+                // 小于1刀不管
+                double dollarAmount = dollarPrice*freeAmount;
+                if (dollarAmount < 1){
+                    continue;
                 }
-                // 满足最小交易额 重平衡
-                else {
+
+                auto symbolData = apiWrapper.GetSymbolData(token, conf::BaseAsset);
+                // 重平衡
+                if (dollarAmount > symbolData.MinNotional) {
                     auto err = tryRebalance(token, conf::BaseAsset, freeAmount);
-                    if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional)
+                    if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional && err != define::ErrorGraphNotReady)
                     {
-                        // spdlog::debug("func: RebalancePool, err: {}", WrapErr(err));
+                        spdlog::error("func: RebalancePool, err: {}", WrapErr(err));
                     }
+                    continue;
+                }
+
+                // 补充u
+                if (dollarAmount < symbolData.MinNotional) {
+                    double diffDollar = symbolData.MinNotional + 1 - dollarAmount;
+                    double tokenQuantity = diffDollar / dollarPrice;
+                    OrderData req{
+                            .BaseToken = symbolData.BaseToken,
+                            .QuoteToken = symbolData.QuoteToken,
+                            .OrderType = define::MARKET
+                    };
+                    if (symbolData.BaseToken == token){
+                        req.Quantity = tokenQuantity;
+                        req.Side = define::BUY;
+                    } else {
+                        req.Quantity = diffDollar;
+                        req.Side = define::SELL;
+                    }
+
+                    apiWrapper.CreateOrder(req, nullptr);
                 }
             }
         }
@@ -203,14 +179,8 @@ namespace CapitalPool
     {
         auto symbolData = apiWrapper.GetSymbolData(fromToken, toToken);
         auto side = apiWrapper.GetSide(fromToken, toToken);
-        define::OrderType orderType = define::LIMIT_MAKER;
-        define::TimeInForce timeInForce = define::GTC;
-
-        // 没有波动的稳定币，用taker
-        //if (symbolData.Symbol == "USDCBUSD" || symbolData.Symbol == "BUSDUSDT") {
-            orderType = define::LIMIT;
-            timeInForce = define::IOC;
-        //}
+        define::OrderType orderType = define::LIMIT;
+        define::TimeInForce timeInForce = define::IOC;
 
         Pathfinder::GetExchangePriceReq priceReq{};
         priceReq.BaseToken = symbolData.BaseToken;

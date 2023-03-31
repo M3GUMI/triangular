@@ -88,8 +88,8 @@ namespace Pathfinder{
         ArbitrageChance FindBestPath(FindBestPathReq& req);
         void SubscribeArbitrage(function<void(ArbitrageChance& chance)> handler);      // 订阅套利机会推送
         void SubscribeMock(function<void(const string& base, string quote, double buyPrice, double sellPrice)> handler);
-        double ToDollar(int fromIndex);
-        double ToDollar(string fromToken);
+        double DollarPrice(int fromIndex);
+        double DollarPrice(const string& fromToken);
         map<string, int> tokenToIndex{};
         map<int, string> indexToToken{};
 

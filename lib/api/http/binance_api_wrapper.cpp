@@ -339,23 +339,17 @@ namespace HttpWrapper
                 args["symbol"], req.Price, args["quantity"], args["side"], args["type"]
         );
 
-        if (callback!=nullptr){
-            ApiRequest apiReq;
-            apiReq.args = args;
-            apiReq.method = "POST";
-            apiReq.uri = uri;
-            apiReq.data = "";
-            apiReq.sign = true;
-            auto apiCallback = bind(
-                    &BinanceApiWrapper::createOrderCallback,
-                    this,
-                    placeholders::_1,
-                    placeholders::_2,
-                    req,
-                    callback
-                    );
-            this->MakeRequest(apiReq, apiCallback);
-        }
+
+        ApiRequest apiReq;
+        apiReq.args = args;
+        apiReq.method = "POST";
+        apiReq.uri = uri;
+        apiReq.data = "";
+        apiReq.sign = true;
+        auto apiCallback = bind(&BinanceApiWrapper::createOrderCallback, this, placeholders::_1, placeholders::_2,
+                                req, callback);
+
+        this->MakeRequest(apiReq, apiCallback);
         return 0;
     }
 
@@ -382,7 +376,9 @@ namespace HttpWrapper
             }
 
             spdlog::debug("func: {}, msg: {}", "createOrderCallback", "mock create_order");
-            return callback(data, 0);
+            if (callback != nullptr) {
+                return callback(data, 0);
+            }
         }
 
         if (auto checkResult = this->CheckRespWithCode(res); checkResult.Err > 0) {
@@ -392,7 +388,9 @@ namespace HttpWrapper
                 return callback(data, define::ErrorInsufficientBalance);
             }
 
-            return callback(data, checkResult.Err);
+            if (callback != nullptr) {
+                return callback(data, checkResult.Err);
+            }
         }
 
         rapidjson::Document order;
@@ -442,7 +440,9 @@ namespace HttpWrapper
                 data.ExecutePrice,
                 data.ExecuteQuantity
         );
-        return callback(data, 0);
+        if (callback != nullptr) {
+            return callback(data, 0);
+        }
     }
 
     void BinanceApiWrapper::cancelOrder(uint64_t orderId, string symbol)
