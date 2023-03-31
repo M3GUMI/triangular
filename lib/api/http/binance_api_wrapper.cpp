@@ -339,7 +339,6 @@ namespace HttpWrapper
                 args["symbol"], req.Price, args["quantity"], args["side"], args["type"]
         );
 
-
         ApiRequest apiReq;
         apiReq.args = args;
         apiReq.method = "POST";

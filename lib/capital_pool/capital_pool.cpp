@@ -58,7 +58,6 @@ namespace CapitalPool
                 // u计价
                 double dollarPrice = pathfinder.DollarPrice(token);
                 if (dollarPrice == 0){
-                    spdlog::error("func: RebalancePool, token: {}, err: Cannot transfer to dollar", token);
                     continue;
                 }
 
@@ -71,6 +70,7 @@ namespace CapitalPool
                 auto symbolData = apiWrapper.GetSymbolData(token, conf::BaseAsset);
                 // 重平衡
                 if (dollarAmount > symbolData.MinNotional) {
+                    spdlog::info("func: RebalancePool, token: {}, dollarAmount: {}", token, dollarAmount);
                     auto err = tryRebalance(token, conf::BaseAsset, freeAmount);
                     if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional && err != define::ErrorGraphNotReady)
                     {
@@ -81,22 +81,28 @@ namespace CapitalPool
 
                 // 补充u
                 if (dollarAmount < symbolData.MinNotional) {
-                    double diffDollar = symbolData.MinNotional + 1 - dollarAmount;
-                    double tokenQuantity = diffDollar / dollarPrice;
+                    double addDollar = symbolData.MinNotional + 1;
+                    double tokenQuantity = addDollar / dollarPrice;
                     OrderData req{
-                            .BaseToken = symbolData.BaseToken,
-                            .QuoteToken = symbolData.QuoteToken,
-                            .OrderType = define::MARKET
+                        .OrderId = GenerateId(),
+                        .BaseToken = symbolData.BaseToken,
+                        .QuoteToken = symbolData.QuoteToken,
+                        .OrderType = define::MARKET
                     };
                     if (symbolData.BaseToken == token){
+                        req.Price = dollarPrice;
                         req.Quantity = tokenQuantity;
                         req.Side = define::BUY;
                     } else {
-                        req.Quantity = diffDollar;
+                        req.Price = double(1) / dollarPrice;
+                        req.Quantity = addDollar;
                         req.Side = define::SELL;
                     }
 
-                    apiWrapper.CreateOrder(req, nullptr);
+                    spdlog::info("func: RebalancePool, token: {}, addDollar: {}", token, addDollar);
+                    auto apiCallback = bind(&CapitalPool::rebalanceHandler, this, placeholders::_1);
+
+                    apiWrapper.CreateOrder(req, apiCallback);
                 }
             }
         }
@@ -170,7 +176,6 @@ namespace CapitalPool
         // 需补充资金
         if (not addToken.empty() && delToken.empty())
         {
-            // spdlog::debug("func: {}, err: {}", "RebalancePool", "need more money");
             return;
         }
     }
@@ -246,7 +251,7 @@ namespace CapitalPool
         for (const auto &item: balancePool) {
             if (not item.first.empty()) {
                 info.push_back(item.first);
-                info.push_back(to_string(item.second));
+                info.push_back(to_string(pathfinder.DollarPrice(item.first)*item.second));
             }
         }
         spdlog::info("func: {}, balancePool: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
