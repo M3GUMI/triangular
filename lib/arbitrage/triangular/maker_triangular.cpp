@@ -174,7 +174,7 @@ namespace Arbitrage{
         Pathfinder::GetExchangePriceReq req{
                 .BaseToken = this->lastStep.BaseToken,
                 .QuoteToken = this->lastStep.QuoteToken,
-                .OrderType = define::LIMIT_MAKER
+                .OrderType = define::LIMIT
         };
 
         Pathfinder::GetExchangePriceResp resp{};
@@ -185,6 +185,7 @@ namespace Arbitrage{
         }
         int newPhase = 3;
         auto step = this->lastStep;
+        step.OrderType = define::LIMIT;
         if (step.Side == define::SELL)
         {
             if (resp.SellPrice > step.Price)
@@ -218,8 +219,8 @@ namespace Arbitrage{
         }
         this->currentPhase = newPhase;
 
-        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(300*1000));
-        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerTimeoutHandler, this, orderId, data));
+        // reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(300*1000));
+        // reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerTimeoutHandler, this, orderId, data));
     }
 
     // maker挂单超时

@@ -78,7 +78,7 @@ namespace Executor{
 
     void Executor::arbitrageFinishHandler() {
         capitalPool.Refresh();
-        if (executeTime <= 5){
+        if (executeTime <= 50){
             this->lock = false;
             spdlog::info("func: arbitrageFinishHandler, executeTime:{}",  executeTime);
             executeTime++;
