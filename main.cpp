@@ -8,12 +8,12 @@ int main() {
     spdlog::set_level(spdlog::level::info);
     websocketpp::lib::asio::io_service ioService;
     HttpWrapper::BinanceApiWrapper apiWrapper(ioService);
-    WebsocketWrapper::BinanceOrderWrapper orderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
     Pathfinder::Pathfinder pathfinder(ioService, apiWrapper);
     CapitalPool::CapitalPool capitalPool(ioService, pathfinder, apiWrapper);
-    Executor::Executor executor(ioService, orderWrapper, pathfinder, capitalPool, apiWrapper);
+    Executor::Executor executor(ioService, pathfinder, capitalPool, apiWrapper);
 
     apiWrapper.GetOpenOrder("XRPUSDT");
+    apiWrapper.GetOpenOrder("BUSDUSDT");
 
     apiWrapper.InitBinanceSymbol();
     ioService.run();

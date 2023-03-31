@@ -151,17 +151,9 @@ namespace Arbitrage{
         }
 
         OrderData* order = orderMap[data.OrderId];
-        if (conf::EnableMock) { // mock情况下可相同毫秒更新
-            if (order->UpdateTime > data.UpdateTime) {
+        if (order->UpdateTime >= data.UpdateTime) {
+            if (order->OrderStatus != define::NEW || data.OrderStatus != define::FILLED) {
                 return;
-            }
-        } else {
-            if (order->UpdateTime >= data.UpdateTime) {
-                spdlog::info("order->UpdateTime >= data.UpdateTime, order->UpdateTime:{}, data.UpdateTime:{}, order.phase: {}",
-                             order->UpdateTime, data.UpdateTime, order->Phase);
-                if (order->OrderStatus != define::NEW || data.OrderStatus != define::FILLED) {
-                    return;
-                }
             }
         }
 

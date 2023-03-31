@@ -46,24 +46,6 @@ namespace Pathfinder{
             this->tradeNodeMap[formatKey(quoteIndex, baseIndex)] = tradeNode;
         }
 
-        for (auto item : tradeNodeMap){
-            Node* node = item.second;
-            int baseIndex = node->getBaseIndex();
-            int quoteIndex = node->getQuoteIndex();
-
-            if (tradeNodeMap.count(formatKey(baseIndex, tokenToIndex["USDT"]))){
-                node->setBase2Dollar(tradeNodeMap[formatKey(baseIndex, tokenToIndex["USDT"])]);
-            } else if (tradeNodeMap.count(formatKey(baseIndex, tokenToIndex["BUSD"]))) {
-                node->setBase2Dollar(tradeNodeMap[formatKey(baseIndex, tokenToIndex["BUSD"])]);
-            }
-
-            if (tradeNodeMap.count(formatKey(quoteIndex, tokenToIndex["USDT"]))){
-                node->setQuote2Dollar(tradeNodeMap[formatKey(quoteIndex, tokenToIndex["USDT"])]);
-            } else if (tradeNodeMap.count(formatKey(quoteIndex, tokenToIndex["BUSD"]))) {
-                node->setQuote2Dollar(tradeNodeMap[formatKey(quoteIndex, tokenToIndex["BUSD"])]);
-            }
-        }
-
         // 存储所有三元环
         for (const auto &baseToken: conf::BaseAssets)
         {
@@ -254,10 +236,42 @@ namespace Pathfinder{
                 return 0;
             }
 
-            currentProfit = currentProfit * node->GetParsePrice(from, to);
+            currentProfit = currentProfit * GetPathPrice(from, to);
         }
         currentProfit = currentProfit*(1-0.00017);
         return currentProfit;
+    }
+
+    double Graph::GetPathPrice(int fromIndex, int toIndex){
+        double toDollar = ToDollar(fromIndex);
+        if (toDollar==0)
+            return 0;
+
+        double price = 0, quantity = 0;
+        Node* node = tradeNodeMap[formatKey(fromIndex, toIndex)];
+        vector<WebsocketWrapper::DepthItem> depths = node->getDepth(fromIndex, toIndex);
+        for (auto depth : depths){
+            quantity += depth.Quantity;
+            if (quantity * toDollar >= 15){
+                price = depth.Price;
+                break;
+            }
+        }
+
+        return node->GetParsePathPrice(price, fromIndex, toIndex);
+    }
+
+    double Graph::ToDollar(int fromIndex){
+        double toDollar = 0;
+        if (tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["USDT"]))) {
+            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["USDT"])]->GetOriginPrice(fromIndex, tokenToIndex["USDT"]);
+        }
+
+        if (toDollar == 0 && tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["BUSD"]))) {
+            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["BUSD"])]->GetOriginPrice(fromIndex, tokenToIndex["BUSD"]);
+        }
+
+        return toDollar;
     }
 
     int Graph::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)

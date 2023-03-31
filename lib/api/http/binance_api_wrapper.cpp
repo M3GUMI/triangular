@@ -520,7 +520,7 @@ namespace HttpWrapper
         return;
     }
 
-    void BinanceApiWrapper::CreateListenKey(string listenKey, function<void(string listenKey, int err)> callback)
+    void BinanceApiWrapper::CreateListenKey(function<void(string listenKey, int err)> callback)
     {
         string uri = "https://api.binance.com/api/v3/userDataStream";
         ApiRequest req;
@@ -530,12 +530,6 @@ namespace HttpWrapper
         req.data = "";
         req.sign = true;
         auto apiCallback = bind(&BinanceApiWrapper::createListkeyCallback, this, placeholders::_1, placeholders::_2, callback);
-
-        if (listenKey.size() != 0)
-        {
-            req.args["listenKey"] = listenKey;
-            req.method = "PUT";
-        }
 
         this->MakeRequest(req, apiCallback);
     }
@@ -563,5 +557,35 @@ namespace HttpWrapper
 
         auto listenKey = listenKeyInfo.FindMember("listenKey")->value.GetString();
         return callback(listenKey, 0);
+    }
+
+    void BinanceApiWrapper::KeepListenKey(string listenKey)
+    {
+        string uri = "https://api.binance.com/api/v3/userDataStream";
+        ApiRequest req;
+        req.args = {};
+        req.method = "PUT";
+        req.uri = uri;
+        req.data = "";
+        req.sign = false;
+        req.args["listenKey"] = std::move(listenKey);
+        auto apiCallback = bind(&BinanceApiWrapper::keepListenKeyCallback, this, placeholders::_1, placeholders::_2);
+
+        this->MakeRequest(req, apiCallback);
+    }
+
+    void BinanceApiWrapper::keepListenKeyCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
+    {
+        if (conf::EnableMock) {
+            return;
+        }
+
+        if (auto err = this->CheckResp(res); err > 0)
+        {
+            spdlog::error("func: keepListenKeyCallback, err: {}, resp: {}", WrapErr(err), res->payload());
+            return;
+        }
+
+        spdlog::info("func: keepListenKeyCallback, resp: {}", res->payload());
     }
 }
