@@ -88,7 +88,8 @@ namespace Pathfinder{
         ArbitrageChance FindBestPath(FindBestPathReq& req);
         void SubscribeArbitrage(function<void(ArbitrageChance& chance)> handler);      // 订阅套利机会推送
         void SubscribeMock(function<void(const string& base, string quote, double buyPrice, double sellPrice)> handler);
-        double get2Dollar(string token); // 获得币到美元的汇率
+        double ToDollar(int fromIndex);
+        double ToDollar(string fromToken);
         map<string, int> tokenToIndex{};
         map<int, string> indexToToken{};
 
@@ -125,6 +126,7 @@ namespace Pathfinder{
 
         vector<TransactionPathItem> formatPath(conf::Strategy& strategy, int phase, vector<int>& path);
         double calculateProfit(conf::Strategy& strategy, int phase, vector<int>& path);
+        double GetPathPrice(int fromIndex, int toIndex);
         bool checkPath(vector<TransactionPathItem>& path);
         int updateBestMap(int from, int to);
         double calculateMakerPathProfit(vector<int>& path);

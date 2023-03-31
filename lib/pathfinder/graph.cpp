@@ -274,6 +274,20 @@ namespace Pathfinder{
         return toDollar;
     }
 
+    double Graph::ToDollar(string fromToken){
+        int fromIndex = tokenToIndex[fromToken];
+        double toDollar = 0;
+        if (tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["USDT"]))) {
+            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["USDT"])]->GetOriginPrice(fromIndex, tokenToIndex["USDT"]);
+        }
+
+        if (toDollar == 0 && tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["BUSD"]))) {
+            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["BUSD"])]->GetOriginPrice(fromIndex, tokenToIndex["BUSD"]);
+        }
+
+        return toDollar;
+    }
+
     int Graph::GetExchangePrice(GetExchangePriceReq &req, GetExchangePriceResp &resp)
     {
         if (not tokenToIndex.count(req.BaseToken) || not tokenToIndex.count(req.QuoteToken)) {
@@ -495,21 +509,6 @@ namespace Pathfinder{
                 }
             }
         }
-    }
-
-    double Graph::get2Dollar(string token){
-        double toDollar = 0;
-        int tokenIndex = tokenToIndex[token];
-        int usdtIndex = tokenToIndex["USDT"];
-        int busdIndex = tokenToIndex["BUSD"];
-
-        if (tradeNodeMap.count(formatKey(tokenIndex, usdtIndex))) {
-            toDollar = tradeNodeMap[formatKey(tokenIndex, usdtIndex)]->getDepth(tokenIndex)[0].Price;
-        } else if (tradeNodeMap.count(formatKey(tokenIndex, busdIndex))) {
-            toDollar = tradeNodeMap[formatKey(tokenIndex, busdIndex)]->getDepth(tokenIndex)[0].Price;
-        }
-
-        return toDollar;
     }
 
     void Graph::SubscribeArbitrage(function<void(ArbitrageChance &path)> handler)

@@ -55,7 +55,7 @@ namespace CapitalPool
             // 非初始稳定币，清仓
             if (not basePool.count(token))
             {
-                double toDollar = pathfinder.get2Dollar(token);
+                double toDollar = pathfinder.ToDollar(token);
                 if (toDollar == 0){
                     spdlog::info("func: {}, token: {}, err: {}", "RebalancePool", token, "Cannot transfer to dollar");
                     return;
