@@ -14,7 +14,7 @@ namespace CapitalPool
         HttpWrapper::BinanceApiWrapper &apiWrapper;
         Pathfinder::Pathfinder &pathfinder;
 		websocketpp::lib::asio::io_service &ioService;
-
+        map<uint64_t, OrderData*> reBalanceOrderMap; // 重平衡订单map
         map<string, double> basePool;                                         // 初始资金池，重平衡至该状态
         map<string, double> balancePool;                                      // 实际资金池，<token,amount>
         map<string, bool> lockedBalance = {};                                      // 执行中token, todo 后续整合为类，暂时简化
@@ -23,6 +23,7 @@ namespace CapitalPool
         bool locked; // 刷新中，锁定
         int tryRebalance(const string& from, const string& to, double amount);
         void rebalanceHandler(OrderData &data);
+        void cancelHandler(int err, int orderId);
         void refreshAccountHandler(HttpWrapper::AccountInfo &info, int err);
 
     public:

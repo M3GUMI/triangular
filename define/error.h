@@ -25,4 +25,5 @@ namespace define
     const int ErrorOrderAmountZero = 206; // 订单金额为0
     const int ErrorLessTicketSize = 207; // 低于最小成交单位数量
     const int ErrorLessMinNotional = 208; // 低于最小成交金额
+    const int ErrorOrderNotFound = 209; // 订单未找到
 }

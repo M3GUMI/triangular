@@ -21,5 +21,6 @@ namespace define
         {ErrorOrderAmountZero, "order amount is zero"},
         {ErrorLessTicketSize, "less than ticket_size"},
         {ErrorLessMinNotional, "less than min_notional"},
+        {ErrorOrderNotFound, "order not found"},
     };
 }

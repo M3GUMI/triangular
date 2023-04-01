@@ -36,6 +36,36 @@ namespace CapitalPool
             return;
         }
 
+        for (auto iter = reBalanceOrderMap.begin(); iter != reBalanceOrderMap.end(); ++iter) {
+            uint64_t orderID = iter->first;
+            OrderData* order = iter->second;
+            Pathfinder::GetExchangePriceReq priceReq{};
+            priceReq.BaseToken = order->BaseToken;
+            priceReq.QuoteToken = order->QuoteToken;
+            priceReq.OrderType = order->OrderType;
+
+            Pathfinder::GetExchangePriceResp priceResp{};
+            if (auto err = pathfinder.GetExchangePrice(priceReq, priceResp); err > 0) {
+                spdlog::info("CapitalPool::RebalancePool, err:{}", WrapErr(err));
+            }
+            bool needReOrder = false;
+            define::OrderSide newSide = define::SELL;
+            if (order->Side == define::SELL && priceResp.SellPrice * (1 + 0.0001) < order->Price){
+                needReOrder = true;
+            }
+            if (order->Side == define::BUY && priceResp.BuyPrice * (1 - 0.0001) > order->Price){
+                newSide = define::BUY;
+                needReOrder = true;
+            }
+
+            if (needReOrder && reBalanceOrderMap.count(orderID) &&
+                    (reBalanceOrderMap[orderID]->OrderStatus == define::INIT ||
+                    reBalanceOrderMap[orderID]->OrderStatus == define::NEW)){
+                apiWrapper.CancelOrder(orderID, bind(&CapitalPool::cancelHandler, this, placeholders::_1, placeholders::_2));
+
+                spdlog::info("CapitalPool::RebalancePool, msg: cancel_and_rebalanceorder, from:{}, to:{}", order->GetFromToken(), order->GetToToken());
+            }
+        }
         string addToken, delToken;
         double minPercent = 100, maxPercent = 0;
 
@@ -184,8 +214,8 @@ namespace CapitalPool
     {
         auto symbolData = apiWrapper.GetSymbolData(fromToken, toToken);
         auto side = apiWrapper.GetSide(fromToken, toToken);
-        define::OrderType orderType = define::LIMIT;
-        define::TimeInForce timeInForce = define::IOC;
+        define::OrderType orderType = define::LIMIT_MAKER;
+        define::TimeInForce timeInForce = define::GTC;
 
         Pathfinder::GetExchangePriceReq priceReq{};
         priceReq.BaseToken = symbolData.BaseToken;
@@ -213,7 +243,6 @@ namespace CapitalPool
             amount = RoundDouble(amount/order.Price);
             order.Quantity = amount <= priceResp.BuyQuantity? amount: priceResp.BuyQuantity;
         }
-
         auto err = apiWrapper.CreateOrder(order, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
         if (err > 0) {
             return err;
@@ -223,6 +252,12 @@ namespace CapitalPool
         return 0;
     }
 
+    void CapitalPool::cancelHandler(int err, int orderId) {
+        if (err == 0 && reBalanceOrderMap.count(orderId)) {
+            reBalanceOrderMap[orderId]->OrderStatus = define::CANCELED;
+        }
+    }
+
     void CapitalPool::rebalanceHandler(OrderData &data) {
         if (locked) {
             // 刷新期间不执行
@@ -230,6 +265,7 @@ namespace CapitalPool
             return;
         }
 
+        reBalanceOrderMap[data.OrderId]->OrderStatus = data.OrderStatus;
         if (not balancePool.count(data.GetFromToken())) {
             spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.GetFromToken()] = 0;

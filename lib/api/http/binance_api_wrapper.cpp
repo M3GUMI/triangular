@@ -468,9 +468,30 @@ namespace HttpWrapper
         MakeRequest(req, callback);
     }
 
-    void BinanceApiWrapper::CancelOrder(uint64_t orderId)
+    void BinanceApiWrapper::cancelOrderId(uint64_t orderId, function<void(int err, int orderId)> callback)
     {
-        this->cancelOrder(orderId, "");
+        map<string, string> args;
+        string uri = "https://api.binance.com/api/v3/openOrders";
+        args["timestamp"] = std::to_string(time(NULL) * 1000);
+        args["recvWindow"] = "50000";
+        if (orderId > 0) {
+            args["newClientOrderId"] = GetOutOrderId(orderId);
+        }
+
+        ApiRequest req;
+        req.args = args;
+        req.method = "DELETE";
+        req.uri = uri;
+        req.data = "";
+        req.sign = true;
+        auto apiCallback = bind(&BinanceApiWrapper::cancelOrderIdCallback, this, placeholders::_1, placeholders::_2, orderId, callback);
+
+        MakeRequest(req, apiCallback);
+    }
+
+    void BinanceApiWrapper::CancelOrder(uint64_t orderId, function<void(int orderId, int err)> callback)
+    {
+        this->cancelOrderId(orderId, callback);
     }
 
     void BinanceApiWrapper::CancelOrderSymbol(string token0, string token1)
@@ -513,10 +534,26 @@ namespace HttpWrapper
 
             return;
         }
+   }
 
-        // todo 改成回调通知订单管理层
-        // mapSymbolBalanceOrderStatus[ori_symbol] = 0;
-        return;
+    void BinanceApiWrapper::cancelOrderIdCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec, int orderId, function<void(int err, int orderId)> callback)
+    {
+        if (conf::EnableMock) {
+            return;
+        }
+
+        if (auto checkResult = this->CheckRespWithCode(res); checkResult.Err > 0)
+        {
+            if (checkResult.Code == -2011 && checkResult.Msg == "Unknown order sent.") {
+                callback(define::ErrorOrderNotFound, 0);
+                return;
+            }
+
+            callback(define::ErrorDefault, 0);
+            return;
+        }
+
+        callback(0, orderId);
     }
 
     void BinanceApiWrapper::CreateListenKey(function<void(string listenKey, int err)> callback)
