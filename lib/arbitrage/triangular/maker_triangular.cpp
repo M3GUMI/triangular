@@ -226,7 +226,7 @@ namespace Arbitrage{
     // maker挂单超时
     void MakerTriangularArbitrage::makerTimeoutHandler(uint64_t orderId, OrderData &data)
     {
-        apiWrapper.CancelOrder(orderId);
+        apiWrapper.CancelOrderSymbol(data.BaseToken, data.QuoteToken);
 //        orderMap[orderId] = nullptr;
         spdlog::info("MakerTriangularArbitrage::makerTimeoutHandler, timout_limit");
         Pathfinder::GetExchangePriceReq reqs{
