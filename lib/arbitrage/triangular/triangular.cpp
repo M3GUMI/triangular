@@ -40,13 +40,17 @@ namespace Arbitrage{
         for (const auto& item : orderMap)
         {
             auto order = item.second;
+            if (order->Phase == 1) {
+                // 现不判断1阶段单
+                continue;
+            }
             if (order->OrderStatus != define::FILLED &&
                 order->OrderStatus != define::PARTIALLY_FILLED &&
                 order->OrderStatus != define::EXPIRED &&
                 order->OrderStatus != define::NEW )
             {
-                spdlog::info("order:{},phase: {},base:{}, quote:{}, side:{}, ExecuteQuantity:{},NewQuantity:{},finished:false",
-                             order->OrderStatus, order->Phase, order->BaseToken, order->QuoteToken, order->Side, order->ExecuteQuantity,order->GetNewQuantity());
+                spdlog::info("orderId: {}, orderStatus:{}, phase: {}, symbol:{}, side:{}, ExecuteQuantity:{}, NewQuantity:{}, finished:false",
+                             order->OrderId, order->OrderStatus, order->Phase, order->BaseToken+order->QuoteToken, order->Side, order->ExecuteQuantity,order->GetNewQuantity());
                 return false;
             }
         }
@@ -95,7 +99,6 @@ namespace Arbitrage{
         if (path.Quantity < symbolData.StepSize){
             order->Quantity = path.Quantity;
         }
-        spdlog::info("order->quantity:{}, path.quantity:{}, symbolData.stepSize:{}", order->Quantity,path.Quantity,symbolData.StepSize);
 
         orderMap[order->OrderId] = order;
         orderId = order->OrderId;
@@ -171,6 +174,10 @@ namespace Arbitrage{
         OrderData* order = orderMap[data.OrderId];
         if (order->UpdateTime >= data.UpdateTime) {
             if (order->OrderStatus != define::NEW || data.OrderStatus != define::FILLED) {
+                if (data.Phase == 1) {
+                    spdlog::info("update_return, phase: {}, status: {}, quantity: {}, executeQuantity: {}, cummulativeQuoteQuantity: {}, price: {}, executePrice: {}",
+                                 data.Phase, data.OrderStatus, data.Quantity, data.ExecuteQuantity, data.CummulativeQuoteQuantity, data.Price, data.ExecutePrice);
+                }
                 return;
             }
         }

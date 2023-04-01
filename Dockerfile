@@ -5,7 +5,12 @@ RUN apt-get update && apt-get install -y git \
     && apt-get install -y gcc \
     && apt-get install -y g++ \
     && apt-get install -y sshpass \
-    && apt-get install -y gdb
+    && apt-get install -y gdb \
+    && apt install libjsoncpp-dev \
+    && apt install uuid-dev \
+    && apt install openssl \
+    && apt install libssl-dev \
+    && apt install zlib1g-dev
 
 RUN apt-get install -y libboost-all-dev \
     && apt-get install -y libasio-dev \

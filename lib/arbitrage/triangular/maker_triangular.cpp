@@ -112,7 +112,7 @@ namespace Arbitrage{
         req.Phase = newPhase;
 
         //重试次数过多，终止
-        if (retryTime > 10000 && !takerPathFinded){
+        if (retryTime > 20000 && !takerPathFinded){
             quitAndReopen = true;
         }
 
