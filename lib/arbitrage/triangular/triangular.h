@@ -38,9 +38,9 @@ namespace Arbitrage{
         double OriginQuantity = 0; // 原始起点token数量
         double FinalQuantity = 0;  // 最终起点token数量
         double PathQuantity = 0;  //过程币的数量
-
+        bool quitAndReopen = false; //taker次数过多，临时变量判断是否重开
         bool overFirstStep = false; //临时堵住baseOrderHandler
-
+        bool MakerExecuted = false; //判斷maker是否完成成交
         Pathfinder::Pathfinder &pathfinder;
         CapitalPool::CapitalPool &capitalPool;
         HttpWrapper::BinanceApiWrapper &apiWrapper;
@@ -48,8 +48,8 @@ namespace Arbitrage{
         int ExecuteTrans(uint64_t& orderId, int phase, Pathfinder::TransactionPathItem &path);
         int ReviseTrans(uint64_t& orderId, int phase, string origin, double quantity);
         bool CheckFinish();
-    private:
         bool finished = false;
+    private:
         function<void()> subscriber = nullptr;
         virtual void TransHandler(OrderData &orderData);
     };

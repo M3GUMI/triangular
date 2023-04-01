@@ -25,17 +25,32 @@ namespace Arbitrage{
             spdlog::info("finished:{}", finished);
             return true;
         }
-
+        if(quitAndReopen){
+            finished = true;
+            if (this->subscriber == nullptr)
+            {
+                spdlog::info("quitAndReopen:fail,finish:subscriber:null");
+            }
+            if (this->subscriber != nullptr) {
+                spdlog::info("quitAndReopen:success");
+                this->subscriber();
+            }
+            return true;
+        }
         for (const auto& item : orderMap)
         {
             auto order = item.second;
+            if (order->Phase == 1) {
+                // 现不判断1阶段单
+                continue;
+            }
             if (order->OrderStatus != define::FILLED &&
                 order->OrderStatus != define::PARTIALLY_FILLED &&
                 order->OrderStatus != define::EXPIRED &&
                 order->OrderStatus != define::NEW )
             {
-                spdlog::info("order:{},base:{}, quote:{}, side:{}, ExecuteQuantity:{},NewQuantity:{},finished:{}",
-                             order->OrderStatus, order->BaseToken, order->QuoteToken, order->Side, order->ExecuteQuantity,order->GetNewQuantity(), "false");
+                spdlog::info("orderId: {}, orderStatus:{}, phase: {}, symbol:{}, side:{}, ExecuteQuantity:{}, NewQuantity:{}, finished:false",
+                             order->OrderId, order->OrderStatus, order->Phase, order->BaseToken+order->QuoteToken, order->Side, order->ExecuteQuantity,order->GetNewQuantity());
                 return false;
             }
         }
@@ -45,7 +60,7 @@ namespace Arbitrage{
         finished = true;
         if (this->subscriber == nullptr)
         {
-            spdlog::info("subscriber:null");
+            spdlog::info("finish:subscriber:null");
         }
         if (this->subscriber != nullptr) {
             spdlog::info("finish:subscriber");
@@ -76,8 +91,14 @@ namespace Arbitrage{
         order->Price = tmpPrice * symbolData.TicketSize;
 
         // stepSize校验
-        uint32_t tmpQuantity = path.Quantity / symbolData.StepSize;
-        order->Quantity = tmpQuantity * symbolData.StepSize;
+        if(path.Quantity >= symbolData.StepSize)
+        {
+            uint32_t tmpQuantity = path.Quantity / symbolData.StepSize;
+            order->Quantity = tmpQuantity * symbolData.StepSize;
+        }
+        if (path.Quantity < symbolData.StepSize){
+            order->Quantity = path.Quantity;
+        }
 
         orderMap[order->OrderId] = order;
         orderId = order->OrderId;
@@ -153,6 +174,10 @@ namespace Arbitrage{
         OrderData* order = orderMap[data.OrderId];
         if (order->UpdateTime >= data.UpdateTime) {
             if (order->OrderStatus != define::NEW || data.OrderStatus != define::FILLED) {
+                if (data.Phase == 1) {
+                    spdlog::info("update_return, phase: {}, status: {}, quantity: {}, executeQuantity: {}, cummulativeQuoteQuantity: {}, price: {}, executePrice: {}",
+                                 data.Phase, data.OrderStatus, data.Quantity, data.ExecuteQuantity, data.CummulativeQuoteQuantity, data.Price, data.ExecutePrice);
+                }
                 return;
             }
         }
@@ -181,7 +206,8 @@ namespace Arbitrage{
             PathQuantity = order->GetNewQuantity();
         }
         else if(data.Phase == 3 ){
-               }
+            MakerExecuted = true;
+        }
 
         TransHandler(*order);
         // TriangularArbitrage::CheckFinish();

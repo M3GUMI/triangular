@@ -45,6 +45,7 @@ namespace Executor{
         auto err = makerTriangular->Run("USDT", "XRP", 20);
         if (err > 0)
         {
+            this->lock = false;
             return;
         }
         makerTriangular->SubscribeFinish(bind(&Executor::arbitrageFinishHandler, this));
@@ -76,10 +77,10 @@ namespace Executor{
     }
 
     void Executor::arbitrageFinishHandler() {
-        spdlog::info("executor::arbitrageFinishHandler, orderFinish!!! ");
         capitalPool.Refresh();
-        if (executeTime <= 5){
+        if (executeTime <= 50){
             this->lock = false;
+            spdlog::info("func: arbitrageFinishHandler, executeTime:{}",  executeTime);
             executeTime++;
         }
 

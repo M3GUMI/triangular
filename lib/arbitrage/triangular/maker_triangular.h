@@ -24,7 +24,10 @@ namespace Arbitrage
         websocketpp::lib::asio::io_service& ioService;
         WebsocketWrapper::BinanceOrderWrapper* orderWrapper;
 
+        double executeProfit = 1; // 实际执行利润率
+
         OrderData* PendingOrder = nullptr; // 提前挂单
+        bool takerPathFinded = false; // 已找到taker路径
         int retryTime = 0;
         int currentPhase = 0;
         string baseToken;
@@ -34,13 +37,21 @@ namespace Arbitrage
         double close = 0.002; // 撤单重挂阈值
         double open = 0.001; // 挂单阈值
 
+        double targetProfit = 1.0002;
+
         std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> retryTimer;//市价吃单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> lastOrderTimer;//市价吃单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> cancelOrderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> mockPriceTimer;//mock测试价格变化计时器
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> quitAndReopenTimer;//退出taker重挂单计时器
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> remakerTimer;//重挂单计时器
 
         void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单
+
+        // maker挂单超时
+        void makerTimeoutHandler(uint64_t orderId, OrderData &data);
+
         void takerHandler(OrderData& data);
 
         void makerHandler(OrderData& data);
