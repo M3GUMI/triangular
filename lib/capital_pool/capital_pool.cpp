@@ -63,7 +63,7 @@ namespace CapitalPool
                     reBalanceOrderMap[orderID]->OrderStatus == define::NEW)){
                 apiWrapper.CancelOrder(orderID, bind(&CapitalPool::cancelHandler, this, placeholders::_1, placeholders::_2));
 
-                spdlog::info("CapitalPool::RebalancePool, cancel_and_rebalanceorder: from:{}, to:{}, ", order->GetFromToken(), order->GetToToken());
+                spdlog::info("CapitalPool::RebalancePool, msg: cancel_and_rebalanceorder, from:{}, to:{}", order->GetFromToken(), order->GetToToken());
             }
         }
         string addToken, delToken;
