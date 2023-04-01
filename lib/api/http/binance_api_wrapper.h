@@ -73,7 +73,7 @@ namespace HttpWrapper
         int CreateOrder(OrderData& req, function<void(OrderData& data, int err)> callback);
 
         // 取消订单
-        void CancelOrder(uint64_t orderId, function<void(int orderId, int err)> callback);
+        void CancelOrder(uint64_t orderId, function<void(int err, int orderId)> callback);
         void CancelOrderSymbol(string token0, string token1);
         void CancelOrderSymbols(vector<pair<string, string>> symbols);
         void CancelOrderAll();
