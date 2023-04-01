@@ -61,15 +61,7 @@ namespace CapitalPool
             if (needReOrder == true){
                 reBalanceOrderMap[orderID] = nullptr;
                 apiWrapper.CancelOrder(orderID);
-//                Pathfinder::TransactionPathItem path{
-//                        .BaseToken = order->BaseToken,
-//                        .QuoteToken = order->QuoteToken,
-//                        .Side = newSide,
-//                        .OrderType = define::LIMIT_MAKER,
-//                        .TimeInForce = define::GTC,
-//                        .Price = priceResp.BuyPrice,
-//                        .Quantity = order->Quantity;
-//                };
+
                 spdlog::info("CapitalPool::RebalancePool, cancel_and_rebalanceorder: from:{}, to:{}, ", order->GetFromToken(), order->GetToToken());
             }
         }
