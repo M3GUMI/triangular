@@ -49,15 +49,28 @@ namespace CapitalPool
                 spdlog::info("CapitalPool::RebalancePool, err:{}", WrapErr(err));
             }
             bool needReOrder = false;
+            define::OrderSide newSide = define::SELL;
             if (order->Side == define::SELL && priceResp.SellPrice * (1 + 0.0001) < order->Price){
                 needReOrder = true;
             }
-            if (order->Side == define::BUY && priceResp.SellPrice * (1 - 0.0001) > order->Price){
+            if (order->Side == define::BUY && priceResp.BuyPrice * (1 - 0.0001) > order->Price){
+                newSide = define::BUY;
                 needReOrder = true;
             }
+
             if (needReOrder == true){
                 reBalanceOrderMap[orderID] = nullptr;
-                spdlog::info("CapitalPool::RebalancePool, RebalanceOrder: from:{}, to:{}, cancel_and_reorder", order->GetFromToken(), order->GetToToken());
+                apiWrapper.CancelOrder(orderID);
+//                Pathfinder::TransactionPathItem path{
+//                        .BaseToken = order->BaseToken,
+//                        .QuoteToken = order->QuoteToken,
+//                        .Side = newSide,
+//                        .OrderType = define::LIMIT_MAKER,
+//                        .TimeInForce = define::GTC,
+//                        .Price = priceResp.BuyPrice,
+//                        .Quantity = order->Quantity;
+//                };
+                spdlog::info("CapitalPool::RebalancePool, cancel_and_rebalanceorder: from:{}, to:{}, ", order->GetFromToken(), order->GetToToken());
             }
         }
         string addToken, delToken;
