@@ -346,7 +346,7 @@ namespace Arbitrage{
         if (needReOrder || this->PendingOrder == nullptr) {
             // 取消旧单
             if (this->PendingOrder != nullptr) {
-                apiWrapper.CancelOrder(this->PendingOrder->OrderId);
+                apiWrapper.CancelOrderSymbol(this->PendingOrder->BaseToken, this->PendingOrder->QuoteToken);
                 this->PendingOrder = nullptr;
             } else {
                 Pathfinder::TransactionPathItem path{
