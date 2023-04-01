@@ -23,6 +23,7 @@ namespace CapitalPool
         bool locked; // 刷新中，锁定
         int tryRebalance(const string& from, const string& to, double amount);
         void rebalanceHandler(OrderData &data);
+        void cancelHandler(int err, int orderId);
         void refreshAccountHandler(HttpWrapper::AccountInfo &info, int err);
 
     public:

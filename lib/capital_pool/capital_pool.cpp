@@ -28,7 +28,7 @@ namespace CapitalPool
         // 每秒执行一次重平衡
         rebalanceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
         rebalanceTimer->async_wait(bind(&CapitalPool::RebalancePool, this, data));
-        
+
         if (locked)
         {
             // 刷新期间不执行
@@ -58,9 +58,8 @@ namespace CapitalPool
                 needReOrder = true;
             }
 
-            if (needReOrder == true){
-                reBalanceOrderMap[orderID] = nullptr;
-                apiWrapper.CancelOrder(orderID);
+            if (needReOrder && reBalanceOrderMap.count(orderID) && reBalanceOrderMap[orderID]->OrderStatus != define::FILLED){
+                apiWrapper.CancelOrder(orderID, bind(&CapitalPool::cancelHandler, this, placeholders::_1, placeholders::_2));
 
                 spdlog::info("CapitalPool::RebalancePool, cancel_and_rebalanceorder: from:{}, to:{}, ", order->GetFromToken(), order->GetToToken());
             }
@@ -213,8 +212,8 @@ namespace CapitalPool
     {
         auto symbolData = apiWrapper.GetSymbolData(fromToken, toToken);
         auto side = apiWrapper.GetSide(fromToken, toToken);
-        define::OrderType orderType = define::LIMIT;
-        define::TimeInForce timeInForce = define::IOC;
+        define::OrderType orderType = define::LIMIT_MAKER;
+        define::TimeInForce timeInForce = define::GTC;
 
         Pathfinder::GetExchangePriceReq priceReq{};
         priceReq.BaseToken = symbolData.BaseToken;
@@ -242,7 +241,6 @@ namespace CapitalPool
             amount = RoundDouble(amount/order.Price);
             order.Quantity = amount <= priceResp.BuyQuantity? amount: priceResp.BuyQuantity;
         }
-        reBalanceOrderMap[order.OrderId] = &order;
         auto err = apiWrapper.CreateOrder(order, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
         if (err > 0) {
             return err;
@@ -252,14 +250,20 @@ namespace CapitalPool
         return 0;
     }
 
-    void CapitalPool::rebalanceHandler(OrderData &data) {
+    void CapitalPool::cancelHandler(int err, int orderId) {
+        if (err == 0 && reBalanceOrderMap.count(orderId)) {
+            reBalanceOrderMap[orderId]->OrderStatus = define::CANCELED;
+        }
+    }
 
+    void CapitalPool::rebalanceHandler(OrderData &data) {
         if (locked) {
             // 刷新期间不执行
             spdlog::debug("func: {}, msg: {}", "rebalanceHandler", "refresh execute, ignore");
             return;
         }
 
+        reBalanceOrderMap[data.OrderId]->OrderStatus = data.OrderStatus;
         if (not balancePool.count(data.GetFromToken())) {
             spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.GetFromToken()] = 0;
