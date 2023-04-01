@@ -3,6 +3,7 @@
 #include "define/define.h"
 #include "utils/utils.h"
 #include "binance_api_wrapper.h"
+#include "stdlib.h"
 
 using namespace std;
 namespace HttpWrapper

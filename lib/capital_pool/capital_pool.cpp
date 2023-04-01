@@ -28,7 +28,7 @@ namespace CapitalPool
         // 每秒执行一次重平衡
         rebalanceTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
         rebalanceTimer->async_wait(bind(&CapitalPool::RebalancePool, this, data));
-
+        
         if (locked)
         {
             // 刷新期间不执行
@@ -36,6 +36,30 @@ namespace CapitalPool
             return;
         }
 
+        for (auto iter = reBalanceOrderMap.begin(); iter != reBalanceOrderMap.end(); ++iter) {
+            uint64_t orderID = iter->first;
+            OrderData* order = iter->second;
+            Pathfinder::GetExchangePriceReq priceReq{};
+            priceReq.BaseToken = order->BaseToken;
+            priceReq.QuoteToken = order->QuoteToken;
+            priceReq.OrderType = order->OrderType;
+
+            Pathfinder::GetExchangePriceResp priceResp{};
+            if (auto err = pathfinder.GetExchangePrice(priceReq, priceResp); err > 0) {
+                spdlog::info("CapitalPool::RebalancePool, err:{}", WrapErr(err));
+            }
+            bool needReOrder = false;
+            if (order->Side == define::SELL && priceResp.SellPrice * (1 + 0.0001) < order->Price){
+                needReOrder = true;
+            }
+            if (order->Side == define::BUY && priceResp.SellPrice * (1 - 0.0001) > order->Price){
+                needReOrder = true;
+            }
+            if (needReOrder == true){
+                reBalanceOrderMap[orderID] = nullptr;
+                spdlog::info("CapitalPool::RebalancePool, RebalanceOrder: from:{}, to:{}, cancel_and_reorder", order->GetFromToken(), order->GetToToken());
+            }
+        }
         string addToken, delToken;
         double minPercent = 100, maxPercent = 0;
 
@@ -213,7 +237,7 @@ namespace CapitalPool
             amount = RoundDouble(amount/order.Price);
             order.Quantity = amount <= priceResp.BuyQuantity? amount: priceResp.BuyQuantity;
         }
-
+        reBalanceOrderMap[order.OrderId] = &order;
         auto err = apiWrapper.CreateOrder(order, bind(&CapitalPool::rebalanceHandler, this, placeholders::_1));
         if (err > 0) {
             return err;
@@ -224,6 +248,7 @@ namespace CapitalPool
     }
 
     void CapitalPool::rebalanceHandler(OrderData &data) {
+
         if (locked) {
             // 刷新期间不执行
             spdlog::debug("func: {}, msg: {}", "rebalanceHandler", "refresh execute, ignore");
