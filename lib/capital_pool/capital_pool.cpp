@@ -129,7 +129,7 @@ namespace CapitalPool
                         req.Side = define::SELL;
                     }
 
-                    spdlog::info("func: RebalancePool, token: {}, addDollar: {}", token, addDollar);
+                    spdlog::info("func: RebalancePool, msg: add position to rebalance, token: {}, dollar: {}, addDollar: {}", token, dollarAmount, addDollar);
                     auto apiCallback = bind(&CapitalPool::rebalanceHandler, this, placeholders::_1);
 
                     apiWrapper.CreateOrder(req, apiCallback);
