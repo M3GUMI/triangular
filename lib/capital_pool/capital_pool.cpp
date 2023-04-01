@@ -58,7 +58,9 @@ namespace CapitalPool
                 needReOrder = true;
             }
 
-            if (needReOrder && reBalanceOrderMap.count(orderID) && reBalanceOrderMap[orderID]->OrderStatus != define::FILLED){
+            if (needReOrder && reBalanceOrderMap.count(orderID) &&
+                    (reBalanceOrderMap[orderID]->OrderStatus == define::INIT ||
+                    reBalanceOrderMap[orderID]->OrderStatus == define::NEW)){
                 apiWrapper.CancelOrder(orderID, bind(&CapitalPool::cancelHandler, this, placeholders::_1, placeholders::_2));
 
                 spdlog::info("CapitalPool::RebalancePool, cancel_and_rebalanceorder: from:{}, to:{}, ", order->GetFromToken(), order->GetToToken());
