@@ -214,7 +214,7 @@ namespace HttpWrapper
         return callback(info, 0);
     }
 
-    int BinanceApiWrapper::GetOpenOrder(string symbol)
+    int BinanceApiWrapper::GetOpenOrder()
     {
         uint64_t now = time(NULL);
 
@@ -232,7 +232,26 @@ namespace HttpWrapper
 
     void BinanceApiWrapper::getOpenOrderCallback(std::shared_ptr<HttpRespone> res, const ahttp::error_code &ec)
     {
-        spdlog::info("orders: {}", res->payload());
+
+        if (auto err = CheckResp(res); err > 0) {
+            return;
+        }
+
+        rapidjson::Document exchangeInfoJson;
+        exchangeInfoJson.Parse(res->payload().c_str());
+        if (!exchangeInfoJson.HasMember("symbols"))
+        {
+            return;
+        }
+
+        vector<string> info;
+        const auto &symbols = exchangeInfoJson["symbols"];
+        for (unsigned i = 0; i < symbols.Size(); i++)
+        {
+            string symbol = symbols[i].FindMember("symbol")->value.GetString();
+            info.push_back(symbol);
+        }
+        spdlog::info("func: GetOpenOrder, order: {}", "rebalanceHandler", spdlog::fmt_lib::join(info, ","));
     }
 
     int BinanceApiWrapper::GetUserAsset(function<void(double btc)> callback)

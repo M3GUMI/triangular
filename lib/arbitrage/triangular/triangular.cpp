@@ -25,12 +25,7 @@ namespace Arbitrage{
         }
         if(quitAndReopen){
             finished = true;
-            if (this->subscriber == nullptr)
-            {
-                spdlog::info("quitAndReopen:fail,finish:subscriber:null");
-            }
             if (this->subscriber != nullptr) {
-                spdlog::info("quitAndReopen:success");
                 this->subscriber();
             }
             return true;
@@ -40,6 +35,13 @@ namespace Arbitrage{
             auto order = item.second;
             if (order->Phase == 1) {
                 // 现不判断1阶段单
+                if (order->OrderStatus != define::FILLED &&
+                    order->OrderStatus != define::PARTIALLY_FILLED &&
+                    order->OrderStatus != define::EXPIRED &&
+                    order->OrderStatus != define::NEW ) {
+                    spdlog::info("orderId: {}, phase: {}, symbol:{}",
+                                 order->OrderId, order->Phase, order->BaseToken+order->QuoteToken);
+                }
                 continue;
             }
             if (order->OrderStatus != define::FILLED &&
