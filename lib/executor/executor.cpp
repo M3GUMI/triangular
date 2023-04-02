@@ -44,7 +44,7 @@ namespace Executor{
         auto err = makerTriangular->Run("USDT", "XRP", 20);
         if (err > 0)
         {
-            spdlog::error("func: initMaker, err:{}", err);
+            spdlog::error("func: initMaker, err:{}", WrapErr(err));
             this->lock = false;
             return;
         }
