@@ -91,10 +91,8 @@ namespace Arbitrage{
             executeProfit = executeProfit * data.GetParsePrice();
             if (PathQuantity != 0){
                 FinalQuantity += (PathQuantity-data.GetExecuteQuantity()) * data.Price;
-                spdlog::info("pathQuantity:{}", PathQuantity);
+                // spdlog::info("pathQuantity:{}", PathQuantity);
             }
-            spdlog::info("{}::Finish, profit: {}, originQuantity: {}, finialQuantity: {}",
-                         this->strategy.StrategyName, FinalQuantity / OriginQuantity, OriginQuantity, FinalQuantity);
             CheckFinish();
             return;
         }
@@ -112,7 +110,7 @@ namespace Arbitrage{
         req.Phase = newPhase;
 
         //重试次数过多，终止
-        if (retryTime > 20000 && !takerPathFinded){
+        if (retryTime > 10000 && !takerPathFinded){
             quitAndReopen = true;
         }
 
@@ -149,11 +147,10 @@ namespace Arbitrage{
             {
                 if (quitAndReopen)
                 {
-                    spdlog::info("{}::TakerHandler,quitAndReopen：{}, can_not_find_path,quit_and_reopen_project",
+                    spdlog::info("{}::TakerHandler, msg: can not find path, quit and reopen",
                                  this->strategy.StrategyName, quitAndReopen);
                     CheckFinish();
                 }
-                // spdlog::info("{}::TakerHandler,failed_path:{}, profit:{}",this->strategy.StrategyName,  spdlog::fmt_lib::join(chance.Format(), ","),realProfit);
                 retryTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
                                                                                     websocketpp::lib::asio::milliseconds(
                                                                                             20));

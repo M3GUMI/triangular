@@ -211,7 +211,6 @@ namespace HttpWrapper
             info.Balances.push_back(data);
         }
 
-        spdlog::info("func: {}, msg: {}", "GetAccountInfo", "get account_info success");
         return callback(info, 0);
     }
 
@@ -622,6 +621,6 @@ namespace HttpWrapper
             return;
         }
 
-        spdlog::info("func: keepListenKeyCallback, resp: {}", res->payload());
+        // spdlog::info("func: keepListenKeyCallback, msg: keep listen key success");
     }
 }

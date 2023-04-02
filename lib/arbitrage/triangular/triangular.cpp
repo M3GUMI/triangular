@@ -1,8 +1,6 @@
 #include "triangular.h"
 #include "lib/api/http/binance_api_wrapper.h"
 
-
-
 namespace Arbitrage{
     TriangularArbitrage::TriangularArbitrage(
             Pathfinder::Pathfinder &pathfinder,
@@ -58,12 +56,7 @@ namespace Arbitrage{
         spdlog::info("{}::Finish, profit: {}, finalQuantity: {}, originQuantity: {}",
                      this->strategy.StrategyName, this->FinalQuantity / this->OriginQuantity, this->FinalQuantity, this->OriginQuantity);
         finished = true;
-        if (this->subscriber == nullptr)
-        {
-            spdlog::info("finish:subscriber:null");
-        }
         if (this->subscriber != nullptr) {
-            spdlog::info("finish:subscriber");
             this->subscriber();
         }
         return true;
@@ -172,14 +165,8 @@ namespace Arbitrage{
         }
 
         OrderData* order = orderMap[data.OrderId];
-        if (order->UpdateTime >= data.UpdateTime) {
-            if (order->OrderStatus != define::NEW || data.OrderStatus != define::FILLED) {
-                if (data.Phase == 1) {
-                    spdlog::info("update_return, phase: {}, status: {}, quantity: {}, executeQuantity: {}, cummulativeQuoteQuantity: {}, price: {}, executePrice: {}",
-                                 data.Phase, data.OrderStatus, data.Quantity, data.ExecuteQuantity, data.CummulativeQuoteQuantity, data.Price, data.ExecutePrice);
-                }
-                return;
-            }
+        if (!orderStatusCheck(order->OrderStatus, data.OrderStatus)) {
+            return;
         }
 
         if (data.Quantity > 0) {
@@ -192,25 +179,45 @@ namespace Arbitrage{
         order->CummulativeQuoteQuantity = data.CummulativeQuoteQuantity;
         order->UpdateTime = data.UpdateTime;
 
-        //堵住重复调用
-        if (order->Phase == 1 && overFirstStep == true && order->OrderStatus == define::FILLED){
-            spdlog::info("overFirstStep = true, status:{}", order->OrderStatus );
-            return;
-        }
-
-        if(order->Phase == 1 && overFirstStep == false && order->OrderStatus == define::FILLED ){
-            overFirstStep = true;
-            OriginQuantity = order->GetExecuteQuantity();
-        }
-        else if(order->Phase == 2 ){
-            PathQuantity = order->GetNewQuantity();
-        }
-        else if(data.Phase == 3 ){
-            MakerExecuted = true;
+        if(order->OrderStatus == define::FILLED){
+            if(order->Phase == 1){
+                OriginQuantity = order->GetExecuteQuantity();
+            }
+            else if(order->Phase == 2 ){
+                PathQuantity = order->GetNewQuantity();
+            }
+            else if(data.Phase == 3 ){
+                MakerExecuted = true;
+            }
         }
 
         TransHandler(*order);
         // TriangularArbitrage::CheckFinish();
+    }
+
+    bool TriangularArbitrage::orderStatusCheck(int baseStatus, int newStatus){
+        // 状态机
+        // INIT->NEW
+        // NEW->PARTIALLY_FILLED->FILLED
+        // NEW->EXPIRED
+        if (baseStatus == define::INIT) {
+            return true;
+        }
+        if (newStatus == define::CANCELED || newStatus == define::REJECTED || newStatus == define::EXPIRED) {
+            return true;
+        }
+
+        if (baseStatus == define::NEW && newStatus == define::PARTIALLY_FILLED) {
+            return true;
+        }
+        if (baseStatus == define::PARTIALLY_FILLED && newStatus == define::FILLED) {
+            return true;
+        }
+        if (baseStatus == define::NEW && newStatus == define::FILLED) {
+            return true;
+        }
+
+        return false;
     }
 
     void TriangularArbitrage::TransHandler(OrderData &orderData) {
