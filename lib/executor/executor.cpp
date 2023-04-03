@@ -20,7 +20,6 @@ namespace Executor{
 
     void Executor::Init() {
         apiWrapper.CancelOrderSymbol("XRP", "USDT");
-        apiWrapper.CancelOrderSymbol("BUSD", "USDT");
         checkTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
         checkTimer->async_wait(bind(&Executor::initMaker, this));
     }
