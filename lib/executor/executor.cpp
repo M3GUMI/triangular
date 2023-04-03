@@ -52,14 +52,9 @@ namespace Executor{
     }
 
     void Executor::arbitragePathHandler(Pathfinder::ArbitrageChance &chance) {
-        return;
         if (this->lock) {
-            spdlog::debug("lock");
+            spdlog::info("lock");
             return;
-        }
-
-        if (!conf::EnableMock) {
-            apiWrapper.GetUserAsset(bind(&Executor::print, this, placeholders::_1));
         }
 
         // todo 此处需要内存管理。需要增加套利任务结束，清除subscribe

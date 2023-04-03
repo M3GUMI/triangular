@@ -17,7 +17,7 @@ namespace conf
     };
     map<u_int64_t, double> HandlingFeeMap = {
             {formatKey(define::LIMIT_MAKER, define::GTC), 0},
-            {formatKey(define::MARKET, define::IOC), 0.0004},
+            {formatKey(define::MARKET, define::IOC), 0.00017},
     };
 //    Config* initConfig()
 //    {
