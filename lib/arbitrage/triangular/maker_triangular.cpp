@@ -112,7 +112,7 @@ namespace Arbitrage{
         req.Phase = newPhase;
 
         //重试次数过多，终止
-        if (retryTime > 20000 && !takerPathFinded){
+        if (retryTime > 400 && !takerPathFinded){
             quitAndReopen = true;
         }
 
@@ -125,7 +125,7 @@ namespace Arbitrage{
             {
                 takerPathFinded = true;
                 uint64_t orderId;
-                spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", this->strategy.StrategyName, realProfit,
+                spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}, retryTime:{}", this->strategy.StrategyName, realProfit,retryTime,
                              spdlog::fmt_lib::join(chance.Format(), ","));
                 auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
                 if (err > 0)
@@ -335,6 +335,7 @@ namespace Arbitrage{
         {
             newSide = define::BUY;
             newPrice = res.BuyPrice * (1 - this->open);
+            newQuantity = RoundDouble(this->OriginQuantity / newPrice);
             newQuantity = RoundDouble(this->OriginQuantity / newPrice);
 
             if (this->PendingOrder != nullptr && res.BuyPrice * (1 - this->close) > this->PendingOrder->Price)
