@@ -39,7 +39,6 @@ namespace Arbitrage{
         double FinalQuantity = 0;  // 最终起点token数量
         double PathQuantity = 0;  //过程币的数量
         bool quitAndReopen = false; //taker次数过多，临时变量判断是否重开
-        bool overFirstStep = false; //临时堵住baseOrderHandler
         bool MakerExecuted = false; //判斷maker是否完成成交
         Pathfinder::Pathfinder &pathfinder;
         CapitalPool::CapitalPool &capitalPool;
@@ -52,5 +51,6 @@ namespace Arbitrage{
     private:
         function<void()> subscriber = nullptr;
         virtual void TransHandler(OrderData &orderData);
+        static bool orderStatusCheck(int baseStatus, int newStatus);
     };
 }
