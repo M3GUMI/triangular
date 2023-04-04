@@ -313,8 +313,6 @@ namespace HttpWrapper
         }
 
         map<string, string> args;
-        string uri = "https://api.binance.com/api/v3/order";
-
         // ticketSize校验
         auto symbolData = GetSymbolData(req.BaseToken, req.QuoteToken);
         uint32_t tmpPrice = req.Price / symbolData.TicketSize;
@@ -332,6 +330,13 @@ namespace HttpWrapper
         if (req.GetNationalQuantity() < symbolData.MinNotional) {
             req.OrderStatus = define::EXPIRED;
             return define::ErrorLessMinNotional;
+        }
+
+        string uri = "https://api.binance.com/api/v3/order";
+        if (req.CancelOrderId > 0) {
+            uri = "https://api.binance.com/api/v3/order/cancelReplace";
+            args["cancelOrigClientOrderId"] = orderIdMap[req.CancelOrderId];
+            args["cancelReplaceMode"] = "STOP_ON_FAILURE";
         }
 
         if (req.OrderType == define::LIMIT && req.TimeInForce == define::IOC) {
@@ -410,8 +415,15 @@ namespace HttpWrapper
             }
         }
 
-        rapidjson::Document order;
-        order.Parse(res->payload().c_str());
+        rapidjson::Value order;
+        rapidjson::Document response;
+        response.Parse(res->payload().c_str());
+
+        if (req.CancelOrderId > 0) {
+            order = response["newOrderResponse"];
+        } else {
+            order.CopyFrom(response, response.GetAllocator());
+        }
 
         string clientOrderId = order.FindMember("clientOrderId")->value.GetString();
         orderIdMap[req.OrderId] = clientOrderId;

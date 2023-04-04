@@ -44,7 +44,7 @@ namespace Arbitrage{
         CapitalPool::CapitalPool &capitalPool;
         HttpWrapper::BinanceApiWrapper &apiWrapper;
 
-        int ExecuteTrans(uint64_t& orderId, int phase, Pathfinder::TransactionPathItem &path);
+        int ExecuteTrans(uint64_t& orderId, int phase, uint64_t cancelOrderId, Pathfinder::TransactionPathItem &path);
         int ReviseTrans(uint64_t& orderId, int phase, string origin, double quantity);
         bool CheckFinish();
         bool finished = false;
