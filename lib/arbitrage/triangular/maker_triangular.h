@@ -34,7 +34,7 @@ namespace Arbitrage
         string quoteToken;
         Pathfinder::TransactionPathItem lastStep{}; // 最后一步挂单数据
 
-        double close = 0.002; // 撤单重挂阈值
+        double close = 0.0018; // 撤单重挂阈值
         double open = 0.001; // 挂单阈值
 
         double targetProfit = 1.0002;

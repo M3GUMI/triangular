@@ -32,7 +32,8 @@ namespace Pathfinder
                 symbol != "BUSDUSDT" &&
 
                 symbol != "ARBUSDT" && symbol != "TWTUSDT" &&
-                symbol != "BSWUSDT" && symbol != "FIDAUSDT" && symbol != "TRYUSDT")
+                symbol != "BSWUSDT" && symbol != "FIDAUSDT" && symbol != "TRYUSDT" &&
+                 symbol != "ARBBNB" && symbol != "ARBBUSD" && symbol != "ARBETH"&&symbol != "ARBBTC")
             {
                 continue;
             }

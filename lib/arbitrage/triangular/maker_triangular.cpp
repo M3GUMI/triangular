@@ -91,10 +91,8 @@ namespace Arbitrage{
             executeProfit = executeProfit * data.GetParsePrice();
             if (PathQuantity != 0){
                 FinalQuantity += (PathQuantity-data.GetExecuteQuantity()) * data.Price;
-                spdlog::info("pathQuantity:{}", PathQuantity);
+                // spdlog::info("pathQuantity:{}", PathQuantity);
             }
-            spdlog::info("{}::Finish, profit: {}, originQuantity: {}, finialQuantity: {}",
-                         this->strategy.StrategyName, FinalQuantity / OriginQuantity, OriginQuantity, FinalQuantity);
             CheckFinish();
             return;
         }
@@ -112,7 +110,7 @@ namespace Arbitrage{
         req.Phase = newPhase;
 
         //重试次数过多，终止
-        if (retryTime > 400 && !takerPathFinded){
+        if (retryTime > 6000 && !takerPathFinded){
             quitAndReopen = true;
         }
 
@@ -121,11 +119,11 @@ namespace Arbitrage{
             auto chance = pathfinder.FindBestPath(req);
             retryTime++;
             auto realProfit = data.GetParsePrice() * chance.Profit;
-            if (realProfit > 1.0004)
+            if (realProfit > 1.0003)
             {
                 takerPathFinded = true;
                 uint64_t orderId;
-                spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}, retryTime:{}", this->strategy.StrategyName, realProfit,retryTime,
+                spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", this->strategy.StrategyName, realProfit,
                              spdlog::fmt_lib::join(chance.Format(), ","));
                 auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
                 if (err > 0)
@@ -149,11 +147,10 @@ namespace Arbitrage{
             {
                 if (quitAndReopen)
                 {
-                    spdlog::info("{}::TakerHandler,quitAndReopen：{}, can_not_find_path,quit_and_reopen_project",
+                    spdlog::info("{}::TakerHandler, msg: can not find path, quit and reopen",
                                  this->strategy.StrategyName, quitAndReopen);
                     CheckFinish();
                 }
-                // spdlog::info("{}::TakerHandler,failed_path:{}, profit:{}",this->strategy.StrategyName,  spdlog::fmt_lib::join(chance.Format(), ","),realProfit);
                 retryTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
                                                                                     websocketpp::lib::asio::milliseconds(
                                                                                             20));
@@ -335,7 +332,6 @@ namespace Arbitrage{
         {
             newSide = define::BUY;
             newPrice = res.BuyPrice * (1 - this->open);
-            newQuantity = RoundDouble(this->OriginQuantity / newPrice);
             newQuantity = RoundDouble(this->OriginQuantity / newPrice);
 
             if (this->PendingOrder != nullptr && res.BuyPrice * (1 - this->close) > this->PendingOrder->Price)
