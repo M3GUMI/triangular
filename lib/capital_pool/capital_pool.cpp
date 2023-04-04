@@ -363,12 +363,16 @@ namespace CapitalPool
             return;
         }
 
+        double xrpAmount = 0;
         double usdtAmount = 0;
         double busdAmount = 0;
         this->balancePool = {};
         for (const auto& asset : info.Balances)
         {
             if (asset.Free > 0) {
+                if (asset.Token == "XRP") {
+                    xrpAmount = asset.Free;
+                }
                 if (asset.Token == "USDT") {
                     usdtAmount = asset.Free;
                 }
@@ -381,6 +385,6 @@ namespace CapitalPool
 
         locked = false;
         // todo 格式化输出一下balancePool
-        spdlog::info("func: refreshAccountHandler, usdt_amount: {}, busdt_amount: {}, msg: refresh account success", usdtAmount, busdAmount);
+        spdlog::info("func: refreshAccountHandler, usdt: {}, busdt: {}, xrp: {}, msg: refresh account success", usdtAmount, busdAmount, xrpAmount);
     }
 }
