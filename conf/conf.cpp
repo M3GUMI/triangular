@@ -4,6 +4,7 @@
 namespace conf
 {
     bool EnableMock = true;
+    bool IsIOC = true;
 
     string AccessKey = "";
     string SecretKey = "";
