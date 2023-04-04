@@ -125,7 +125,7 @@ namespace Arbitrage{
                 uint64_t orderId;
                 spdlog::info("{}::TakerHandler, realProfit: {}, best_path: {}", this->strategy.StrategyName, realProfit,
                              spdlog::fmt_lib::join(chance.Format(), ","));
-                auto err = ExecuteTrans(orderId, newPhase, chance.FirstStep());
+                auto err = ExecuteTrans(orderId, newPhase, 0, chance.FirstStep());
                 if (err > 0)
                 {
                     spdlog::error("{}::TakerHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
@@ -158,7 +158,6 @@ namespace Arbitrage{
             }
         }
     }
-
 
     void MakerTriangularArbitrage::makerHandler(OrderData &data)
     {
@@ -208,7 +207,7 @@ namespace Arbitrage{
         }
 
         uint64_t orderId;
-        auto err = this->ExecuteTrans(orderId, newPhase, step);
+        auto err = this->ExecuteTrans(orderId, newPhase, 0, step);
         if (err > 0)
         {
             spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
@@ -269,7 +268,7 @@ namespace Arbitrage{
         limitOrder.Side = step.Side;
         limitOrder.TimeInForce = define::GTC;
         limitOrder.OrderType = define::LIMIT;
-        auto err = ExecuteTrans(orderId, newPhase, limitOrder);
+        auto err = ExecuteTrans(orderId, newPhase, 0, limitOrder);
         if (err > 0)
         {
             spdlog::error("{}::makerTimeoutHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
@@ -341,26 +340,26 @@ namespace Arbitrage{
             }
         }
         if (needReOrder || this->PendingOrder == nullptr) {
-            // 取消旧单
+            uint64_t cancelOrderId = 0;
             if (this->PendingOrder != nullptr) {
-                apiWrapper.CancelOrderSymbol(this->PendingOrder->BaseToken, this->PendingOrder->QuoteToken);
-                this->PendingOrder = nullptr;
-            } else {
-                Pathfinder::TransactionPathItem path{
-                        .BaseToken = this->baseToken,
-                        .QuoteToken = this->quoteToken,
-                        .Side = newSide,
-                        .OrderType = define::LIMIT_MAKER,
-                        .TimeInForce = define::GTC,
-                        .Price = newPrice,
-                        .Quantity = newQuantity
-                };
-
-                //挂出新单
-                uint64_t orderId = 0;
-                ExecuteTrans(orderId, 1, path);
-                this->PendingOrder = orderMap[orderId];
+                cancelOrderId = this->PendingOrder->OrderId;
             }
+
+            Pathfinder::TransactionPathItem path{
+                    .BaseToken = this->baseToken,
+                    .QuoteToken = this->quoteToken,
+                    .Side = newSide,
+                    .OrderType = define::LIMIT_MAKER,
+                    .TimeInForce = define::GTC,
+                    .Price = newPrice,
+                    .Quantity = newQuantity
+            };
+
+            //挂出新单
+            uint64_t orderId = 0;
+            if (err = ExecuteTrans(orderId, 1, cancelOrderId, path); err == 0) {
+                this->PendingOrder = orderMap[orderId];
+            };
         }
     }
 

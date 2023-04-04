@@ -51,7 +51,7 @@ namespace Arbitrage{
         this->TargetToken = targetToken;
         this->OriginQuantity = lockedQuantity;
         uint64_t orderId;
-        TriangularArbitrage::ExecuteTrans(orderId, 0, firstStep);
+        TriangularArbitrage::ExecuteTrans(orderId, 0, 0, firstStep);
         return 0;
     }
 

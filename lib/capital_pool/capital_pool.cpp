@@ -45,7 +45,8 @@ namespace CapitalPool
 
             Pathfinder::GetExchangePriceResp priceResp{};
             if (auto err = pathfinder.GetExchangePrice(priceReq, priceResp); err > 0) {
-                spdlog::info("func::RebalancePool, err:{}", WrapErr(err));
+                spdlog::debug("func::RebalancePool, err:{}", WrapErr(err));
+                continue;
             }
             bool needReOrder = false;
             define::OrderSide newSide = define::SELL;
