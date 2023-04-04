@@ -162,15 +162,12 @@ namespace Pathfinder{
         double buyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
         this->mockSubscriber(data.BaseToken, data.QuoteToken, buyPrice, sellPrice);
 
-        /*auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
+        auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
         if (chance.Profit <= 1)
         {
             return;
         }
-
-        spdlog::info("func: {}, path found profit: {}", "UpdateNode", chance.Profit);
-
-        return this->subscriber(chance);*/
+        return this->subscriber(chance);
     }
 
     int Graph::updateBestMap(int from, int to){
@@ -328,9 +325,9 @@ namespace Pathfinder{
         gettimeofday(&tv1,NULL);
 
         for (auto item: relatedTriangular[formatKey(quoteIndex, baseIndex)]){
-//            spdlog::debug("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", item->Steps[0], item->Steps[1], item->Steps[2]);
+//            spdlog::info("func: {}, before calculate profit, ring:{}->{}->{}", "CalculateArbitrage", indexToToken[item->Steps[0]], indexToToken[item->Steps[1]], indexToToken[item->Steps[2]]);
             double profit = calculateProfit(strategy, 1, item->Steps);
-//            spdlog::debug("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
+//            spdlog::info("func: {}, after calculate profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
             if (profit <= 1 || profit <= maxProfit)
             {
                 continue;
@@ -349,11 +346,11 @@ namespace Pathfinder{
         }
         gettimeofday(&tv2,NULL);
 
-        /*spdlog::debug("func: {}, scan rings: {}, path time cost: {}us, max profit: {}",
-                "CalculateArbitrage",
-                relatedTriangular[formatKey(quoteIndex, baseIndex)].size(),
-                tv2.tv_sec*1000000 + tv2.tv_usec - (tv1.tv_sec*1000000 + tv1.tv_usec),
-                maxProfit);*/
+//        spdlog::info("func: {}, scan rings: {}, path time cost: {}us, max profit: {}",
+//                "CalculateArbitrage",
+//                relatedTriangular[formatKey(quoteIndex, baseIndex)].size(),
+//                tv2.tv_sec*1000000 + tv2.tv_usec - (tv1.tv_sec*1000000 + tv1.tv_usec),
+//                maxProfit);
 
         ArbitrageChance chance{};
         if (resultPath.size() != 3) {

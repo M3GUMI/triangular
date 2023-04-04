@@ -20,7 +20,6 @@ namespace Executor{
 
     void Executor::Init() {
         apiWrapper.CancelOrderSymbol("XRP", "USDT");
-        apiWrapper.CancelOrderSymbol("BUSD", "USDT");
         checkTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
         checkTimer->async_wait(bind(&Executor::initMaker, this));
     }
@@ -28,8 +27,7 @@ namespace Executor{
     void Executor::initMaker()
     {
         checkTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService,
-                                                                            websocketpp::lib::asio::milliseconds(
-                                                                                    10 * 1000));
+                                                                            websocketpp::lib::asio::milliseconds(10 * 1000));
         checkTimer->async_wait(bind(&Executor::initMaker, this));
 
         if (this->lock) {
@@ -45,6 +43,7 @@ namespace Executor{
         auto err = makerTriangular->Run("USDT", "XRP", 20);
         if (err > 0)
         {
+            spdlog::error("func: initMaker, err:{}", WrapErr(err));
             this->lock = false;
             return;
         }
@@ -52,7 +51,6 @@ namespace Executor{
     }
 
     void Executor::arbitragePathHandler(Pathfinder::ArbitrageChance &chance) {
-        return;
         if (this->lock) {
             spdlog::debug("lock");
             return;
@@ -80,8 +78,10 @@ namespace Executor{
         capitalPool.Refresh();
         if (executeTime <= 50){
             this->lock = false;
-            spdlog::info("func: arbitrageFinishHandler, executeTime:{}",  executeTime);
+            spdlog::info("Executor::Over, executeTime:{}",  executeTime);
             executeTime++;
+        } else {
+            spdlog::info("Executor::Over");
         }
 
         if (!conf::EnableMock) {

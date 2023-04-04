@@ -95,38 +95,3 @@ double Min(double val0, double val1) {
         return val0;
     }
 }
-
-//
-//void readConfig(){
-//    // 读取文件内容
-//    std::ifstream ifs("config.json");
-//    std::string content((std::istreambuf_iterator<char>(ifs)),(std::istreambuf_iterator<char>()));
-//
-//    // 解析JSON
-//    rapidjson::Document doc;
-//    doc.Parse(content.c_str());
-//
-//    // 获取配置项
-//    bool EnableMock = doc["EnableMock"].GetBool();
-//    std::string AccessKey = doc["AccessKey"].GetString();
-//    std::string SecretKey = doc["SecretKey"].GetString();
-//    double MaxTriangularQuantity = doc["MaxTriangularQuantity"].GetDouble();
-//    double MinTriangularQuantity = doc["MinTriangularQuantity"].GetDouble();
-//    std::string BaseAsset = doc["BaseAsset"].GetString();
-//    for (rapidjson::Value::ConstMemberIterator it = doc["BaseAssets"].MemberBegin(); it != doc["BaseAssets"].MemberEnd(); ++it) {
-//        string key = it->name.GetString();
-//        double value = it->value.GetDouble();
-//        config.BaseAssets[key] = value;
-//    }
-//    config.AccessKey = AccessKey;
-//    config.BaseAsset = BaseAsset;
-//    config.MinTriangularQuantity = MinTriangularQuantity;
-//    config.MaxTriangularQuantity = MaxTriangularQuantity;
-//    config.EnableMock = EnableMock;
-//    config.SecretKey = SecretKey;
-//
-//}
-
-//Config* getConfig(){
-//    return &config;
-//}

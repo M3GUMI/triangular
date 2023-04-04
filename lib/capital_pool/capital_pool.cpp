@@ -22,7 +22,6 @@ namespace CapitalPool
     {
     }
 
-    // todo 重平衡最好改成maker，考虑maker执行中的锁定情况
     void CapitalPool::RebalancePool(vector<HttpWrapper::BinanceSymbolData> &data)
     {
         // 每秒执行一次重平衡
@@ -46,7 +45,7 @@ namespace CapitalPool
 
             Pathfinder::GetExchangePriceResp priceResp{};
             if (auto err = pathfinder.GetExchangePrice(priceReq, priceResp); err > 0) {
-                spdlog::info("CapitalPool::RebalancePool, err:{}", WrapErr(err));
+                spdlog::info("func::RebalancePool, err:{}", WrapErr(err));
             }
             bool needReOrder = false;
             define::OrderSide newSide = define::SELL;
@@ -63,7 +62,7 @@ namespace CapitalPool
                     reBalanceOrderMap[orderID]->OrderStatus == define::NEW)){
                 apiWrapper.CancelOrder(orderID, bind(&CapitalPool::cancelHandler, this, placeholders::_1, placeholders::_2));
 
-                spdlog::info("CapitalPool::RebalancePool, msg: cancel_and_rebalanceorder, from:{}, to:{}", order->GetFromToken(), order->GetToToken());
+                spdlog::info("func::RebalancePool, msg: cancel_and_rebalanceorder, from:{}, to:{}", order->GetFromToken(), order->GetToToken());
             }
         }
         string addToken, delToken;
@@ -110,7 +109,7 @@ namespace CapitalPool
                 }
 
                 // 补充u
-                if (dollarAmount < symbolData.MinNotional) {
+                /*if (dollarAmount < symbolData.MinNotional) {
                     double addDollar = symbolData.MinNotional + 1;
                     double tokenQuantity = addDollar / dollarPrice;
                     OrderData req{
@@ -133,7 +132,8 @@ namespace CapitalPool
                     auto apiCallback = bind(&CapitalPool::rebalanceHandler, this, placeholders::_1);
 
                     apiWrapper.CreateOrder(req, apiCallback);
-                }
+                }*/
+                continue;
             }
         }
 
@@ -265,7 +265,13 @@ namespace CapitalPool
             return;
         }
 
-        reBalanceOrderMap[data.OrderId]->OrderStatus = data.OrderStatus;
+        if (reBalanceOrderMap.count(data.OrderId)) {
+            reBalanceOrderMap[data.OrderId]->OrderStatus = data.OrderStatus;
+        } else {
+            auto order = new OrderData{data};
+            reBalanceOrderMap[data.OrderId] = order;
+        }
+
         if (not balancePool.count(data.GetFromToken())) {
             spdlog::error("func: {}, err: {}", "rebalanceHandler", WrapErr(define::ErrorBalanceNumber));
             balancePool[data.GetFromToken()] = 0;
@@ -356,13 +362,17 @@ namespace CapitalPool
             return;
         }
 
-        double amount = 0;
+        double usdtAmount = 0;
+        double busdAmount = 0;
         this->balancePool = {};
         for (const auto& asset : info.Balances)
         {
             if (asset.Free > 0) {
-                if (asset.Token == "BUSD" || asset.Token == "USDT") {
-                    amount += asset.Free;
+                if (asset.Token == "USDT") {
+                    usdtAmount = asset.Free;
+                }
+                if (asset.Token == "BUSD") {
+                    busdAmount = asset.Free;
                 }
                 this->balancePool[asset.Token] = asset.Free;
             }
@@ -370,6 +380,6 @@ namespace CapitalPool
 
         locked = false;
         // todo 格式化输出一下balancePool
-        spdlog::info("func: refreshAccountHandler, amount: {}, msg: refresh account success", amount);
+        spdlog::info("func: refreshAccountHandler, usdt_amount: {}, busdt_amount: {}, msg: refresh account success", usdtAmount, busdAmount);
     }
 }

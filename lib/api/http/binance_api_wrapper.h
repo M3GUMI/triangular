@@ -66,7 +66,7 @@ namespace HttpWrapper
 
         // 账户信息
         int GetAccountInfo(function<void(AccountInfo &info, int err)> callback);
-        int GetOpenOrder(string symbol);
+        int GetOpenOrder();
         int GetUserAsset(function<void(double btc)> callback);
 
         // 创建订单
