@@ -68,9 +68,10 @@ namespace Arbitrage{
         this->subscriber = callback;
     }
 
-    int TriangularArbitrage::ExecuteTrans(uint64_t& orderId, int phase, Pathfinder::TransactionPathItem &path) {
+    int TriangularArbitrage::ExecuteTrans(uint64_t& orderId, int phase, uint64_t cancelOrderId, Pathfinder::TransactionPathItem &path) {
         auto order = new OrderData();
         order->OrderId = GenerateId();
+        order->CancelOrderId = cancelOrderId;
         order->Phase = phase;
         order->BaseToken = path.BaseToken;
         order->QuoteToken = path.QuoteToken;
@@ -148,7 +149,7 @@ namespace Arbitrage{
 //                chance.FirstStep().Quantity,
 //                spdlog::fmt_lib::join(chance.Format(), ","));
 
-        return ExecuteTrans(orderId, phase, chance.FirstStep());
+        return ExecuteTrans(orderId, phase, 0, chance.FirstStep());
     }
 
     void TriangularArbitrage::baseOrderHandler(OrderData &data, int err) {

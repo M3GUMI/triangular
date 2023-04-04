@@ -4,6 +4,7 @@
 
 struct OrderData {
     uint64_t OrderId = 0;
+    uint64_t CancelOrderId = 0; // 撤单重挂单id，暂时放在这里
     int Phase = 0;
 
     string BaseToken;

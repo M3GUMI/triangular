@@ -25,17 +25,18 @@ namespace Pathfinder
         for (const auto& symbolData : data)
         {
             auto symbol = symbolData.Symbol;
-//            if (symbol != "XRPBUSD" &&
-//                symbol != "XRPBTC" && symbol != "XRPETH" && symbol != "XRPBNB" && symbol != "XRPUSDC" &&
-//                symbol != "XRPUSDT" &&
-//                symbol != "BTCUSDT" && symbol != "ETHUSDT" && symbol != "BNBUSDT" && symbol != "USDCUSDT" &&
-//                symbol != "BUSDUSDT" &&
-//
-//                symbol != "ARBUSDT" && symbol != "TWTUSDT" &&
-//                symbol != "BSWUSDT" && symbol != "FIDAUSDT" && symbol != "TRYUSDT")
-//            {
-//                continue;
-//            }
+            if (symbol != "XRPBUSD" &&
+                symbol != "XRPBTC" && symbol != "XRPETH" && symbol != "XRPBNB" && symbol != "XRPUSDC" &&
+                symbol != "XRPUSDT" &&
+                symbol != "BTCUSDT" && symbol != "ETHUSDT" && symbol != "BNBUSDT" && symbol != "USDCUSDT" &&
+                symbol != "BUSDUSDT" &&
+
+                symbol != "ARBUSDT" && symbol != "TWTUSDT" &&
+                symbol != "BSWUSDT" && symbol != "FIDAUSDT" && symbol != "TRYUSDT" &&
+                 symbol != "ARBBNB" && symbol != "ARBBUSD" && symbol != "ARBETH"&&symbol != "ARBBTC")
+            {
+                continue;
+            }
 
             depthSocketMap[symbol] = new WebsocketWrapper::BinanceDepthWrapper(ioService, apiWrapper,
                                                                                "stream.binance.com", "9443");
