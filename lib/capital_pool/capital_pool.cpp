@@ -359,7 +359,7 @@ namespace CapitalPool
         if (err > 0)
         {
             spdlog::error("func: {}, err: {}", "refreshAccountHandler", WrapErr(err));
-            Refresh();
+            // Refresh();
             return;
         }
 
