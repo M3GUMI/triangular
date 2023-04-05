@@ -347,6 +347,7 @@ namespace HttpWrapper
         args["type"] = orderTypeToString(req.OrderType);
         args["timestamp"] = std::to_string(time(NULL) * 1000);
         args["quantity"] =  FormatDouble(req.Quantity);
+        args["newClientOrderId"] = to_string(req.OrderId);
 
         // 市价单 不能有下面这些参数
         if (req.OrderType != define::MARKET && req.OrderType != define::LIMIT_MAKER) {

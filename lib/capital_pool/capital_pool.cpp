@@ -48,22 +48,22 @@ namespace CapitalPool
                 spdlog::debug("func::RebalancePool, err:{}", WrapErr(err));
                 continue;
             }
+
+            auto symbolData = apiWrapper.GetSymbolData(order->BaseToken, order->QuoteToken);
             bool needReOrder = false;
-            define::OrderSide newSide = define::SELL;
-            if (order->Side == define::SELL && priceResp.SellPrice * (1 + 0.0001) < order->Price){
+            if (order->Side == define::SELL && order->Price - priceResp.SellPrice > symbolData.StepSize){
                 needReOrder = true;
             }
-            if (order->Side == define::BUY && priceResp.BuyPrice * (1 - 0.0001) > order->Price){
-                newSide = define::BUY;
+            if (order->Side == define::BUY && priceResp.BuyPrice - order->Price > symbolData.StepSize){
                 needReOrder = true;
             }
 
             if (needReOrder && reBalanceOrderMap.count(orderID) &&
                     (reBalanceOrderMap[orderID]->OrderStatus == define::INIT ||
                     reBalanceOrderMap[orderID]->OrderStatus == define::NEW)){
-                apiWrapper.CancelOrder(orderID, bind(&CapitalPool::cancelHandler, this, placeholders::_1, placeholders::_2));
+                tryRebalance(orderID, order->GetFromToken(), order->GetToToken(), order->Quantity);
 
-                spdlog::info("func::RebalancePool, msg: cancel_and_rebalanceorder, from:{}, to:{}", order->GetFromToken(), order->GetToToken());
+                spdlog::info("func::RebalancePool, msg: cancel and rebalanceorder, from:{}, to:{}", order->GetFromToken(), order->GetToToken());
             }
         }
         string addToken, delToken;
@@ -101,7 +101,7 @@ namespace CapitalPool
                 // 重平衡
                 if (dollarAmount > symbolData.MinNotional) {
                     spdlog::info("func: RebalancePool, token: {}, dollarAmount: {}", token, dollarAmount);
-                    auto err = tryRebalance(token, conf::BaseAsset, freeAmount);
+                    auto err = tryRebalance(0, token, conf::BaseAsset, freeAmount);
                     if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional && err != define::ErrorGraphNotReady)
                     {
                         spdlog::error("func: RebalancePool, err: {}", WrapErr(err));
@@ -185,7 +185,7 @@ namespace CapitalPool
         // 交换两种token
         if (not addToken.empty() && not delToken.empty())
         {
-            auto err = tryRebalance(delToken, addToken, balancePool[delToken] - basePool[delToken]);
+            auto err = tryRebalance(0, delToken, addToken, balancePool[delToken] - basePool[delToken]);
             if (err > 0 && err != define::ErrorLessTicketSize)
             {
                 spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
@@ -196,7 +196,7 @@ namespace CapitalPool
         // 多余token换为USDT
         if (addToken.empty() && not delToken.empty())
         {
-            auto err = tryRebalance(delToken, conf::BaseAsset, balancePool[delToken] - basePool[delToken]);
+            auto err = tryRebalance(0, delToken, conf::BaseAsset, balancePool[delToken] - basePool[delToken]);
             if (err > 0)
             {
                 spdlog::error("func: {}, err: {}", "RebalancePool", WrapErr(err));
@@ -211,7 +211,7 @@ namespace CapitalPool
         }
     }
 
-    int CapitalPool::tryRebalance(const string& fromToken, const string& toToken, double amount)
+    int CapitalPool::tryRebalance(uint64_t cancelOrderId, const string& fromToken, const string& toToken, double amount)
     {
         auto symbolData = apiWrapper.GetSymbolData(fromToken, toToken);
         auto side = apiWrapper.GetSide(fromToken, toToken);
@@ -230,6 +230,7 @@ namespace CapitalPool
 
         OrderData order;
         order.OrderId = GenerateId();
+        order.CancelOrderId = cancelOrderId;
         order.BaseToken = symbolData.BaseToken;
         order.QuoteToken = symbolData.QuoteToken;
         order.Side = side;
