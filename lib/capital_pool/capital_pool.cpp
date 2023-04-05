@@ -99,7 +99,7 @@ namespace CapitalPool
 
                 auto symbolData = apiWrapper.GetSymbolData(token, conf::BaseAsset);
                 // 重平衡
-                if (dollarAmount > symbolData.MinNotional) {
+                if (dollarAmount > symbolData.MinNotional + 1) {
                     spdlog::info("func: RebalancePool, token: {}, dollarAmount: {}", token, dollarAmount);
                     auto err = tryRebalance(0, token, conf::BaseAsset, freeAmount);
                     if (err > 0 && err != define::ErrorLessTicketSize && err != define::ErrorLessMinNotional && err != define::ErrorGraphNotReady)
@@ -215,7 +215,7 @@ namespace CapitalPool
     {
         auto symbolData = apiWrapper.GetSymbolData(fromToken, toToken);
         auto side = apiWrapper.GetSide(fromToken, toToken);
-        define::OrderType orderType = define::LIMIT_MAKER;
+        define::OrderType orderType = define::MARKET;
         define::TimeInForce timeInForce = define::GTC;
 
         Pathfinder::GetExchangePriceReq priceReq{};
