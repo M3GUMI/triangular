@@ -27,4 +27,25 @@ namespace conf
                     }
             }
     };
+
+    Strategy IOCTriangular = Strategy{
+            .StrategyName =  "IOCTriangular",
+            .Steps = vector<Step>{
+                    Step{
+                            .StableCoin = false,
+                            .OrderType = define::LIMIT,
+                            .TimeInForce = define::IOC
+                    },
+                    Step{
+                            .StableCoin = true,
+                            .OrderType = define::LIMIT,
+                            .TimeInForce = define::IOC
+                    },
+                    Step{
+                            .StableCoin = true,
+                            .OrderType = define::LIMIT,
+                            .TimeInForce = define::IOC
+                    }
+            }
+    };
 }

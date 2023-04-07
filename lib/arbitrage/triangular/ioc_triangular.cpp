@@ -9,7 +9,7 @@ namespace Arbitrage{
             HttpWrapper::BinanceApiWrapper &apiWrapper
     ) : TriangularArbitrage(pathfinder, pool, apiWrapper) {
         // todo 要改
-        this->strategy = conf::MakerTriangular;
+        this->strategy = conf::IOCTriangular;
     }
 
     IocTriangularArbitrage::~IocTriangularArbitrage() = default;
@@ -17,7 +17,6 @@ namespace Arbitrage{
     int IocTriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
         string targetToken;
         double lockedQuantity;
-        spdlog::info("IOC run");
 
         auto &firstStep = chance.FirstStep();
         if (firstStep.Side == define::SELL) {

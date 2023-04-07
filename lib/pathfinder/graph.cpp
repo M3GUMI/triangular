@@ -162,13 +162,12 @@ namespace Pathfinder{
 //        double buyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
 //        this->mockSubscriber(data.BaseToken, data.QuoteToken, buyPrice, sellPrice);
 
-        auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
+        auto chance = CalculateArbitrage(conf::IOCTriangular, baseIndex, quoteIndex);
         if (chance.Profit <= 1.0005)
         {
             return;
         }
 
-        spdlog::info("find IOC path, profit: {}", chance.Profit);
         return this->subscriber(chance);
     }
 

@@ -43,4 +43,5 @@ namespace conf
     };
 
     extern Strategy MakerTriangular;
+    extern Strategy IOCTriangular;
 }
