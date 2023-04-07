@@ -52,7 +52,7 @@ namespace HttpWrapper
 
         if (res->http_status() != 200)
         {
-            spdlog::error("func: {}, err: {}", "CheckResp", WrapErr(define::ErrorEmptyResponse));
+            spdlog::error("func: {}, err: {}, resp: {]", "CheckResp", WrapErr(define::ErrorEmptyResponse), res->payload());
             return define::ErrorHttpFail;
         }
 

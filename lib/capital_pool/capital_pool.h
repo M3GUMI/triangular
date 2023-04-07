@@ -21,7 +21,7 @@ namespace CapitalPool
         std::shared_ptr<websocketpp::lib::asio::steady_timer> rebalanceTimer; // 重平衡计时器
 
         bool locked; // 刷新中，锁定
-        int tryRebalance(const string& from, const string& to, double amount);
+        int tryRebalance(uint64_t cancelOrderId, const string& fromToken, const string& toToken, double amount);
         void rebalanceHandler(OrderData &data);
         void cancelHandler(int err, int orderId);
         void refreshAccountHandler(HttpWrapper::AccountInfo &info, int err);

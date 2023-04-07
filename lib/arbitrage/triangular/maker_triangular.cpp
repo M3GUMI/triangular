@@ -52,9 +52,14 @@ namespace Arbitrage{
 
     void MakerTriangularArbitrage::TransHandler(OrderData &data)
     {
+        if (finished) {
+            return;
+        }
+
         spdlog::info(
-                "{}::TransHandler, symbol: {}, side: {}, phase: {}, status: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
+                "{}::TransHandler, orderId: {}, symbol: {}, side: {}, phase: {}, status: {}, quantity: {}, price: {}, executeQuantity: {}, newQuantity: {}",
                 this->strategy.StrategyName,
+                data.OrderId,
                 data.BaseToken+data.QuoteToken,
                 sideToString(data.Side),
                 data.Phase,
