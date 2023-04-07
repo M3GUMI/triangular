@@ -163,10 +163,12 @@ namespace Pathfinder{
 //        this->mockSubscriber(data.BaseToken, data.QuoteToken, buyPrice, sellPrice);
 
         auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
-        if (chance.Profit <= 1)
+        if (chance.Profit <= 1.0005)
         {
             return;
         }
+
+        spdlog::info("find IOC path, profit: {}", chance.Profit);
         return this->subscriber(chance);
     }
 
@@ -342,7 +344,6 @@ namespace Pathfinder{
 
             maxProfit = profit;
             resultPath = path;
-            spdlog::info("func: {}, update max profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
         }
         gettimeofday(&tv2,NULL);
 
@@ -461,7 +462,7 @@ namespace Pathfinder{
             auto to = path[i + 1];
 
             auto node = tradeNodeMap[formatKey(from, to)];
-            profit = profit * node->GetParsePrice(from, to) * strategy.GetFee(phase);
+            profit = profit * GetPathPrice(from, to) * strategy.GetFee(phase);
         }
 
         return profit;
