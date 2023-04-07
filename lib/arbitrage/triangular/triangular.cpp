@@ -14,6 +14,7 @@ namespace Arbitrage{
 
     int TriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance)
     {
+        spdlog::info("triangular Run");
         exit(EXIT_FAILURE);
     }
 

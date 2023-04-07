@@ -17,6 +17,7 @@ namespace Arbitrage{
     int IocTriangularArbitrage::Run(Pathfinder::ArbitrageChance &chance) {
         string targetToken;
         double lockedQuantity;
+        spdlog::info("IOC run");
 
         auto &firstStep = chance.FirstStep();
         if (firstStep.Side == define::SELL) {

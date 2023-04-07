@@ -154,13 +154,13 @@ namespace Pathfinder{
             int updateNum = updateBestMap(tokenToIndex[data.BaseToken], tokenToIndex[data.QuoteToken]);
         }
 
-        if (not conf::EnableMock || this->mockSubscriber == nullptr)
-            return;
-
-        // 触发mock
-        double sellPrice = node->GetOriginPrice(baseIndex, quoteIndex);
-        double buyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
-        this->mockSubscriber(data.BaseToken, data.QuoteToken, buyPrice, sellPrice);
+//        if (not conf::EnableMock || this->mockSubscriber == nullptr)
+//            return;
+//
+//        // 触发mock
+//        double sellPrice = node->GetOriginPrice(baseIndex, quoteIndex);
+//        double buyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
+//        this->mockSubscriber(data.BaseToken, data.QuoteToken, buyPrice, sellPrice);
 
         auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
         if (chance.Profit <= 1)
