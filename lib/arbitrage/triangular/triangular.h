@@ -19,7 +19,7 @@ namespace Arbitrage{
 
         void baseOrderHandler(OrderData &data, int err);
 
-        int Run(Pathfinder::ArbitrageChance& chance);
+        virtual int Run(Pathfinder::ArbitrageChance& chance);
 
         map<uint64_t, OrderData*> getOrderMap();
         void setOrderMap(map<uint64_t, OrderData*> newOrderMap);
