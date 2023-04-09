@@ -58,6 +58,9 @@ namespace Pathfinder{
             auto originIndex = tokenToIndex[baseToken.first]; // 起点token
             for (const auto& second : indexToToken)
             {
+                if (not define::NotStableCoin(second.second))
+                    continue;
+
                 auto secondIndex = second.first; // 第一个点
                 if (not tradeNodeMap.count(formatKey(originIndex, secondIndex))) {
                     // 第一条边不存在
@@ -66,6 +69,9 @@ namespace Pathfinder{
 
                 for (const auto& third : indexToToken)
                 {
+                    if (define::NotStableCoin(third.second))
+                        continue;
+
                     auto thirdIndex = third.first; // 第二个点
                     if (not tradeNodeMap.count(formatKey(secondIndex, thirdIndex))) {
                         // 第二条边不存在
