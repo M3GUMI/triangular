@@ -276,11 +276,11 @@ namespace Pathfinder{
         int fromIndex = tokenToIndex[fromToken];
         double toDollar = 0;
         if (tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["USDT"]))) {
-            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["USDT"])]->GetParsePrice(fromIndex, tokenToIndex["USDT"]);
+            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["USDT"])]->GetOriginPrice(fromIndex, tokenToIndex["USDT"]);
         }
 
         if (toDollar == 0 && tradeNodeMap.count(formatKey(fromIndex, tokenToIndex["BUSD"]))) {
-            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["BUSD"])]->GetParsePrice(fromIndex, tokenToIndex["BUSD"]);
+            toDollar = tradeNodeMap[formatKey(fromIndex, tokenToIndex["BUSD"])]->GetOriginPrice(fromIndex, tokenToIndex["BUSD"]);
         }
 
         return toDollar;

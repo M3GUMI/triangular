@@ -20,7 +20,6 @@ namespace Executor{
 
     void Executor::Init() {
         apiWrapper.CancelOrderSymbol("XRP", "USDT");
-        this->depthReady = true;
         if (not conf::IsIOC) {
             checkTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(5 * 1000));
             checkTimer->async_wait(bind(&Executor::initMaker, this));
@@ -54,9 +53,6 @@ namespace Executor{
     }
 
     void Executor::arbitragePathHandler(Pathfinder::ArbitrageChance &chance) {
-        if (not this->depthReady) {
-            return;
-        }
         if (this->lock) {
             spdlog::debug("lock");
             return;
@@ -68,7 +64,7 @@ namespace Executor{
 
         // todo 此处需要内存管理。需要增加套利任务结束，清除subscribe
         this->lock = true;
-        auto *iocTriangular = new Arbitrage::IocTriangularArbitrage(
+        Arbitrage::IocTriangularArbitrage *iocTriangular = new Arbitrage::IocTriangularArbitrage(
                 pathfinder,
                 capitalPool,
                 apiWrapper

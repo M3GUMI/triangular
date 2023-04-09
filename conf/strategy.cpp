@@ -44,7 +44,7 @@ namespace conf
                     Step{
                             .StableCoin = true,
                             .OrderType = define::LIMIT,
-                            .TimeInForce = define::GTC
+                            .TimeInForce = define::IOC
                     }
             }
     };
