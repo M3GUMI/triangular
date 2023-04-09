@@ -58,7 +58,7 @@ namespace Pathfinder{
             auto originIndex = tokenToIndex[baseToken.first]; // 起点token
             for (const auto& second : indexToToken)
             {
-                if (not define::NotStableCoin(second))
+                if (not define::NotStableCoin(second.second))
                     continue;
 
                 auto secondIndex = second.first; // 第一个点
@@ -69,7 +69,7 @@ namespace Pathfinder{
 
                 for (const auto& third : indexToToken)
                 {
-                    if (define::NotStableCoin(third))
+                    if (define::NotStableCoin(third.second))
                         continue;
 
                     auto thirdIndex = third.first; // 第二个点
