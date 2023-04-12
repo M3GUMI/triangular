@@ -7,7 +7,7 @@
 using namespace boost::asio;
 using namespace std;
 namespace Arbitrage{
-    MakerTriangularArbitrage::MakerTriangularArbitrage(
+    NewTriangularArbitrage::NewTriangularArbitrage(
             websocketpp::lib::asio::io_service& ioService,
             Pathfinder::Pathfinder &pathfinder,
             CapitalPool::CapitalPool &pool,
@@ -19,7 +19,7 @@ namespace Arbitrage{
         this->orderWrapper->SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
 
         pathfinder.SubscribeMock((bind(
-                &MakerTriangularArbitrage::mockTrader,
+                &NewTriangularArbitrage::mockTrader,
                 this,
                 std::placeholders::_1,
                 std::placeholders::_2,
@@ -28,9 +28,9 @@ namespace Arbitrage{
         )));
     }
 
-    MakerTriangularArbitrage::~MakerTriangularArbitrage() = default;
+    NewTriangularArbitrage::~NewTriangularArbitrage() = default;
 
-    int MakerTriangularArbitrage::Run(const string& origin, const string& step, int amount) {
+    int NewTriangularArbitrage::Run(const string& origin, const string& step, int amount) {
         double lockedQuantity;
         if (auto err = capitalPool.LockAsset(origin, amount, lockedQuantity); err > 0) {
             return err;
@@ -45,12 +45,12 @@ namespace Arbitrage{
         this->baseToken = symbolData.BaseToken;
         this->quoteToken = symbolData.QuoteToken;
 
-        MakerTriangularArbitrage::makerOrderChangeHandler();
+        NewTriangularArbitrage::makerOrderChangeHandler();
 
         return 0;
     }
 
-    void MakerTriangularArbitrage::TransHandler(OrderData &data)
+    void NewTriangularArbitrage::TransHandler(OrderData &data)
     {
         if (finished) {
             return;
@@ -79,7 +79,7 @@ namespace Arbitrage{
         if (data.GetToToken() == this->TargetToken) {
             FinalQuantity += data.GetNewQuantity();
         }
-        if (data.Phase == 1 && data.OrderStatus == define::FILLED)
+        if (data.Phase == 1)
         {
             executeProfit = executeProfit * data.GetParsePrice();
             return takerHandler(data);
@@ -103,7 +103,7 @@ namespace Arbitrage{
         }
     }
 
-    void MakerTriangularArbitrage::takerHandler(OrderData &data)
+    void NewTriangularArbitrage::takerHandler(OrderData &data)
     {
         // 第二步，立刻taker出eth
         int newPhase = 2;
@@ -141,7 +141,7 @@ namespace Arbitrage{
         this->currentPhase = newPhase;
     }
 
-    void MakerTriangularArbitrage::makerHandler(OrderData &data)
+    void NewTriangularArbitrage::makerHandler(OrderData &data)
     {
         if (data.GetToToken() == this->TargetToken)
         {
@@ -149,10 +149,13 @@ namespace Arbitrage{
             return;
         }
 
+        // 第三步，立刻挂单为usdt
+        int newPhase = 3;
+        auto symbolData = apiWrapper.GetSymbolData("USDT", data.GetToToken());
         Pathfinder::GetExchangePriceReq req{
-                .BaseToken = this->lastStep.BaseToken,
-                .QuoteToken = this->lastStep.QuoteToken,
-                .OrderType = define::LIMIT
+                .BaseToken = symbolData.BaseToken,
+                .QuoteToken = symbolData.QuoteToken,
+                .OrderType = define::MARKET
         };
 
         Pathfinder::GetExchangePriceResp resp{};
@@ -161,35 +164,19 @@ namespace Arbitrage{
             spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
             return;
         }
-        int newPhase = 3;
-        auto step = this->lastStep;
-        step.OrderType = define::LIMIT;
-        if (step.Side == define::SELL)
-        {
-            if (resp.SellPrice > step.Price)
-            {
-                step.Price = resp.SellPrice;
-            }
-        }
-        else
-        {
-            if (resp.BuyPrice < this->lastStep.Price)
-            {
-                step.Price = resp.BuyPrice;
-            }
-        }
 
-        if (data.GetToToken() == this->lastStep.BaseToken)
-        {
-            step.Quantity = data.GetNewQuantity();
-        }
-        else if (data.GetToToken() == this->lastStep.QuoteToken)
-        {
-            step.Quantity = data.GetNewQuantity() / this->lastStep.Price;
-        }
+        Pathfinder::TransactionPathItem path{
+                .BaseToken = symbolData.BaseToken,
+                .QuoteToken = symbolData.QuoteToken,
+                .Side = apiWrapper.GetSide(data.GetToToken(), "USDT"),
+                .OrderType = define::LIMIT_MAKER,
+                .TimeInForce = define::GTC,
+                .Price = data.GetToToken() == symbolData.BaseToken? resp.SellPrice: resp.BuyPrice,
+                .Quantity = data.GetNewQuantity(),
+        };
 
         uint64_t orderId;
-        auto err = this->ExecuteTrans(orderId, newPhase, 0, step);
+        auto err = this->ExecuteTrans(orderId, newPhase, 0, path);
         if (err > 0)
         {
             spdlog::error("{}::TransHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
@@ -200,9 +187,9 @@ namespace Arbitrage{
 
     //价格变化幅度不够大，撤单重挂单
     //base是BUSD SIDE为BUY QUOTE放购入货币
-    void MakerTriangularArbitrage::makerOrderChangeHandler(){
+    void NewTriangularArbitrage::makerOrderChangeHandler(){
         reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1 * 1000));
-        reorderTimer->async_wait(bind(&MakerTriangularArbitrage::makerOrderChangeHandler, this));
+        reorderTimer->async_wait(bind(&NewTriangularArbitrage::makerOrderChangeHandler, this));
 
         // socket重连暂时放在这里
         if (this->orderWrapper->Status == define::SocketStatusFailConnect) {
@@ -283,6 +270,49 @@ namespace Arbitrage{
             if (err = ExecuteTrans(orderId, 1, cancelOrderId, path); err == 0) {
                 this->PendingOrder = orderMap[orderId];
             };
+        }
+    }
+
+    void NewTriangularArbitrage::mockTrader(const string& base, string quote, double buyPrice, double sellPrice) {
+        if (!conf::EnableMock) {
+            return;
+        }
+
+        for (auto& item:orderMap) {
+            auto orderId = item.first;
+            auto order = item.second;
+            if (base != order->BaseToken || quote != order->QuoteToken) {
+                continue;
+            }
+
+            if (order->OrderType != define::LIMIT_MAKER) {
+                continue;
+            }
+
+            if (order->OrderStatus != define::INIT && order->OrderStatus != define::NEW) {
+                continue;
+            }
+
+            bool execute = false;
+            if (order->Side == define::SELL && order->Price < buyPrice) {
+                execute = true;
+            } else if (order->Side == define::BUY && order->Price > sellPrice) {
+                execute = true;
+            }
+
+            if (execute) {
+                auto data = OrderData{
+                        .OrderId = orderId,
+                        .Phase = order->Phase,
+                        .OrderStatus = define::FILLED,
+                        .ExecutePrice = order->Price,
+                        .ExecuteQuantity = order->Quantity,
+                        .CummulativeQuoteQuantity = RoundDouble(order->Price*order->Quantity),
+                        .UpdateTime = GetNowTime()
+                };
+
+                this->baseOrderHandler(data, 0);
+            }
         }
     }
 }

@@ -8,15 +8,15 @@ using namespace std;
 namespace Arbitrage
 {
     // 两次maker挂单三角套利
-    class MakerTriangularArbitrage : public TriangularArbitrage
+    class NewTriangularArbitrage : public TriangularArbitrage
     {
     public:
-        MakerTriangularArbitrage(websocketpp::lib::asio::io_service& ioService,
+        NewTriangularArbitrage(websocketpp::lib::asio::io_service& ioService,
                                  Pathfinder::Pathfinder& pathfinder,
                                  CapitalPool::CapitalPool& pool,
                                  HttpWrapper::BinanceApiWrapper& apiWrapper);
 
-        ~MakerTriangularArbitrage();
+        ~NewTriangularArbitrage();
 
         int Run(const string& baseToken, const string& quoteToken, int amount);
 
@@ -53,5 +53,7 @@ namespace Arbitrage
         void makerHandler(OrderData& data);
 
         void TransHandler(OrderData& data) override;
+
+        void mockTrader(const string& origin, string step, double buyPrice, double sellPrice);
     };
 }
