@@ -45,8 +45,6 @@ namespace Arbitrage{
         this->baseToken = symbolData.BaseToken;
         this->quoteToken = symbolData.QuoteToken;
 
-        NewTriangularArbitrage::makerOrderChangeHandler();
-
         return 0;
     }
 
@@ -185,17 +183,19 @@ namespace Arbitrage{
         this->currentPhase = newPhase;
     }
 
-    //价格变化幅度不够大，撤单重挂单
-    //base是BUSD SIDE为BUY QUOTE放购入货币
-    void NewTriangularArbitrage::makerOrderChangeHandler(){
-        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1 * 1000));
-        reorderTimer->async_wait(bind(&NewTriangularArbitrage::makerOrderChangeHandler, this));
-
-        // socket重连暂时放在这里
+    void NewTriangularArbitrage::socketReconnectHandler(){
         if (this->orderWrapper->Status == define::SocketStatusFailConnect) {
             this->orderWrapper = new WebsocketWrapper::BinanceOrderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
             this->orderWrapper->SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
         }
+        socketReconnectTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1 * 1000));
+        socketReconnectTimer->async_wait(bind(&NewTriangularArbitrage::socketReconnectHandler, this));
+    }
+    //价格变化幅度不够大，撤单重挂单
+    //base是BUSD SIDE为BUY QUOTE放购入货币
+    void NewTriangularArbitrage::makerOrderChangeHandler(Pathfinder::GetExchangePriceResp res){
+//        reorderTimer = std::make_shared<websocketpp::lib::asio::steady_timer>(ioService, websocketpp::lib::asio::milliseconds(1 * 1000));
+//        reorderTimer->async_wait(bind(&NewTriangularArbitrage::makerOrderChangeHandler, this));
 
         if (this->PendingOrder != nullptr)
         {
@@ -212,12 +212,12 @@ namespace Arbitrage{
         req.OrderType = define::LIMIT_MAKER;
 
         // 盘口价格
-        Pathfinder::GetExchangePriceResp res;
-        auto err = pathfinder.GetExchangePrice(req, res);
-        if (err > 0) {
-            spdlog::info("{}:makerOrderChangeHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
-            return;
-        }
+//        Pathfinder::GetExchangePriceResp res;
+//        auto err = pathfinder.GetExchangePrice(req, res);
+//        if (err > 0) {
+//            spdlog::info("{}:makerOrderChangeHandler, err: {}", this->strategy.StrategyName, WrapErr(err));
+//            return;
+//        }
 
         bool needReOrder = false;
         define::OrderSide newSide = define::SELL;
@@ -267,6 +267,7 @@ namespace Arbitrage{
 
             //挂出新单
             uint64_t orderId = 0;
+            int err;
             if (err = ExecuteTrans(orderId, 1, cancelOrderId, path); err == 0) {
                 this->PendingOrder = orderMap[orderId];
             };

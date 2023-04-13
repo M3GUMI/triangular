@@ -34,7 +34,7 @@ namespace Arbitrage
         string quoteToken;
         Pathfinder::TransactionPathItem lastStep{}; // 最后一步挂单数据
 
-        double close = 0.0018; // 撤单重挂阈值
+        double close = 0.0006; // 撤单重挂阈值
         double open = 0.001; // 挂单阈值
 
         double targetProfit = 1.0002;
@@ -45,8 +45,8 @@ namespace Arbitrage
         std::shared_ptr<websocketpp::lib::asio::steady_timer> cancelOrderTimer;//重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> mockPriceTimer;//mock测试价格变化计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> quitAndReopenTimer;//退出taker重挂单计时器
-
-        void makerOrderChangeHandler();//价格变化幅度不够大，撤单重挂单
+        std::shared_ptr<websocketpp::lib::asio::steady_timer> socketReconnectTimer;//socket重连计时器
+        void makerOrderChangeHandler(Pathfinder::GetExchangePriceResp res);//价格变化幅度不够大，撤单重挂单
 
         void takerHandler(OrderData& data);
 
@@ -55,5 +55,9 @@ namespace Arbitrage
         void TransHandler(OrderData& data) override;
 
         void mockTrader(const string& origin, string step, double buyPrice, double sellPrice);
+
+        void socketReconnectHandler();
     };
+
+
 }
