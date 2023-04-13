@@ -27,26 +27,16 @@ namespace Arbitrage
         double executeProfit = 1; // 实际执行利润率
 
         OrderData* PendingOrder = nullptr; // 提前挂单
-        bool takerPathFinded = false; // 已找到taker路径
         int retryTime = 0;
         int currentPhase = 0;
-        string baseToken;
-        string quoteToken;
         Pathfinder::TransactionPathItem lastStep{}; // 最后一步挂单数据
 
         double close = 0.0006; // 撤单重挂阈值
-        double open = 0.001; // 挂单阈值
-
-        double targetProfit = 1.0002;
+        double open = 0.003; // 挂单阈值
 
         std::shared_ptr<websocketpp::lib::asio::steady_timer> reorderTimer;//重挂单计时器
-        std::shared_ptr<websocketpp::lib::asio::steady_timer> retryTimer;//市价吃单计时器
-        std::shared_ptr<websocketpp::lib::asio::steady_timer> lastOrderTimer;//市价吃单计时器
-        std::shared_ptr<websocketpp::lib::asio::steady_timer> cancelOrderTimer;//重挂单计时器
-        std::shared_ptr<websocketpp::lib::asio::steady_timer> mockPriceTimer;//mock测试价格变化计时器
-        std::shared_ptr<websocketpp::lib::asio::steady_timer> quitAndReopenTimer;//退出taker重挂单计时器
         std::shared_ptr<websocketpp::lib::asio::steady_timer> socketReconnectTimer;//socket重连计时器
-        void makerOrderChangeHandler(Pathfinder::GetExchangePriceResp res);//价格变化幅度不够大，撤单重挂单
+        void makerOrderChangeHandler(const string& base, const string& quote, double buyPrice, double sellPrice);//价格变化幅度不够大，撤单重挂单
 
         void takerHandler(OrderData& data);
 
