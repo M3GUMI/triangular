@@ -58,9 +58,6 @@ namespace Pathfinder{
             auto originIndex = tokenToIndex[baseToken.first]; // 起点token
             for (const auto& second : indexToToken)
             {
-                if (not define::NotStableCoin(second.second))
-                    continue;
-
                 auto secondIndex = second.first; // 第一个点
                 if (not tradeNodeMap.count(formatKey(originIndex, secondIndex))) {
                     // 第一条边不存在
@@ -69,9 +66,6 @@ namespace Pathfinder{
 
                 for (const auto& third : indexToToken)
                 {
-                    if (define::NotStableCoin(third.second))
-                        continue;
-
                     auto thirdIndex = third.first; // 第二个点
                     if (not tradeNodeMap.count(formatKey(secondIndex, thirdIndex))) {
                         // 第二条边不存在
@@ -160,21 +154,20 @@ namespace Pathfinder{
             int updateNum = updateBestMap(tokenToIndex[data.BaseToken], tokenToIndex[data.QuoteToken]);
         }
 
-//        if (not conf::EnableMock || this->mockSubscriber == nullptr)
-//            return;
-//
-//        // 触发mock
-//        double sellPrice = node->GetOriginPrice(baseIndex, quoteIndex);
-//        double buyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
-//        this->mockSubscriber(data.BaseToken, data.QuoteToken, buyPrice, sellPrice);
+        if (this->mockSubscriber == nullptr)
+            return;
 
-        auto chance = CalculateArbitrage(conf::IOCTriangular, baseIndex, quoteIndex);
-        if (chance.Profit <= 1.0005)
+        // 触发mock
+        double sellPrice = node->GetOriginPrice(baseIndex, quoteIndex);
+        double buyPrice = node->GetOriginPrice(quoteIndex, baseIndex);
+        this->mockSubscriber(data.BaseToken, data.QuoteToken, buyPrice, sellPrice);
+
+        /*auto chance = CalculateArbitrage(conf::MakerTriangular, baseIndex, quoteIndex);
+        if (chance.Profit <= 1)
         {
             return;
         }
-
-        return this->subscriber(chance);
+        return this->subscriber(chance);*/
     }
 
     int Graph::updateBestMap(int from, int to){
@@ -349,6 +342,7 @@ namespace Pathfinder{
 
             maxProfit = profit;
             resultPath = path;
+            spdlog::info("func: {}, update max profit, profit: {}, max profit: {}", "CalculateArbitrage", profit, maxProfit);
         }
         gettimeofday(&tv2,NULL);
 
@@ -467,7 +461,7 @@ namespace Pathfinder{
             auto to = path[i + 1];
 
             auto node = tradeNodeMap[formatKey(from, to)];
-            profit = profit * GetPathPrice(from, to) * strategy.GetFee(phase);
+            profit = profit * node->GetParsePrice(from, to) * strategy.GetFee(phase);
         }
 
         return profit;

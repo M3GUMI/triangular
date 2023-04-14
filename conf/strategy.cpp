@@ -8,7 +8,7 @@ namespace conf
     // 2. 市价吃单 b->c
     // 3. 稳定币挂单 c->a
     Strategy MakerTriangular = Strategy{
-            .StrategyName =  "MakerTriangular",
+            .StrategyName =  "NewTriangular",
             .Steps = vector<Step>{
                     Step{
                         .StableCoin = false,

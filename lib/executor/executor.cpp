@@ -1,7 +1,7 @@
 #include <functional>
 #include "utils/utils.h"
 #include "lib/arbitrage/triangular/ioc_triangular.h"
-#include "lib/arbitrage/triangular/maker_triangular.h"
+#include "lib/arbitrage/triangular/new_triangular.h"
 #include "executor.h"
 
 using namespace std;
@@ -39,7 +39,7 @@ namespace Executor{
 
         apiWrapper.GetUserAsset(bind(&Executor::print, this, placeholders::_1));
 
-        auto* makerTriangular = new Arbitrage::MakerTriangularArbitrage(
+        auto* makerTriangular = new Arbitrage::NewTriangularArbitrage(
                 ioService, pathfinder, capitalPool, apiWrapper
         );
         auto err = makerTriangular->Run("USDT", "XRP", 20);
