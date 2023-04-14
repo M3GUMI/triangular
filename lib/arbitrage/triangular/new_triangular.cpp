@@ -18,15 +18,6 @@ namespace Arbitrage{
         this->orderWrapper = new WebsocketWrapper::BinanceOrderWrapper(ioService, apiWrapper, "stream.binance.com", "9443");
         this->orderWrapper->SubscribeOrder(bind(&TriangularArbitrage::baseOrderHandler, this, std::placeholders::_1, std::placeholders::_2));
         this->pathfinder.SubscribeMock(bind(&NewTriangularArbitrage::makerOrderChangeHandler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-
-        pathfinder.SubscribeMock((bind(
-                &NewTriangularArbitrage::mockTrader,
-                this,
-                std::placeholders::_1,
-                std::placeholders::_2,
-                std::placeholders::_3,
-                std::placeholders::_4
-        )));
     }
 
     NewTriangularArbitrage::~NewTriangularArbitrage() = default;
