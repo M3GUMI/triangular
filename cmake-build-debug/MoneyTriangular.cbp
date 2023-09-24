@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="MoneyTriangular"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\third-party\;CMake Files\third-party\spdlog\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/ubuntu/yyg/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="MoneyTriangular">
+				<Option output="/home/ubuntu/yyg/cmake-build-debug/MoneyTriangular" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/ubuntu/yyg/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/ubuntu/yyg/."/>
+					<Add directory="/home/ubuntu/yyg/third-party/spdlog/include"/>
+					<Add directory="/usr/include/c++/11"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/11"/>
+					<Add directory="/usr/include/c++/11/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/11/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 MoneyTriangular"/>
+					<CompileFile command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="MoneyTriangular/fast">
+				<Option output="/home/ubuntu/yyg/cmake-build-debug/MoneyTriangular" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/ubuntu/yyg/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/ubuntu/yyg/."/>
+					<Add directory="/home/ubuntu/yyg/third-party/spdlog/include"/>
+					<Add directory="/usr/include/c++/11"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/11"/>
+					<Add directory="/usr/include/c++/11/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/11/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 MoneyTriangular/fast"/>
+					<CompileFile command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/ubuntu/yyg/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/ubuntu/yyg/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j2 -f &quot;/home/ubuntu/yyg/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/ubuntu/yyg/conf/conf.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/conf/conf.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/conf/strategy.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/conf/strategy.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/define/define.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/define/define.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/define/error.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/define/error.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/ahttp/config.hpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/ahttp/dns_reslove.hpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/ahttp/http_client.hpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/ahttp/http_conn.hpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/ahttp/http_parse.hpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/ahttp/http_request.hpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/ahttp/http_respone.hpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/ahttp/tcp_conn.hpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/ahttp/url.hpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/http/base_api_wrapper.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/http/base_api_wrapper.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/http/binance_api_wrapper.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/http/binance_api_wrapper.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/http/client.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/ws/binance_depth_wrapper.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/ws/binance_depth_wrapper.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/ws/binance_order_wrapper.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/ws/binance_order_wrapper.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/ws/websocket_wrapper.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/api/ws/websocket_wrapper.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/arbitrage/triangular/ioc_triangular.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/arbitrage/triangular/ioc_triangular.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/arbitrage/triangular/maker_triangular.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/arbitrage/triangular/maker_triangular.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/arbitrage/triangular/triangular.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/arbitrage/triangular/triangular.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/capital_pool/capital_pool.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/capital_pool/capital_pool.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/executor/executor.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/executor/executor.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/AnyValue.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/Closure.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/ClosureHelper.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/Common.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/DateTime.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/DllCall.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/EZType_traits.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/ScopeGuard.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/Strings.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/ThreadPool.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/Timer.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/Tree.hpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/libmix/libmix.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/order/order.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/order/order.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/pathfinder/graph.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/pathfinder/graph.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/pathfinder/node.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/pathfinder/node.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/pathfinder/pathfinder.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/lib/pathfinder/pathfinder.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/main.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/utils/utils.cpp">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/utils/utils.h">
+			<Option target="MoneyTriangular"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/yyg/third-party/spdlog/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\third-party\spdlog\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

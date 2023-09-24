@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:personal" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </select>
+  </component>
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated>
+      <config projectName="MoneyTriangular" targetName="spdlog" />
+      <config projectName="MoneyTriangular" targetName="MoneyTriangular" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" BUILD_OPTIONS="-- -j 1" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="7c8f8e08-23b7-45cc-b0c7-a82d876b09d9" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="7726a7c3631429ab3a4ae4d81c68ebeac2155d3a" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="MIXED" />
+  </component>
+  <component name="ProjectId" id="2N7YmTB5037vfZC0TM7sAYVoQKT" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="true" />
+    <property name="WebServerToolWindowPanel.toolwindow.highlight.mappings" value="true" />
+    <property name="WebServerToolWindowPanel.toolwindow.highlight.symlinks" value="true" />
+    <property name="WebServerToolWindowPanel.toolwindow.show.date" value="false" />
+    <property name="WebServerToolWindowPanel.toolwindow.show.permissions" value="false" />
+    <property name="WebServerToolWindowPanel.toolwindow.show.size" value="false" />
+    <property name="cf.first.check.clang-format" value="false" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+  </component>
+  <component name="RunManager" selected="CMake Application.MoneyTriangular">
+    <configuration name="MoneyTriangular" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MoneyTriangular" TARGET_NAME="MoneyTriangular" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MoneyTriangular" RUN_TARGET_NAME="MoneyTriangular">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="spdlog" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MoneyTriangular" TARGET_NAME="spdlog" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MoneyTriangular" RUN_TARGET_NAME="spdlog">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="CMake Application.MoneyTriangular" />
+      <item itemvalue="CMake Application.spdlog" />
+    </list>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7c8f8e08-23b7-45cc-b0c7-a82d876b09d9" name="Default Changelist" comment="" />
+      <created>1679016746487</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1679016746487</updated>
+      <workItem from="1679016754049" duration="8534000" />
+      <workItem from="1679030174715" duration="5929000" />
+      <workItem from="1679038292697" duration="374000" />
+      <workItem from="1679038683779" duration="2221000" />
+      <workItem from="1679473849910" duration="588000" />
+      <workItem from="1679474455018" duration="1156000" />
+      <workItem from="1679475633628" duration="771000" />
+      <workItem from="1679476416025" duration="215000" />
+      <workItem from="1679476646673" duration="158000" />
+      <workItem from="1679476816435" duration="2049000" />
+      <workItem from="1679484610525" duration="5470000" />
+      <workItem from="1679533433238" duration="3077000" />
+      <workItem from="1679537701930" duration="940000" />
+      <workItem from="1679539427413" duration="724000" />
+      <workItem from="1679545656880" duration="3901000" />
+      <workItem from="1679552218438" duration="3535000" />
+      <workItem from="1679621161078" duration="701000" />
+      <workItem from="1679622869444" duration="858000" />
+      <workItem from="1679623744016" duration="7820000" />
+      <workItem from="1679632845683" duration="428000" />
+      <workItem from="1679633285797" duration="4139000" />
+      <workItem from="1679728157062" duration="5185000" />
+      <workItem from="1679753116541" duration="3713000" />
+      <workItem from="1679879743845" duration="431000" />
+      <workItem from="1679880199676" duration="7865000" />
+      <workItem from="1679906464446" duration="877000" />
+      <workItem from="1679907358793" duration="2341000" />
+      <workItem from="1679911278564" duration="9000" />
+      <workItem from="1679911334127" duration="182000" />
+      <workItem from="1679920556968" duration="4456000" />
+      <workItem from="1679925080824" duration="4078000" />
+      <workItem from="1679929488245" duration="3971000" />
+      <workItem from="1679965506806" duration="5042000" />
+      <workItem from="1679972060482" duration="3676000" />
+      <workItem from="1679975759049" duration="2309000" />
+      <workItem from="1680144581169" duration="948000" />
+      <workItem from="1680152525866" duration="463000" />
+      <workItem from="1680153029929" duration="16000" />
+      <workItem from="1680153065428" duration="22000" />
+      <workItem from="1680178797457" duration="12388000" />
+      <workItem from="1680224849796" duration="3737000" />
+      <workItem from="1680230430602" duration="2088000" />
+      <workItem from="1680366575349" duration="1077000" />
+      <workItem from="1680513954261" duration="20000" />
+      <workItem from="1680523355999" duration="9764000" />
+      <workItem from="1680539216425" duration="92000" />
+      <workItem from="1680588381488" duration="6180000" />
+      <workItem from="1680600016993" duration="1073000" />
+      <workItem from="1680611595930" duration="2875000" />
+      <workItem from="1680623899970" duration="4492000" />
+      <workItem from="1680633285027" duration="1498000" />
+      <workItem from="1680688870771" duration="5889000" />
+      <workItem from="1680708981647" duration="2819000" />
+      <workItem from="1680877180344" duration="7546000" />
+      <workItem from="1680934254188" duration="1221000" />
+      <workItem from="1680959356933" duration="1722000" />
+      <workItem from="1681019047669" duration="1054000" />
+      <workItem from="1681021368597" duration="3627000" />
+      <workItem from="1681039925252" duration="1010000" />
+      <workItem from="1681435169477" duration="1832000" />
+      <workItem from="1681477169315" duration="4331000" />
+      <workItem from="1681819517594" duration="596000" />
+      <workItem from="1682066215710" duration="40000" />
+      <workItem from="1689963999431" duration="79000" />
+      <workItem from="1692267271346" duration="50000" />
+      <workItem from="1692267336990" duration="562000" />
+    </task>
+    <task id="LOCAL-00001" summary="兼容多档数据">
+      <created>1679030098857</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1679030098857</updated>
+    </task>
+    <task id="LOCAL-00002" summary="修复了多档深度的部分bug">
+      <created>1679038254641</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1679038254641</updated>
+    </task>
+    <task id="LOCAL-00003" summary="修改了多档数据的Bug">
+      <created>1679040568413</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1679040568413</updated>
+    </task>
+    <task id="LOCAL-00004" summary="测试updateNode是否有bug">
+      <created>1679554919483</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1679554919483</updated>
+    </task>
+    <task id="LOCAL-00005" summary="修复了updateNode的部分bug">
+      <created>1679632414084</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1679632414084</updated>
+    </task>
+    <task id="LOCAL-00006" summary="多档获取price">
+      <created>1679974784181</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1679974784181</updated>
+    </task>
+    <task id="LOCAL-00007" summary="完善rebalance逻辑">
+      <created>1680231775315</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1680231775315</updated>
+    </task>
+    <task id="LOCAL-00008" summary="修改为ioc（不知道为啥一直bad file descriptor）">
+      <created>1680538680650</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1680538680650</updated>
+    </task>
+    <task id="LOCAL-00009" summary="IOC">
+      <created>1680633134455</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1680633134455</updated>
+    </task>
+    <task id="LOCAL-00010" summary="修复了IOC的bug">
+      <created>1680878069838</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1680878069838</updated>
+    </task>
+    <task id="LOCAL-00011" summary="修改了挂单阈值和多档兼容">
+      <created>1680880332499</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1680880332499</updated>
+    </task>
+    <task id="LOCAL-00012" summary="修改了三元环统计">
+      <created>1681019313695</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1681019313695</updated>
+    </task>
+    <task id="LOCAL-00013" summary="修复部分bug">
+      <created>1681026733624</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1681026733624</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Revert &quot;bug修复&quot;&#10;&#10;This reverts commit 5e70f362">
+      <created>1681026865779</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1681026865779</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="2" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="origin/main" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="兼容多档数据" />
+    <MESSAGE value="修复了多档深度的部分bug" />
+    <MESSAGE value="修改了多档数据的Bug" />
+    <MESSAGE value="测试updateNode是否有bug" />
+    <MESSAGE value="修复了updateNode的部分bug" />
+    <MESSAGE value="多档获取price" />
+    <MESSAGE value="完善rebalance逻辑" />
+    <MESSAGE value="修改为ioc（不知道为啥一直bad file descriptor）" />
+    <MESSAGE value="IOC" />
+    <MESSAGE value="修复了IOC的bug" />
+    <MESSAGE value="修改了挂单阈值和多档兼容" />
+    <MESSAGE value="修改了三元环统计" />
+    <MESSAGE value="修复部分bug" />
+    <MESSAGE value="Revert &quot;bug修复&quot;&#10;&#10;This reverts commit 5e70f362" />
+    <option name="LAST_COMMIT_MESSAGE" value="Revert &quot;bug修复&quot;&#10;&#10;This reverts commit 5e70f362" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="270" y="56" key="SettingsEditor" timestamp="1692267299174">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="270" y="56" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1692267299174" />
+  </component>
+</project>

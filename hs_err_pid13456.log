@@ -1,0 +1,196 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 266338304 bytes for Failed to commit area from 0x0000000702000000 to 0x0000000711e00000 of length 266338304.
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   The process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (c:/BuildAgent/work/1eae4dac1d648407/src/hotspot/os/windows/os_windows.cpp:3296), pid=13456, tid=2812
+#
+# JRE version:  (11.0.6+8) (build )
+# Java VM: OpenJDK 64-Bit Server VM (11.0.6+8-b765.25, mixed mode, sharing, tiered, compressed oops, g1 gc, windows-amd64)
+# No core dump will be written. Minidumps are not enabled by default on client versions of Windows
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: org.jetbrains.git4idea.http.GitAskPassApp Username for 'https://github.com': 
+
+Host: AMD Ryzen 7 4800H with Radeon Graphics         , 16 cores, 15G,  Windows 10 , 64 bit Build 19041 (10.0.19041.2546)
+Time: Tue Apr  4 21:13:18 2023 中国标准时间 elapsed time: 0 seconds (0d 0h 0m 0s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00000281ee429000):  JavaThread "Unknown thread" [_thread_in_vm, id=2812, stack(0x000000c825600000,0x000000c825700000)]
+
+Stack: [0x000000c825600000,0x000000c825700000]
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x5de3ca]
+V  [jvm.dll+0x710ae5]
+V  [jvm.dll+0x712005]
+V  [jvm.dll+0x7126b3]
+V  [jvm.dll+0x23e708]
+V  [jvm.dll+0x5db874]
+V  [jvm.dll+0x5d0aa5]
+V  [jvm.dll+0x2fb0fb]
+V  [jvm.dll+0x2fb06a]
+V  [jvm.dll+0x2faf42]
+V  [jvm.dll+0x2ffe16]
+V  [jvm.dll+0x348723]
+V  [jvm.dll+0x348e26]
+V  [jvm.dll+0x348823]
+V  [jvm.dll+0x2d58a8]
+V  [jvm.dll+0x2d6a47]
+V  [jvm.dll+0x6ef917]
+V  [jvm.dll+0x6f110c]
+V  [jvm.dll+0x355d69]
+V  [jvm.dll+0x6d4afe]
+V  [jvm.dll+0x3bf3d3]
+V  [jvm.dll+0x3c1921]
+C  [jli.dll+0x5363]
+C  [ucrtbase.dll+0x21bb2]
+C  [KERNEL32.DLL+0x17614]
+C  [ntdll.dll+0x526a1]
+
+
+---------------  P R O C E S S  ---------------
+
+Threads class SMR info:
+_java_thread_list=0x00000281ee3012d0, length=0, elements={
+}
+
+Java Threads: ( => current thread )
+
+Other Threads:
+  0x00000281ee443000 GCTaskThread "GC Thread#0" [stack: 0x000000c825700000,0x000000c825800000] [id=16444]
+  0x00000281ee4a3800 ConcurrentGCThread "G1 Main Marker" [stack: 0x000000c825800000,0x000000c825900000] [id=24060]
+  0x00000281ee4a4800 ConcurrentGCThread "G1 Conc#0" [stack: 0x000000c825900000,0x000000c825a00000] [id=24088]
+
+[error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffb83046227]
+
+VM state:not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x00000281ee4283b0] Heap_lock - owner thread: 0x00000281ee429000
+
+Heap address: 0x0000000702000000, size: 4064 MB, Compressed Oops mode: Non-zero based: 0x0000000702000000
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 0
+
+GC Heap History (0 events):
+No events
+
+Deoptimization events (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+Events (2 events):
+Event: 0.008 Loaded shared library D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\zip.dll
+Event: 0.009 Loaded shared library D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\jimage.dll
+
+
+Dynamic libraries:
+0x00007ff6439e0000 - 0x00007ff6439ea000 	D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\java.exe
+0x00007ffbca310000 - 0x00007ffbca508000 	C:\WINDOWS\SYSTEM32\ntdll.dll
+0x00007ffbc9b90000 - 0x00007ffbc9c4f000 	C:\WINDOWS\System32\KERNEL32.DLL
+0x00007ffbc7c60000 - 0x00007ffbc7f32000 	C:\WINDOWS\System32\KERNELBASE.dll
+0x00007ffbc8110000 - 0x00007ffbc8210000 	C:\WINDOWS\System32\ucrtbase.dll
+0x00007ffbc2420000 - 0x00007ffbc2439000 	D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\jli.dll
+0x00007ffbc99e0000 - 0x00007ffbc9b81000 	C:\WINDOWS\System32\USER32.dll
+0x00007ffbc7a60000 - 0x00007ffbc7a82000 	C:\WINDOWS\System32\win32u.dll
+0x00007ffbaf020000 - 0x00007ffbaf2ba000 	C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.19041.1110_none_60b5254171f9507e\COMCTL32.dll
+0x00007ffbc8db0000 - 0x00007ffbc8ddb000 	C:\WINDOWS\System32\GDI32.dll
+0x00007ffbc8380000 - 0x00007ffbc841e000 	C:\WINDOWS\System32\msvcrt.dll
+0x00007ffbc7fd0000 - 0x00007ffbc80df000 	C:\WINDOWS\System32\gdi32full.dll
+0x00007ffbc82c0000 - 0x00007ffbc835d000 	C:\WINDOWS\System32\msvcp_win.dll
+0x00007ffba2870000 - 0x00007ffba2887000 	D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\VCRUNTIME140.dll
+0x00007ffbc98e0000 - 0x00007ffbc9910000 	C:\WINDOWS\System32\IMM32.DLL
+0x00007ffb802c0000 - 0x00007ffb8035d000 	D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\msvcp140.dll
+0x00007ffb82d60000 - 0x00007ffb8381d000 	D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\server\jvm.dll
+0x00007ffbc84c0000 - 0x00007ffbc856e000 	C:\WINDOWS\System32\ADVAPI32.dll
+0x00007ffbc8420000 - 0x00007ffbc84bc000 	C:\WINDOWS\System32\sechost.dll
+0x00007ffbc8680000 - 0x00007ffbc87a4000 	C:\WINDOWS\System32\RPCRT4.dll
+0x00007ffbc8360000 - 0x00007ffbc8368000 	C:\WINDOWS\System32\PSAPI.DLL
+0x00007ffbb9d10000 - 0x00007ffbb9d37000 	C:\WINDOWS\SYSTEM32\WINMM.dll
+0x00007ffbc2400000 - 0x00007ffbc2409000 	C:\WINDOWS\SYSTEM32\WSOCK32.dll
+0x00007ffbc02e0000 - 0x00007ffbc02ea000 	C:\WINDOWS\SYSTEM32\VERSION.dll
+0x00007ffbc9970000 - 0x00007ffbc99db000 	C:\WINDOWS\System32\WS2_32.dll
+0x00007ffbc5890000 - 0x00007ffbc58a2000 	C:\WINDOWS\SYSTEM32\kernel.appcore.dll
+0x00007ffbc3630000 - 0x00007ffbc3641000 	D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\verify.dll
+0x00007ffbb3e80000 - 0x00007ffbb4064000 	C:\WINDOWS\SYSTEM32\DBGHELP.DLL
+0x00007ffbafed0000 - 0x00007ffbaff05000 	C:\WINDOWS\SYSTEM32\dbgcore.DLL
+0x00007ffbc7f40000 - 0x00007ffbc7fc2000 	C:\WINDOWS\System32\bcryptPrimitives.dll
+0x00007ffbc35e0000 - 0x00007ffbc3609000 	D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\java.dll
+0x00007ffbb1a80000 - 0x00007ffbb1a98000 	D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\zip.dll
+0x00007ffbc3590000 - 0x00007ffbc359b000 	D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\jimage.dll
+
+dbghelp: loaded successfully - version: 4.0.5 - missing functions: none
+symbol engine: initialized successfully - sym options: 0x614 - pdb path: .;D:\develop_tools\c\clion\CLion 2020.1\jbr\bin;C:\WINDOWS\SYSTEM32;C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.19041.1110_none_60b5254171f9507e;D:\develop_tools\c\clion\CLion 2020.1\jbr\bin\server
+
+VM Arguments:
+java_command: org.jetbrains.git4idea.http.GitAskPassApp Username for 'https://github.com': 
+java_class_path (initial): D:/develop_tools/c/clion/CLion 2020.1/plugins/git4idea/lib/git4idea-rt.jar;D:/develop_tools/c/clion/CLion 2020.1/lib/xmlrpc-2.0.1.jar;D:/develop_tools/c/clion/CLion 2020.1/lib/commons-codec-1.14.jar;D:/develop_tools/c/clion/CLion 2020.1/lib/util.jar
+Launcher Type: SUN_STANDARD
+
+[Global flags]
+     intx CICompilerCount                          = 12                                        {product} {ergonomic}
+     uint ConcGCThreads                            = 3                                         {product} {ergonomic}
+     uint G1ConcRefinementThreads                  = 13                                        {product} {ergonomic}
+   size_t G1HeapRegionSize                         = 1048576                                   {product} {ergonomic}
+    uintx GCDrainStackTargetSize                   = 64                                        {product} {ergonomic}
+   size_t InitialHeapSize                          = 266338304                                 {product} {ergonomic}
+   size_t MarkStackSize                            = 4194304                                   {product} {ergonomic}
+   size_t MaxHeapSize                              = 4261412864                                {product} {ergonomic}
+   size_t MinHeapDeltaBytes                        = 1048576                                   {product} {ergonomic}
+    uintx NonNMethodCodeHeapSize                   = 7594288                                {pd product} {ergonomic}
+    uintx NonProfiledCodeHeapSize                  = 122031976                              {pd product} {ergonomic}
+    uintx ProfiledCodeHeapSize                     = 122031976                              {pd product} {ergonomic}
+    uintx ReservedCodeCacheSize                    = 251658240                              {pd product} {ergonomic}
+     bool SegmentedCodeCache                       = true                                      {product} {ergonomic}
+     bool UseCompressedClassPointers               = true                                 {lp64_product} {ergonomic}
+     bool UseCompressedOops                        = true                                 {lp64_product} {ergonomic}
+     bool UseG1GC                                  = true                                      {product} {ergonomic}
+     bool UseLargePagesIndividualAllocation        = false                                  {pd product} {ergonomic}
+
+Logging:
+Log output configuration:
+ #0: stdout all=warning uptime,level,tags
+ #1: stderr all=off uptime,level,tags
+
+Environment Variables:
+PATH=D:\develop_tools\Git\mingw64\libexec\git-core;D:\develop_tools\Git\mingw64\libexec\git-core;D:\develop_tools\Git\mingw64\bin;D:\develop_tools\Git\usr\bin;C:\Users\MEGUMI\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.6\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.6\libnvvp;D:\software\vmware\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;D:\software\xftp;D:\software\xshell;D:\software\Bandizip;C:\Program Files\Docker\Docker\resources\bin;D:\develop_tools\Git\cmd;C:\ProgramData\chocolatey\bin;D:\develop_tools\node;D:\develop_tools\c\mingw64\bin;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.1.0;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;D:\software\anaconda;D:\software\anaconda\Scripts;D:\software\anaconda\Library\bin;D:\develop_tools\java\jdk1.8.0_271\bin;C:\Users\MEGUMI\AppData\Local\Microsoft\WindowsApps;C:\Users\MEGUMI\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\MEGUMI\AppData\Roaming\npm;D:\develop_tools\c\mingw64\bin;D:\develop_tools\java\IntelliJ IDEA 2021.1.3\bin
+USERNAME=MEGUMI
+DISPLAY=:0.0
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=AMD64 Family 23 Model 96 Stepping 1, AuthenticAMD
+
+
+
+---------------  S Y S T E M  ---------------
+
+OS: Windows 10 , 64 bit Build 19041 (10.0.19041.2546)
+HyperV virtualization detected
+
+CPU:total 16 (initial active 16) (16 cores per cpu, 2 threads per core) family 23 model 96 stepping 1, cmov, cx8, fxsr, mmx, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, avx, avx2, aes, clmul, mmxext, 3dnowpref, lzcnt, sse4a, ht, tsc, tscinvbit, tscinv, bmi1, bmi2, adx, sha, fma
+
+Memory: 4k page, system-wide physical 16253M (1865M free)
+TotalPageFile size 20349M (AvailPageFile size 13M)
+current process WorkingSet (physical memory assigned to process): 10M, peak: 10M
+current process commit charge ("private bytes"): 71M, peak: 325M
+
+vm_info: OpenJDK 64-Bit Server VM (11.0.6+8-b765.25) for windows-amd64 JRE (11.0.6+8-b765.25), built on Mar 30 2020 12:57:22 by "" with MS VC++ 14.0 (VS2015)
+
+END.

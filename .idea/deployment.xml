@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData">
+    <serverData>
+      <paths name="Remote Host (3da5284a-121b-4062-9d3e-679f5c90f51b)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/ubuntu/yyg" local="$PROJECT_DIR$" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="远程主机 (7429a703-38fd-4e6d-b32f-3ed0ec275d56)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/ubuntu/yyg" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
